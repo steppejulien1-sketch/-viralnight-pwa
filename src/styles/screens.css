@@ -1,0 +1,33 @@
+/* ============================================================
+   Gestion des ecrans montes par le routeur + transitions
+   ============================================================ */
+
+/* Chaque ecran est superpose dans le viewport le temps de la transition. */
+.app-viewport .screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  transition: transform var(--dur-screen) var(--ease-out), opacity var(--dur-screen) var(--ease-out);
+  will-change: transform;
+}
+
+/* L'ecran actif est au-dessus. */
+.app-viewport .screen.is-active {
+  z-index: 2;
+}
+
+/* Stub temporaire (ecrans pas encore construits). */
+.screen-stub {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 var(--pad-x);
+}
+.screen-stub h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

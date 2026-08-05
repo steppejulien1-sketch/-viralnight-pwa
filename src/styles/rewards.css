@@ -1,0 +1,213 @@
+/* ============================================================
+   Ecran Recompenses (catalogue + ticket QR)
+   ============================================================ */
+
+.rw-page {
+  min-height: 100dvh;
+}
+.rw-inner {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--safe-top) + 16px) var(--pad-x) calc(var(--safe-bottom) + 24px);
+}
+
+/* --- Tete : retour + titre + solde --- */
+.rw-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.rw-head .label {
+  flex: 1;
+}
+.rw-balance {
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--accent-tint);
+  border: 1px solid rgba(255, 99, 99, 0.2);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.rw-close svg {
+  transform: rotate(90deg);
+}
+
+/* --- Liste --- */
+.rw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rw-h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+.rw-lead {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+/* --- Reward card --- */
+.rc {
+  padding: 17px 18px;
+  transition: border-color 0.2s;
+}
+.rc.is-open {
+  border-color: rgba(255, 99, 99, 0.3);
+  box-shadow: var(--shadow-card), 0 0 30px -14px var(--accent-glow);
+}
+.rc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.rc-title {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.rc-desc {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-mute);
+}
+.rc-cost {
+  flex: none;
+  text-align: right;
+}
+.rc-cost-num {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rc-cost-unit {
+  display: block;
+  font-size: 10px;
+  color: var(--text-mute);
+  letter-spacing: 0.04em;
+}
+.rc-btn {
+  margin-top: 15px;
+  height: 46px;
+  font-size: 14.5px;
+}
+.rc-locked {
+  margin-top: 15px;
+}
+.rc-bar {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.rc-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: #3a3a42;
+  transition: width 0.9s var(--ease-out);
+}
+.rc-remaining {
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--text-mute);
+}
+.rc-remaining .mono {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Ticket de retrait (QR)
+   ============================================================ */
+.rw-ticket {
+  justify-content: space-between;
+}
+.tk-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.tk-check {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--success-tint);
+  color: var(--success);
+  margin-bottom: 16px;
+}
+.tk-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.tk-sub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 26px;
+}
+.tk-card {
+  width: 100%;
+  max-width: 300px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tk-qr-wrap {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+}
+.tk-qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+.tk-code {
+  margin-top: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text);
+}
+.tk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-mute);
+}
+.tk-valid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+}
+.tk-valid-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(125, 216, 143, 0.7);
+}

@@ -1,0 +1,125 @@
+/* ============================================================
+   Ecran Profil
+   ============================================================ */
+
+.pf-inner {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--safe-top) + 16px) var(--pad-x) calc(var(--safe-bottom) + 22px);
+}
+
+/* --- Identite --- */
+.pf-id {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0 24px;
+}
+.pf-handle {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.pf-tier {
+  margin-top: 3px;
+  font-size: 13.5px;
+  color: var(--text-mute);
+}
+.pf-tier strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* --- Stats --- */
+.pf-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 30px;
+}
+.pf-stat {
+  padding: 15px 12px;
+  text-align: center;
+}
+.pf-stat-val {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.pf-stat-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-mute);
+}
+
+/* --- Sections / lignes --- */
+.pf-section {
+  margin-bottom: 22px;
+}
+.pf-section-label {
+  margin-bottom: 10px;
+}
+.pf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.pf-row-label {
+  font-size: 14.5px;
+  color: var(--text);
+}
+.pf-row-val {
+  font-size: 13.5px;
+  color: var(--text-mute);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Toggle --- */
+.pf-toggle {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: background 0.22s var(--ease-out), border-color 0.22s;
+}
+.pf-toggle.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.pf-toggle-knob {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translateY(-50%);
+  transition: left 0.22s var(--ease-spring);
+}
+.pf-toggle.is-on .pf-toggle-knob {
+  left: 21px;
+  background: var(--accent-ink);
+}
+
+.pf-foot {
+  margin-top: auto;
+}

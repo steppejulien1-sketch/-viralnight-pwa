@@ -1,0 +1,19 @@
+{
+  "name": "viralnight-pwa",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "PWA client-facing ViralNight — le clubbeur scanne, poste sa story, gagne des points.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  }
+}

@@ -1,0 +1,55 @@
+/* ============================================================
+   Composants partages
+   ============================================================ */
+
+/* --- TierBadge : pastille multiplicateur ---
+   Le losange corail evoque un "cristal" de palier. Sobre, une seule
+   couleur, le chiffre en mono pour le feel data. */
+.tier-badge {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  border-radius: 22%;
+  background: linear-gradient(155deg, #1d1418, var(--surface));
+  border: 1px solid rgba(255, 99, 99, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 30px -8px var(--accent-glow);
+}
+.tier-badge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 120% at 50% 0%, var(--accent-tint), transparent 60%);
+  pointer-events: none;
+}
+.tier-mult {
+  position: relative;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Tailles */
+.tier-hero {
+  width: 104px;
+  height: 104px;
+}
+.tier-hero .tier-mult {
+  font-size: 44px;
+}
+.tier-md {
+  width: 52px;
+  height: 52px;
+}
+.tier-md .tier-mult {
+  font-size: 21px;
+}
+.tier-sm {
+  width: 38px;
+  height: 38px;
+  border-radius: 26%;
+}
+.tier-sm .tier-mult {
+  font-size: 15px;
+}
