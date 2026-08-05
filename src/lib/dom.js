@@ -34,6 +34,11 @@ const ICONS = {
   check: '<path d="M4 12l5 5L20 6"/>',
   gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"/>',
+  flame: '<path d="M12 2c1 3 4 4.5 4 8a4 4 0 0 1-8 0c0-1 .3-1.8.7-2.5C9 9 9 10.5 10 11c0-2 .5-4 2-4-.5 1.5.5 2.5 1.5 3.2.3-2-.5-5-1.5-8.2z"/><path d="M12 22a6 6 0 0 0 6-6c0-4-3-6-6-11-3 5-6 7-6 11a6 6 0 0 0 6 6z"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  medal: '<circle cx="12" cy="14" r="6"/><path d="M12 11v3l2 1M8.5 8L6 2M15.5 8L18 2"/>',
+  lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>',
 };
 
 export function icon(name, size = 20, extraClass = "") {

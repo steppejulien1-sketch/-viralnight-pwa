@@ -10,6 +10,7 @@ import "./styles/post-story.css";
 import "./styles/rewards.css";
 import "./styles/bonus.css";
 import "./styles/profile.css";
+import "./styles/gamification.css";
 
 import { createRouter } from "./lib/router.js";
 import { Landing } from "./pages/landing.js";
@@ -19,6 +20,8 @@ import { PostStory } from "./pages/post-story.js";
 import { Rewards } from "./pages/rewards.js";
 import { Bonus } from "./pages/bonus.js";
 import { Profile } from "./pages/profile.js";
+import { Leaderboard } from "./pages/leaderboard.js";
+import { Collection } from "./pages/collection.js";
 
 const mount = document.getElementById("app");
 
@@ -33,6 +36,8 @@ createRouter({
     rewards: Rewards,
     bonus: Bonus,
     profile: Profile,
+    leaderboard: Leaderboard,
+    collection: Collection,
   },
 });
 

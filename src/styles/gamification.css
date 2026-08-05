@@ -1,0 +1,529 @@
+/* ============================================================
+   VIRALNIGHT PWA — Gamification
+   Streak (flamme), défi du moment, tuiles d'accès, classement
+   hebdo, collection de badges. Palette lime + magenta, pas de
+   violet "IA". Mobile-first (375px).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Dashboard — Streak (pastille flamme dans la carte niveau)
+   ------------------------------------------------------------ */
+.db-streak-slot:empty {
+  display: none;
+}
+.db-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px 5px 8px;
+  border-radius: var(--r-pill);
+  background: var(--grad-hot);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  box-shadow: 0 0 14px var(--magenta-glow);
+}
+.db-streak svg {
+  color: #ffe08a;
+  animation: flame-flick 1.6s var(--ease-out) infinite alternate;
+}
+.db-streak-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+@keyframes flame-flick {
+  from { transform: translateY(0) scale(1); opacity: 0.9; }
+  to   { transform: translateY(-1px) scale(1.08); opacity: 1; }
+}
+
+/* ------------------------------------------------------------
+   2. Dashboard — Défi du moment (bannière au-dessus du solde)
+   ------------------------------------------------------------ */
+.db-slot:empty {
+  display: none;
+}
+.db-challenge {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 15px;
+  margin-bottom: 20px;
+  border-radius: var(--r-card);
+  border: 1px solid rgba(255, 61, 139, 0.28);
+  background: linear-gradient(135deg, var(--magenta-tint), rgba(53, 224, 232, 0.06));
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s var(--ease-out), border-color 0.2s;
+}
+.db-challenge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 100% 0%, var(--magenta-tint), transparent 60%);
+  pointer-events: none;
+}
+.db-challenge:active {
+  transform: scale(0.985);
+}
+.db-chal-left {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.db-chal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--magenta);
+  margin-bottom: 6px;
+}
+.db-chal-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.db-chal-desc {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.db-chal-right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+}
+.db-chal-bonus {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--grad-fresh);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.db-chal-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-mute);
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+}
+
+/* ------------------------------------------------------------
+   3. Dashboard — Tuiles d'accès (Classement / Collection)
+   ------------------------------------------------------------ */
+.db-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.db-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 15px 15px 14px;
+  text-align: left;
+  position: relative;
+  transition: transform 0.15s var(--ease-out), border-color 0.2s;
+}
+.db-tile:active {
+  transform: scale(0.97);
+}
+.db-tile-icn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+.db-tiles .db-tile:last-child .db-tile-icn {
+  background: var(--magenta-tint);
+  color: var(--magenta);
+}
+.db-tile-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.db-tile-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.db-tile-sub {
+  font-size: 11.5px;
+  color: var(--text-mute);
+  line-height: 1.3;
+}
+.db-tile-arrow {
+  position: absolute;
+  top: 15px;
+  right: 13px;
+  color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------
+   4. Classement hebdomadaire
+   ------------------------------------------------------------ */
+.lb-page,
+.cl-page {
+  min-height: 100dvh;
+}
+.lb-inner,
+.cl-inner {
+  min-height: 100dvh;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) var(--pad-x) calc(var(--safe-bottom) + 32px);
+}
+.lb-head,
+.cl-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.lb-head .label,
+.cl-head .label {
+  flex: 1;
+}
+
+.lb-title-wrap,
+.cl-title-wrap {
+  margin-bottom: 18px;
+}
+.lb-title,
+.cl-title {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.lb-sub,
+.cl-sub {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  margin-top: 5px;
+}
+.cl-count {
+  font-weight: 800;
+  color: var(--lime);
+}
+
+/* --- Podium top 3 --- */
+.lb-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: end;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+.lb-pod {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px 12px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+}
+.lb-pod-1 {
+  padding-top: 22px;
+  border-color: rgba(200, 255, 47, 0.4);
+  background: linear-gradient(180deg, var(--lime-tint), var(--surface) 70%);
+  box-shadow: 0 0 26px -8px var(--lime-glow);
+}
+.lb-pod-2 { transform: translateY(6px); }
+.lb-pod-3 { transform: translateY(12px); }
+.lb-pod-rank {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-mute);
+}
+.lb-pod-1 .lb-pod-rank { color: var(--lime); }
+.lb-pod-ava {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.lb-pod-1 .lb-pod-ava {
+  width: 54px;
+  height: 54px;
+  border-color: var(--lime);
+  background: var(--grad-fresh);
+  color: var(--lime-ink);
+}
+.lb-pod-handle {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lb-pod-pts {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+}
+.lb-pod.is-me {
+  outline: 1.5px solid var(--magenta);
+  outline-offset: 1px;
+}
+
+/* --- Liste (4e et +) --- */
+.lb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.lb-rank {
+  flex: none;
+  width: 24px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mute);
+}
+.lb-ava {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.lb-handle {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lb-you {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--magenta);
+  color: #fff;
+}
+.lb-pts {
+  flex: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.lb-row.is-me {
+  border-color: var(--magenta);
+  background: linear-gradient(90deg, var(--magenta-tint), var(--surface) 60%);
+}
+
+/* --- Ma ligne épinglée (hors top 10) --- */
+.lb-me-fixed {
+  position: sticky;
+  bottom: calc(var(--safe-bottom) + 12px);
+  margin-top: 18px;
+  z-index: 3;
+}
+.lb-row.is-fixed {
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(8px);
+}
+.lb-you-none {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: var(--r-card);
+  border: 1px dashed var(--border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+/* ------------------------------------------------------------
+   5. Collection de badges
+   ------------------------------------------------------------ */
+.cl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cl-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 20px 14px 16px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.cl-badge-icn {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+}
+.cl-badge.is-on .cl-badge-icn {
+  background: var(--grad-fresh);
+  color: var(--lime-ink);
+  box-shadow: 0 0 22px -6px var(--lime-glow);
+}
+.cl-badge.is-locked {
+  border-style: dashed;
+  opacity: 0.62;
+}
+.cl-badge.is-locked .cl-badge-icn {
+  background: var(--surface-2);
+  color: var(--text-faint);
+}
+.cl-badge-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.cl-badge.is-locked .cl-badge-name {
+  color: var(--text-mute);
+}
+.cl-badge-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-mute);
+}
+
+/* ------------------------------------------------------------
+   6. Célébration (overlay déblocage)
+   ------------------------------------------------------------ */
+.cbr {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 14, 0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.22s var(--ease-out);
+}
+.cbr.is-in {
+  opacity: 1;
+}
+.cbr-card {
+  position: relative;
+  text-align: center;
+  padding: 26px 30px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-pop);
+  transform: scale(0.9);
+  transition: transform 0.3s var(--ease-spring);
+}
+.cbr.is-in .cbr-card {
+  transform: scale(1);
+}
+.cbr-burst {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--grad-fresh);
+  box-shadow: 0 0 30px -4px var(--lime-glow);
+  animation: cbr-pulse 0.9s var(--ease-spring) infinite alternate;
+}
+@keyframes cbr-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.12); }
+}
+.cbr-title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.cbr-sub {
+  margin-top: 5px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+}
+.cbr-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cbr-piece {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: cbr-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.5, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes cbr-fall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(var(--rot)); opacity: 0; }
+}

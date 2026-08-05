@@ -1,0 +1,106 @@
+// Chargement des données de gamification depuis Supabase (streak, badges,
+// défis, classement). Nécessite une session (ensureSession).
+
+import { supabase, isConfigured } from "./supabase.js";
+import { ensureSession } from "./session.js";
+import { CLUB } from "./mock.js";
+
+let _clubId = null;
+
+export async function clubId() {
+  if (_clubId) return _clubId;
+  const { data } = await supabase.from("clubs").select("id").eq("slug", CLUB.slug).maybeSingle();
+  _clubId = data?.id || null;
+  return _clubId;
+}
+
+export async function myId() {
+  const s = await ensureSession();
+  return s?.user?.id || null;
+}
+
+// Streak courant du clubbeur pour ce club.
+export async function loadStreak() {
+  if (!isConfigured) return null;
+  await ensureSession();
+  const cid = await clubId();
+  const uid = await myId();
+  if (!cid || !uid) return null;
+  const { data } = await supabase
+    .from("streaks")
+    .select("current_streak, longest_streak")
+    .eq("club_id", cid)
+    .eq("user_id", uid)
+    .maybeSingle();
+  return data || { current_streak: 0, longest_streak: 0 };
+}
+
+// Défi actif du club (le plus proche de sa fin).
+export async function loadActiveChallenge() {
+  if (!isConfigured) return null;
+  await ensureSession();
+  const cid = await clubId();
+  if (!cid) return null;
+  const { data } = await supabase
+    .from("challenges")
+    .select("*")
+    .eq("club_id", cid)
+    .eq("active", true)
+    .lte("starts_at", new Date().toISOString())
+    .gte("ends_at", new Date().toISOString())
+    .order("ends_at")
+    .limit(1)
+    .maybeSingle();
+  return data || null;
+}
+
+// Catalogue de badges + ceux débloqués par le user.
+export async function loadBadges() {
+  if (!isConfigured) return { all: [], unlocked: new Set() };
+  await ensureSession();
+  const uid = await myId();
+  const [{ data: all }, { data: mine }] = await Promise.all([
+    supabase.from("badges").select("*").order("sort"),
+    supabase.from("user_badges").select("badge_id").eq("user_id", uid),
+  ]);
+  return { all: all || [], unlocked: new Set((mine || []).map((m) => m.badge_id)) };
+}
+
+// Classement hebdo du club + ma position.
+export async function loadLeaderboard() {
+  if (!isConfigured) return { rows: [], me: null };
+  await ensureSession();
+  const cid = await clubId();
+  const uid = await myId();
+  const monday = mondayISO();
+  // Passe par une fonction SECURITY DEFINER : la RLS de `users` interdit
+  // de lire le handle des autres clubbeurs via une jointure classique.
+  const { data } = await supabase.rpc("get_leaderboard", { p_club: cid, p_week: monday });
+  const rows = (data || []).map((r) => ({
+    rank: Number(r.rank),
+    handle: r.handle || "clubbeur",
+    points: r.week_points,
+    isMe: r.user_id === uid,
+  }));
+  return { rows, me: rows.find((r) => r.isMe) || null };
+}
+
+function mondayISO() {
+  const d = new Date();
+  const day = (d.getDay() + 6) % 7; // 0 = lundi
+  d.setDate(d.getDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
+// Compte à rebours lisible ("2j 4h", "5h 12m", "18m").
+export function countdown(endsAt) {
+  const ms = new Date(endsAt) - new Date();
+  if (ms <= 0) return "terminé";
+  const m = Math.floor(ms / 60000);
+  const d = Math.floor(m / 1440);
+  const h = Math.floor((m % 1440) / 60);
+  const mm = m % 60;
+  if (d > 0) return `${d}j ${h}h`;
+  if (h > 0) return `${h}h ${mm}m`;
+  return `${mm}m`;
+}

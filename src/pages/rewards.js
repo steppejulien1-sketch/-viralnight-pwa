@@ -9,6 +9,7 @@ import { CLUB } from "../lib/mock.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { impact } from "../lib/haptics.js";
+import { celebrate } from "../lib/celebrate.js";
 import QRCode from "qrcode";
 
 const nf = new Intl.NumberFormat("fr-FR");
@@ -184,6 +185,7 @@ export function Rewards(_params, ctx) {
       }
       const row = Array.isArray(data) ? data[0] : data;
       impact();
+      celebrate({ title: "Récompense débloquée !", sub: r.title });
       me.points_balance = row.new_balance;
       renderTicket(r, row.qr_code);
     }

@@ -6,15 +6,17 @@ import "./owner.css";
 import { h, icon } from "../lib/dom.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { RewardsAdmin } from "./sections/rewards.js";
+import { ChallengesAdmin } from "./sections/challenges.js";
+import { SettingsAdmin } from "./sections/settings.js";
 import { Placeholder } from "./sections/placeholder.js";
 
 const mount = document.getElementById("owner");
 
 const SECTIONS = [
   { id: "rewards", label: "Boutique", icon: "gift", render: RewardsAdmin },
-  { id: "challenges", label: "Défis", icon: "sparkles", render: (c) => Placeholder("Défis", "Crée des défis ponctuels pour tes clubbeurs.", c) },
+  { id: "challenges", label: "Défis", icon: "sparkles", render: ChallengesAdmin },
   { id: "stats", label: "Statistiques", icon: "scan", render: (c) => Placeholder("Statistiques", "Rédemptions, points distribués, activité.", c) },
-  { id: "settings", label: "Paramètres", icon: "check", render: (c) => Placeholder("Paramètres du club", "Couleur, leaderboard, infos.", c) },
+  { id: "settings", label: "Paramètres", icon: "check", render: SettingsAdmin },
 ];
 
 let club = null;

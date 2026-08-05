@@ -145,6 +145,34 @@ select.ow-input { cursor: pointer; }
 .ow-check input { width: 18px; height: 18px; accent-color: var(--lime); }
 .ow-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
 
+/* ============================================================
+   Défis — état (à venir / en cours / terminé)
+   ============================================================ */
+.ow-state { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.ow-state-live { background: var(--lime-tint); color: var(--lime); }
+.ow-state-soon { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
+.ow-state-over { background: var(--surface-2); color: var(--text-mute); }
+
+/* ============================================================
+   Paramètres — cartes, couleur, barre d'enregistrement
+   ============================================================ */
+.ow-settings { display: flex; flex-direction: column; gap: 18px; max-width: 620px; }
+.ow-card { padding: 22px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+.ow-card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.ow-setting-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.ow-setting-row .ow-td-sub { white-space: normal; max-width: 380px; margin-top: 4px; }
+
+.ow-color-row { display: flex; align-items: center; gap: 12px; }
+.ow-color-swatch { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border); flex: none; }
+.ow-color-input { width: 46px; height: 34px; padding: 0; border: none; background: none; cursor: pointer; }
+.ow-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.ow-color-input::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 8px; }
+
+.ow-save-bar { display: flex; align-items: center; gap: 16px; }
+.ow-save-msg { font-size: 13px; color: var(--text-mute); }
+.ow-save-msg.is-ok { color: var(--success); }
+.ow-save-msg.is-err { color: var(--magenta); }
+
 @media (max-width: 760px) {
   .ow-shell { grid-template-columns: 1fr; }
   .ow-side { flex-direction: row; align-items: center; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
