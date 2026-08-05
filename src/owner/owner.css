@@ -1,0 +1,155 @@
+/* ============================================================
+   ViralNight — Dashboard propriétaire (desktop-first)
+   Même design system que la PWA (tokens v2), densité plus élevée.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+svg { display: block; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.noise {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.ow-muted { color: var(--text-mute); font-size: 13px; }
+
+.ow-logo-mark { width: 15px; height: 15px; border-radius: 5px; background: var(--grad-fresh); box-shadow: 0 0 12px var(--lime-glow); }
+
+/* --- Boutons --- */
+.ow-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 18px; border-radius: 11px; font-size: 14px; font-weight: 600;
+  transition: transform 0.15s var(--ease-out), filter 0.2s, background 0.2s;
+}
+.ow-btn:active { transform: scale(0.98); }
+.ow-btn-primary { background: var(--lime); color: var(--lime-ink); box-shadow: 0 8px 24px -10px var(--lime-glow); }
+.ow-btn-primary:hover { filter: brightness(1.05); }
+.ow-btn-danger { background: transparent; color: #ff7a9c; border: 1px solid rgba(255, 61, 139, 0.35); }
+.ow-btn-danger:hover { background: var(--magenta-tint); }
+
+/* ============================================================
+   Login
+   ============================================================ */
+.ow-login { position: relative; z-index: 1; min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+.ow-login-card {
+  width: 100%; max-width: 380px; padding: 34px; border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ow-login-brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.ow-login-card h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.ow-login-sub { color: var(--text-dim); font-size: 14px; margin-bottom: 8px; }
+.ow-login-msg { font-size: 13px; color: var(--text-mute); min-height: 18px; }
+.ow-login-demo { font-size: 12px; color: var(--text-faint); font-family: var(--font-mono); text-align: center; }
+
+.ow-field { display: flex; flex-direction: column; gap: 7px; }
+.ow-field > span { font-size: 12.5px; font-weight: 500; color: var(--text-mute); }
+.ow-input {
+  height: 44px; padding: 0 13px; border-radius: 11px; background: var(--bg-2);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14.5px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+select.ow-input { cursor: pointer; }
+.ow-input:focus { outline: none; border-color: var(--lime); box-shadow: 0 0 0 3px var(--lime-tint); }
+.ow-input::placeholder { color: var(--text-faint); }
+
+/* ============================================================
+   Shell : sidebar + contenu
+   ============================================================ */
+.ow-shell { position: relative; z-index: 1; display: grid; grid-template-columns: 250px 1fr; min-height: 100dvh; }
+.ow-side {
+  border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 6px;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg));
+}
+.ow-brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 0 8px; }
+.ow-club { display: inline-flex; align-items: center; gap: 8px; margin: 8px 8px 22px; font-size: 12.5px; color: var(--text-dim); }
+.ow-club-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--magenta); box-shadow: 0 0 8px var(--magenta-glow); }
+.ow-nav { display: flex; flex-direction: column; gap: 3px; }
+.ow-nav-item {
+  display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 11px;
+  font-size: 14px; font-weight: 500; color: var(--text-dim); text-align: left; transition: background 0.15s, color 0.15s;
+}
+.ow-nav-item:hover { background: rgba(255, 255, 255, 0.03); color: var(--text); }
+.ow-nav-item.is-active { background: var(--lime-tint); color: var(--lime); font-weight: 600; }
+.ow-nav-item svg { flex: none; }
+.ow-signout { margin-top: auto; padding: 11px 12px; text-align: left; font-size: 13.5px; color: var(--text-mute); border-radius: 11px; }
+.ow-signout:hover { color: var(--text); background: rgba(255, 255, 255, 0.03); }
+
+.ow-content { overflow-y: auto; max-height: 100dvh; }
+.ow-section { max-width: 960px; padding: 36px 40px; }
+
+/* --- Head de section --- */
+.ow-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+.ow-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.025em; }
+.ow-head-sub { margin-top: 5px; font-size: 14px; color: var(--text-dim); }
+.ow-empty-box { padding: 40px; border: 1px dashed var(--border); border-radius: var(--r-card); text-align: center; color: var(--text-mute); }
+
+/* ============================================================
+   Table des rewards
+   ============================================================ */
+.ow-table { width: 100%; border-collapse: collapse; }
+.ow-table th {
+  text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-mute); border-bottom: 1px solid var(--border);
+}
+.ow-table td { padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ow-table tr:hover td { background: rgba(255, 255, 255, 0.015); }
+.ow-table strong { display: block; font-size: 14.5px; font-weight: 600; }
+.ow-td-sub { display: block; margin-top: 2px; font-size: 12px; color: var(--text-mute); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ow-cat { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.ow-cat-boisson { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
+.ow-cat-entree { background: var(--lime-tint); color: var(--lime); }
+.ow-cat-vip { background: var(--magenta-tint); color: #ff9ac4; }
+.ow-cat-exclusif { background: rgba(255, 138, 61, 0.14); color: #ffb37a; }
+.ow-lvl-tag { display: inline-block; padding: 3px 9px; border-radius: 7px; background: var(--surface-2); font-size: 11.5px; font-weight: 600; text-transform: capitalize; }
+
+.ow-icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: var(--text-mute); transition: background 0.15s, color 0.15s; }
+.ow-icon-btn:hover { background: var(--surface-2); color: var(--text); }
+
+/* Toggle */
+.ow-toggle { position: relative; width: 42px; height: 25px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); transition: background 0.2s, border-color 0.2s; }
+.ow-toggle.is-on { background: var(--lime); border-color: var(--lime); }
+.ow-toggle-knob { position: absolute; top: 50%; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); transform: translateY(-50%); transition: left 0.2s var(--ease-spring); }
+.ow-toggle.is-on .ow-toggle-knob { left: 20px; background: var(--lime-ink); }
+
+/* ============================================================
+   Drawer (formulaire créer/éditer)
+   ============================================================ */
+.ow-drawer-backdrop {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.55);
+  display: flex; justify-content: flex-end; opacity: 0; transition: opacity 0.25s var(--ease-out);
+}
+.ow-drawer-backdrop.is-open { opacity: 1; }
+.ow-drawer {
+  width: min(440px, 100%); height: 100%; overflow-y: auto; padding: 28px;
+  background: var(--surface); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 16px;
+  transform: translateX(30px); transition: transform 0.25s var(--ease-out);
+}
+.ow-drawer-backdrop.is-open .ow-drawer { transform: none; }
+.ow-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.ow-drawer-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.ow-drawer-head .ow-icon-btn svg { transform: rotate(180deg); }
+.ow-form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ow-form-row { display: grid; }
+.ow-check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dim); cursor: pointer; padding: 4px 0; }
+.ow-check input { width: 18px; height: 18px; accent-color: var(--lime); }
+.ow-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+@media (max-width: 760px) {
+  .ow-shell { grid-template-columns: 1fr; }
+  .ow-side { flex-direction: row; align-items: center; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
+  .ow-nav { flex-direction: row; flex-wrap: wrap; }
+  .ow-signout { margin-top: 0; }
+  .ow-section { padding: 24px 18px; }
+  .ow-table thead { display: none; }
+}
