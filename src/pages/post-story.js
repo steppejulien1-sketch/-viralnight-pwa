@@ -116,13 +116,13 @@ export function PostStory(_params, ctx) {
 
   /* ---------- 3. Gain de points ---------- */
   function renderReward() {
-    const gain = STORY_BASE_POINTS * USER.tier.mult;
+    const gain = STORY_BASE_POINTS;
     const before = USER.points;
     const after = before + gain;
     USER.points = after;
+    USER.totalEarned += gain;
     HISTORY.unshift({
       date: "À l'instant",
-      kind: "Story Instagram",
       views: 0,
       points: gain,
     });
@@ -144,9 +144,9 @@ export function PostStory(_params, ctx) {
             h("span", { class: "rw-gain-unit" }, "pts"),
           ]),
           h("p", { class: "rw-mult pop", style: { "--d": "300ms" } }, [
-            `${STORY_BASE_POINTS} pts `,
-            h("span", { class: "rw-mult-x mono" }, `×${USER.tier.mult}`),
-            ` palier ${USER.tier.label}`,
+            "Story créditée. ",
+            h("span", { class: "rw-mult-x" }, "Ajoute tes vues"),
+            " pour un gros bonus.",
           ]),
 
           h("div", { class: "rw-bal card pop", style: { "--d": "400ms" } }, [

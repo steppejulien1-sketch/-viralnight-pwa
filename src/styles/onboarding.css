@@ -127,6 +127,47 @@
   color: var(--success);
 }
 
+/* --- Ecran connexion Instagram --- */
+.ob-connect {
+  display: flex;
+  flex-direction: column;
+}
+.ob-ig-badge {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: var(--grad-hot);
+  color: #fff;
+  margin-bottom: 24px;
+  box-shadow: 0 14px 40px -12px var(--magenta-glow);
+}
+.ob-assure {
+  list-style: none;
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ob-assure-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.ob-assure-dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--lime-tint);
+  color: var(--lime);
+}
+
 /* ============================================================
    Etat "analyzing"
    ============================================================ */

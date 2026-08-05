@@ -1,68 +1,85 @@
 /* ============================================================
-   VIRALNIGHT PWA — Design tokens
+   VIRALNIGHT PWA — Design tokens (v2 · énergie nightlife)
    ------------------------------------------------------------
-   Nightlife premium, energie contenue. Fond noir profond, un
-   seul accent (corail, la couleur de marque ViralNight), typo
-   agressivement hierarchisee. Rien de "template IA" : le relief
-   vient du contraste des surfaces et de la typo, pas de degrades
-   criards.
+   Direction : fun, jeune, électrique — pour un clubbeur à 1h du
+   mat. Fond nuit violacé (pas noir plat), accent LIME qui claque
+   + MAGENTA pour le contraste. Grosses typos, formes rondes,
+   dégradés assumés mais avec goût. Pas de violet "IA".
    ============================================================ */
 
 :root {
-  /* --- Surfaces (du fond vers l'avant-plan) --- */
-  --bg: #0a0a0b; /* fond de page, jamais #000 pur */
-  --surface: #131316; /* cartes, panneaux */
-  --surface-2: #1a1a1e; /* elements empiles sur une carte */
-  --surface-hover: #202024;
+  /* --- Surfaces : nuit violacée, riche --- */
+  --bg: #0d0b14; /* fond, violet-nuit profond */
+  --bg-2: #120f1b;
+  --surface: #1a1626; /* cartes */
+  --surface-2: #241d33; /* empilé */
+  --surface-hover: #2c2440;
 
-  /* --- Bordures / filets --- */
-  --border: #27272a;
-  --border-soft: rgba(255, 255, 255, 0.06);
+  /* --- Bordures --- */
+  --border: #2e2740;
+  --border-soft: rgba(255, 255, 255, 0.07);
 
   /* --- Texte --- */
-  --text: #f4f4f5; /* principal */
-  --text-dim: #a1a1aa; /* secondaire lisible */
-  --text-mute: #71717a; /* metadonnees, labels */
-  --text-faint: #52525b; /* le plus discret */
+  --text: #f7f5ff;
+  --text-dim: #b3adc9;
+  --text-mute: #7d7794;
+  --text-faint: #574f6e;
 
-  /* --- Accent unique : corail ViralNight ---
-     Chaud, humain, nightlife. Rationne : CTA, valeur clef,
-     accent d'atmosphere. Jamais du texte courant. */
-  --accent: #ff6363;
-  --accent-hover: #ff7878;
-  --accent-press: #f04f4f;
-  --accent-ink: #17070a; /* texte sur fond accent (quasi noir chaud) */
-  --accent-glow: rgba(255, 99, 99, 0.35);
-  --accent-tint: rgba(255, 99, 99, 0.1);
+  /* --- Accent 1 : LIME électrique (énergie, CTA) --- */
+  --lime: #c8ff2f;
+  --lime-hover: #d4ff5c;
+  --lime-press: #b3f01a;
+  --lime-ink: #131a02; /* texte sur lime */
+  --lime-glow: rgba(200, 255, 47, 0.4);
+  --lime-tint: rgba(200, 255, 47, 0.12);
 
-  /* --- Etats fonctionnels (discrets) --- */
-  --success: #7dd88f;
-  --success-tint: rgba(125, 216, 143, 0.12);
-  --warn: #e6b455;
+  /* --- Accent 2 : MAGENTA (fun, contraste, "hot") --- */
+  --magenta: #ff3d8b;
+  --magenta-glow: rgba(255, 61, 139, 0.4);
+  --magenta-tint: rgba(255, 61, 139, 0.14);
 
-  /* --- Typographie --- */
+  /* --- Accent 3 : CYAN (touches fraîches) --- */
+  --cyan: #35e0e8;
+
+  /* --- Dégradé signature (moments forts uniquement) --- */
+  --grad-hot: linear-gradient(115deg, #ff3d8b, #ff8a3d);
+  --grad-fresh: linear-gradient(115deg, #c8ff2f, #35e0e8);
+
+  /* --- Accent principal générique = lime --- */
+  --accent: var(--lime);
+  --accent-hover: var(--lime-hover);
+  --accent-press: var(--lime-press);
+  --accent-ink: var(--lime-ink);
+  --accent-glow: var(--lime-glow);
+  --accent-tint: var(--lime-tint);
+
+  /* --- États --- */
+  --success: #4be3a0;
+  --success-tint: rgba(75, 227, 160, 0.14);
+
+  /* --- Typo --- */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* --- Rayons --- */
-  --r-btn: 10px;
-  --r-card: 14px;
-  --r-lg: 18px;
-  --r-hero: 24px;
+  /* --- Rayons : plus ronds, plus fun --- */
+  --r-btn: 14px;
+  --r-card: 18px;
+  --r-lg: 22px;
+  --r-hero: 28px;
   --r-pill: 999px;
 
-  /* --- Elevation : douce, jamais de grosse drop-shadow criarde --- */
-  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.7);
-  --shadow-pop: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -20px rgba(0, 0, 0, 0.8);
+  /* --- Elevation --- */
+  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 10px 30px -14px rgba(0, 0, 0, 0.8);
+  --shadow-pop: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 24px 60px -22px rgba(0, 0, 0, 0.85);
 
   /* --- Mouvement --- */
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
   --dur-screen: 300ms;
 
-  /* --- Layout mobile-first --- */
-  --app-max: 440px; /* largeur max du contenu, centre sur desktop */
-  --pad-x: 20px; /* padding horizontal standard */
+  /* --- Layout --- */
+  --app-max: 440px;
+  --pad-x: 20px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

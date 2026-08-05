@@ -16,6 +16,26 @@
   gap: 16px;
   margin: 14px 0 24px;
 }
+.pf-ava {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 18px;
+  background: var(--grad-hot);
+  color: #fff;
+  box-shadow: 0 10px 30px -12px var(--magenta-glow);
+}
+.pf-lvl-star {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--grad-fresh);
+  vertical-align: -1px;
+  margin-right: 6px;
+}
 .pf-handle {
   font-size: 22px;
   font-weight: 700;

@@ -33,11 +33,10 @@ export function Landing(_params, ctx) {
         `Tu es au ${CLUB.name}, ${CLUB.city}`,
       ]),
       h("h1", { class: "lp-title reveal", style: { "--d": "70ms" } }, CLUB.name),
-      h(
-        "p",
-        { class: "lp-sub reveal", style: { "--d": "140ms" } },
-        "Poste ta soirée en story, gagne des points, débloque des récompenses. Ce soir, ta présence rapporte."
-      ),
+      h("p", { class: "lp-sub reveal", style: { "--d": "140ms" } }, [
+        "Poste ta soirée, gagne des points, débloque des trucs gratuits. ",
+        h("strong", {}, "Ce soir, ta story te rapporte."),
+      ]),
     ]),
 
     // Bas : action unique + reassurance.

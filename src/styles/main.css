@@ -139,6 +139,20 @@ svg {
   transform: scale(0.98);
 }
 
+/* Instagram : dégradé chaud (magenta -> orange), texte blanc. */
+.btn-ig {
+  background: var(--grad-hot);
+  color: #fff;
+  box-shadow: 0 10px 34px -10px var(--magenta-glow);
+}
+.btn-ig:hover {
+  transform: scale(1.015);
+  filter: brightness(1.06);
+}
+.btn-ig:active {
+  transform: scale(0.98);
+}
+
 /* Secondaire : contour, fond transparent. */
 .btn-ghost {
   background: transparent;

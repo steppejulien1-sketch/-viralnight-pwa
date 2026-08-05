@@ -1,11 +1,10 @@
-// Ecran 3 — Dashboard perso.
-// Hierarchie mobile-first : solde de points (le chiffre-roi), palier,
-// prochaine recompense avec progression, PUIS l'action unique dominante
-// "Poster ma story". L'historique vient en dessous, secondaire.
+// Ecran 3 — Dashboard perso (v2).
+// Plus de palier d'abonnes. On montre : le solde (chiffre-roi), le NIVEAU
+// (activite cumulee) avec sa progression, la prochaine recompense, l'action
+// unique "Poster ma story", puis l'historique (vues reelles + points).
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY, REWARDS, nextReward } from "../lib/mock.js";
-import { TierBadge } from "../components/TierBadge.js";
+import { CLUB, USER, HISTORY, REWARDS, nextReward, levelForPoints } from "../lib/mock.js";
 import { PointsCounter } from "../components/PointsCounter.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
@@ -16,51 +15,49 @@ export function Dashboard(_params, ctx) {
   const progress = next ? Math.min(100, Math.round((USER.points / next.cost) * 100)) : 100;
   const remaining = next ? next.cost - USER.points : 0;
 
+  const level = levelForPoints(USER.totalEarned);
+  const lvlProgress = level.next
+    ? Math.min(100, Math.round(((USER.totalEarned - level.min) / (level.next - level.min)) * 100))
+    : 100;
+
   return h("div", { class: "db" }, [
-    // --- Barre du haut : club + acces profil ---
     h("header", { class: "db-top" }, [
-      h("span", { class: "db-club" }, [
-        h("span", { class: "db-club-dot", "aria-hidden": "true" }),
-        CLUB.name,
-      ]),
+      h("span", { class: "db-club" }, [h("span", { class: "db-club-dot", "aria-hidden": "true" }), CLUB.name]),
       h(
         "button",
-        {
-          class: "db-profile",
-          "aria-label": "Ton profil",
-          onClick: () => ctx.navigate("profile"),
-        },
+        { class: "db-profile", "aria-label": "Ton profil", onClick: () => ctx.navigate("profile") },
         [
           h("span", { class: "db-profile-handle" }, `@${USER.handle || "toi"}`),
-          h("span", { class: "db-profile-ava mono" }, `×${USER.tier.mult}`),
+          h("span", { class: "db-profile-ava", "aria-hidden": "true" }, icon("instagram", 15)),
         ]
       ),
     ]),
 
     h("main", { class: "db-body" }, [
-      // --- Solde (le chiffre-roi) ---
+      // Solde.
       h("section", { class: "db-balance reveal", style: { "--d": "0ms" } }, [
         h("p", { class: "label" }, "Ton solde"),
         PointsCounter(USER.points),
-        h("div", { class: "db-tier-line" }, [
-          TierBadge(USER.tier, "sm"),
-          h("span", {}, [
-            "Palier ",
-            h("strong", {}, USER.tier.label),
-            ` · chaque story ×${USER.tier.mult}`,
-          ]),
+      ]),
+
+      // Niveau + progression.
+      h("section", { class: "db-level card reveal", style: { "--d": "70ms" } }, [
+        h("div", { class: "db-level-head" }, [
+          h("span", { class: "db-level-name" }, [h("span", { class: "db-level-star", "aria-hidden": "true" }), level.label]),
+          level.next
+            ? h("span", { class: "db-level-next mono" }, `${nf.format(level.next - USER.totalEarned)} pts → niveau suivant`)
+            : h("span", { class: "db-level-next" }, "Niveau max"),
+        ]),
+        h("div", { class: "db-bar db-bar-lvl", "aria-hidden": "true" }, [
+          h("span", { class: "db-bar-fill db-bar-fill-lvl", style: { width: `${lvlProgress}%` } }),
         ]),
       ]),
 
-      // --- Prochaine recompense (progression) ---
+      // Prochaine recompense.
       next
         ? h(
             "button",
-            {
-              class: "db-next card reveal",
-              style: { "--d": "80ms" },
-              onClick: () => ctx.navigate("rewards"),
-            },
+            { class: "db-next card reveal", style: { "--d": "140ms" }, onClick: () => ctx.navigate("rewards") },
             [
               h("div", { class: "db-next-head" }, [
                 h("span", { class: "label" }, "Prochaine récompense"),
@@ -78,24 +75,17 @@ export function Dashboard(_params, ctx) {
           )
         : null,
 
-      // --- Action unique dominante ---
-      h("section", { class: "db-action reveal", style: { "--d": "150ms" } }, [
-        h(
-          "button",
-          {
-            class: "btn btn-primary btn-block db-post",
-            onClick: () => ctx.navigate("post"),
-          },
-          [icon("instagram", 20), "Poster ma story"]
-        ),
-        h("p", { class: "db-action-hint" }, [
-          icon("sparkles", 13),
-          "Poste maintenant, la soirée bat son plein",
+      // Action unique.
+      h("section", { class: "db-action reveal", style: { "--d": "210ms" } }, [
+        h("button", { class: "btn btn-primary btn-block db-post", onClick: () => ctx.navigate("post") }, [
+          icon("instagram", 20),
+          "Poster ma story",
         ]),
+        h("p", { class: "db-action-hint" }, [icon("sparkles", 13), "Plus ta story fait de vues, plus tu gagnes"]),
       ]),
 
-      // --- Historique des soirees ---
-      h("section", { class: "db-history reveal", style: { "--d": "220ms" } }, [
+      // Historique.
+      h("section", { class: "db-history reveal", style: { "--d": "280ms" } }, [
         h("div", { class: "db-history-head" }, [
           h("span", { class: "label" }, "Tes soirées"),
           h("span", { class: "db-history-count mono" }, `${unlocked} récompense${unlocked > 1 ? "s" : ""} atteinte${unlocked > 1 ? "s" : ""}`),
@@ -109,7 +99,7 @@ export function Dashboard(_params, ctx) {
                   h("span", { class: "db-event-icn", "aria-hidden": "true" }, icon("instagram", 17)),
                   h("span", { class: "db-event-main" }, [
                     h("span", { class: "db-event-date" }, e.date),
-                    h("span", { class: "db-event-meta" }, `${e.kind} · ${nf.format(e.views)} vues`),
+                    h("span", { class: "db-event-meta" }, `${nf.format(e.views)} vues`),
                   ]),
                   h("span", { class: "db-event-pts mono" }, `+${e.points}`),
                 ])
