@@ -438,3 +438,51 @@
 .ob-msg.err {
   color: var(--magenta);
 }
+
+/* ============================================================
+   Connexion sociale
+   ============================================================ */
+.ob-social {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0 4px;
+}
+
+.btn-social {
+  gap: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn-social:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-faint);
+}
+
+/* TikTok en premier et plus affirme : c'est le seul reseau ouvert a tous
+   les comptes, donc celui qui aboutira le plus souvent. */
+.btn-tiktok {
+  background: var(--surface-2);
+  border-color: var(--text-faint);
+}
+
+.ob-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.ob-sep::before,
+.ob-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

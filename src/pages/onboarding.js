@@ -1,22 +1,33 @@
 // Ecran 2 — Connexion.
 //
-// POURQUOI PAS "SE CONNECTER AVEC INSTAGRAM" :
-// l'API Instagram Basic Display est fermee depuis decembre 2024, et son
-// remplacant (Instagram API with Instagram Login) n'accepte que les comptes
-// PROFESSIONNELS. Un clubbeur en compte perso ne peut donc pas s'y
-// connecter. Supabase n'a pas non plus de provider Instagram.
+// Trois voies, par ordre de facilite :
+//   1. TikTok   — Login Kit, ouvert a TOUS les comptes.
+//   2. Instagram— n'accepte QUE les comptes professionnels (Createur ou
+//                 Business) depuis la fermeture de Basic Display le
+//                 4 decembre 2024. Un compte perso est refuse par
+//                 Instagram ; le message d'erreur explique la bascule,
+//                 qui est gratuite et instantanee.
+//   3. Email    — lien magique, toujours disponible, aucun reseau requis.
 //
-// La propriete du compte est prouvee autrement, et mieux : seul le
-// proprietaire peut publier une story qui tague le club. C'est la mention
-// elle-meme qui fait foi, pas un jeton OAuth. On demande donc juste une
-// identite (email, lien magique) et le pseudo, confirme a la premiere
-// mention detectee.
+// Les boutons sociaux n'apparaissent que si l'app correspondante est
+// configuree (cle + redirect_uri). Sinon il ne reste que l'email : mieux
+// vaut pas de bouton qu'un bouton qui echoue.
+//
+// A noter : meme sans connexion sociale, la propriete du compte reste
+// prouvee par la mention elle-meme -- seul le proprietaire peut publier
+// depuis son compte.
 
 import { h, icon } from "../lib/dom.js";
 import { CLUB, USER } from "../lib/mock.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
+import {
+  availableProviders,
+  startSocialLogin,
+  hasSocialReturn,
+  completeSocialLogin,
+} from "../lib/social.js";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
 
@@ -30,14 +41,38 @@ export function Onboarding(_params, ctx) {
   }
 
   async function start() {
+    // Retour d'un reseau social : on echange le code avant tout le reste.
+    if (hasSocialReturn()) {
+      renderPending("On termine la connexion…");
+      const res = await completeSocialLogin();
+      if (res.ok) {
+        USER.handle = res.username;
+        USER.connected = true;
+        return ctx.navigate("dashboard");
+      }
+      return renderConnect(res.message);
+    }
+
     // Retour de lien magique : la session existe deja, on enchaine.
     const s = await ensureSession();
     if (s?.user) return renderHandle(s.user);
     renderConnect();
   }
 
+  // Ecran d'attente neutre pendant un aller-retour reseau.
+  function renderPending(txt) {
+    swap(
+      h("div", { class: "ob-inner" }, [
+        h("div", { class: "ob-body ob-connect" }, [
+          h("div", { class: "ob-ig-badge", "aria-hidden": "true" }, [icon("instagram", 34)]),
+          h("h1", { class: "ob-title" }, txt),
+        ]),
+      ])
+    );
+  }
+
   /* ---------- 1. Identite ---------- */
-  function renderConnect() {
+  function renderConnect(erreur) {
     const input = h("input", {
       class: "ob-input",
       type: "email",
@@ -88,6 +123,38 @@ export function Onboarding(_params, ctx) {
       if (e.key === "Enter") send();
     });
 
+    if (erreur) {
+      msg.className = "ob-msg err";
+      msg.textContent = erreur;
+    }
+
+    // Boutons sociaux : uniquement ceux qui sont configures.
+    const providers = availableProviders();
+    const social = providers.length
+      ? [
+          h(
+            "div",
+            { class: "ob-social reveal", style: { "--d": "150ms" } },
+            providers.map((p) =>
+              h(
+                "button",
+                {
+                  class: `btn btn-social btn-${p.id} btn-block`,
+                  onClick: () => {
+                    tap();
+                    startSocialLogin(p.id);
+                  },
+                },
+                [icon(p.ico, 19), `Continuer avec ${p.label}`]
+              )
+            )
+          ),
+          h("div", { class: "ob-sep reveal", style: { "--d": "180ms" } }, [
+            h("span", {}, "ou par email"),
+          ]),
+        ]
+      : [];
+
     swap(
       h("div", { class: "ob-inner" }, [
         head(() => ctx.back("landing")),
@@ -97,10 +164,14 @@ export function Onboarding(_params, ctx) {
           ]),
           h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Rejoins le Mirage"),
           h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
-            "Ton email, et c'est parti. ",
+            providers.length
+              ? "Connecte ton réseau, ou reçois un lien par email. "
+              : "Ton email, et c'est parti. ",
             h("strong", {}, "Aucun mot de passe"),
-            " : tu reçois un lien, tu cliques, tu es connecté.",
+            " à retenir.",
           ]),
+
+          ...social,
 
           h("div", { class: "ob-field reveal", style: { "--d": "190ms" } }, [input, msg]),
 
