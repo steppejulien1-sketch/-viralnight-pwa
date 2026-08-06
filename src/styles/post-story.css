@@ -271,3 +271,66 @@
   font-weight: 500;
   font-size: 15px;
 }
+
+/* ============================================================
+   Choix du format : story / Reel / TikTok
+   Le format change le bareme, donc il est visible d'emblee et non
+   cache dans un reglage. Trois onglets a poids egal.
+   ============================================================ */
+.ps-kinds {
+  display: grid;
+  /* minmax(0, 1fr) et non 1fr : un item de grille a min-width:auto par
+     defaut, donc "TikTok" + son icone elargissait sa colonne et faisait
+     deborder le sélecteur hors de l'ecran sur mobile. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 18px 0 14px;
+  padding: 4px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.ps-kind {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text-mute);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.ps-kind svg {
+  flex: none;
+}
+
+.ps-kind:hover {
+  color: var(--text-dim);
+}
+
+/* L'onglet actif prend le lime : c'est l'accent d'action de la PWA. */
+.ps-kind.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ps-kind:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 360px) {
+  .ps-kind {
+    font-size: 12.5px;
+    gap: 5px;
+  }
+}

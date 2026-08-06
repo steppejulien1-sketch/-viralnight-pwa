@@ -31,6 +31,13 @@ const ICONS = {
     '<rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.4A4 4 0 1 1 12.6 8 4 4 0 0 1 16 11.4z"/><path d="M17.5 6.5h.01"/>',
   sparkles:
     '<path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5 10.1 7.6z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+  // Note de croche + arrondi : la note TikTok, tracee au trait comme le
+  // reste du jeu d'icones (stroke, pas de remplissage).
+  tiktok:
+    '<path d="M9 12.5a3.5 3.5 0 1 0 3.5 3.5V3c.6 2.6 2.5 4.4 5 4.6"/>',
+  // Rectangle vertical + triangle de lecture : un Reel.
+  reel:
+    '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M10 9l5 3-5 3z"/>',
   check: '<path d="M4 12l5 5L20 6"/>',
   gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"/>',

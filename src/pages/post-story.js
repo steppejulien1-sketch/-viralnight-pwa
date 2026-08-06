@@ -1,10 +1,11 @@
-// Ecran — Poster ma story.
+// Ecran — Poster un contenu (story, Reel ou TikTok).
 // Trois temps :
-//   1) howto   : 3 etapes visuelles pour poster la story taguee
+//   1) howto   : choix du format + 3 etapes visuelles
 //   2) waiting : attente de la confirmation webhook (stub ~4,5 s)
 //   3) reward  : gain de points anime (compteur + haptic)
 //
-// En prod, l'etape "waiting" ecoutera le webhook Instagram cote serveur.
+// En prod, l'etape "waiting" ecoutera le webhook de la plateforme.
+// Le bareme depend du format : voir credit_story (migration 0005).
 
 import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, STORY_BASE_POINTS } from "../lib/mock.js";
@@ -12,8 +13,45 @@ import { countUp } from "../lib/animations.js";
 import { tap, success } from "../lib/haptics.js";
 import { creditStory } from "../lib/game.js";
 
+// Les trois formats acceptes. Le bareme affiche ici doit rester aligne sur
+// celui de la fonction SQL credit_story (migration 0005) : c'est elle qui
+// fait foi, ces valeurs ne servent qu'a l'affichage.
+const KINDS = [
+  {
+    id: "story",
+    label: "Story",
+    ico: "instagram",
+    app: "Instagram",
+    url: "https://instagram.com",
+    per100: 20,
+    why: "Le meilleur taux : une story touche ton cercle proche, c'est ce qui remplit vraiment.",
+    step: "Ajoute le sticker mention",
+  },
+  {
+    id: "reel",
+    label: "Reel",
+    ico: "reel",
+    app: "Instagram",
+    url: "https://instagram.com",
+    per100: 7,
+    why: "Payé au volume : la portée est plus large, mais moins ciblée.",
+    step: "Mentionne",
+  },
+  {
+    id: "tiktok",
+    label: "TikTok",
+    ico: "tiktok",
+    app: "TikTok",
+    url: "https://tiktok.com",
+    per100: 7,
+    why: "Payé au volume : la portée est plus large, mais moins ciblée.",
+    step: "Mentionne",
+  },
+];
+
 export function PostStory(_params, ctx) {
   const root = h("div", { class: "ps" });
+  let kind = KINDS[0];
   renderHowto();
   return root;
 
@@ -24,21 +62,44 @@ export function PostStory(_params, ctx) {
   /* ---------- 1. Instructions ---------- */
   function renderHowto() {
     const steps = [
-      { n: "1", t: "Ouvre Instagram", d: "On t'y emmène en un tap." },
+      { n: "1", t: `Ouvre ${kind.app}`, d: "On t'y emmène en un tap." },
       {
         n: "2",
-        t: "Poste une story",
-        d: `Ajoute le sticker mention @${CLUB.igHandle} sur ta story.`,
+        t: `Poste ${kind.id === "story" ? "une story" : kind.id === "reel" ? "un Reel" : "un TikTok"}`,
+        d: `${kind.step} @${CLUB.igHandle}.`,
       },
-      { n: "3", t: "Reviens ici", d: "On détecte ta story et on crédite tes points." },
+      { n: "3", t: "Reviens ici", d: "On détecte ton contenu et on crédite tes points." },
     ];
 
     function go() {
       tap();
-      // Ouvre Instagram (best effort) puis passe en attente.
-      window.open("https://instagram.com", "_blank", "noopener");
+      window.open(kind.url, "_blank", "noopener");
       renderWaiting();
     }
+
+    // Choix du format : il change le bareme, donc il est annonce avant le
+    // parcours et pas cache dans un reglage.
+    const picker = h(
+      "div",
+      { class: "ps-kinds reveal", style: { "--d": "40ms" }, role: "tablist" },
+      KINDS.map((k) =>
+        h(
+          "button",
+          {
+            class: "ps-kind" + (k.id === kind.id ? " on" : ""),
+            role: "tab",
+            "aria-selected": k.id === kind.id ? "true" : "false",
+            onClick: () => {
+              if (k.id === kind.id) return;
+              tap();
+              kind = k;
+              renderHowto();
+            },
+          },
+          [icon(k.ico, 17), h("span", {}, k.label)]
+        )
+      )
+    );
 
     swap(
       h("div", { class: "ps-inner" }, [
@@ -48,7 +109,7 @@ export function PostStory(_params, ctx) {
             { class: "ob-back", "aria-label": "Retour", onClick: () => ctx.back("dashboard") },
             icon("arrowRight", 18)
           ),
-          h("span", { class: "label" }, "Poster ma story"),
+          h("span", { class: "label" }, "Poster un contenu"),
         ]),
 
         h("div", { class: "ps-body" }, [
@@ -57,11 +118,14 @@ export function PostStory(_params, ctx) {
             h("span", { class: "ps-club" }, `@${CLUB.igHandle}`),
             " et gagne tes points",
           ]),
-          h(
-            "p",
-            { class: "ps-sub reveal", style: { "--d": "60ms" } },
-            "Trois étapes, trente secondes. Ta story rapporte selon les vues qu'elle fait."
-          ),
+
+          picker,
+
+          h("p", { class: "ps-sub reveal", style: { "--d": "90ms" } }, [
+            h("strong", {}, `${kind.per100} pts`),
+            " pour 100 vues. ",
+            kind.why,
+          ]),
 
           h(
             "ol",
@@ -80,8 +144,8 @@ export function PostStory(_params, ctx) {
 
         h("footer", { class: "ps-foot reveal", style: { "--d": "380ms" } }, [
           h("button", { class: "btn btn-primary btn-block", onClick: go }, [
-            icon("instagram", 20),
-            "Ouvrir Instagram",
+            icon(kind.ico, 20),
+            `Ouvrir ${kind.app}`,
           ]),
           h("p", { class: "ob-note" }, [
             icon("check", 13),
@@ -99,9 +163,9 @@ export function PostStory(_params, ctx) {
         h("div", { class: "ps-radar", "aria-hidden": "true" }, [
           h("span", { class: "ps-radar-ring" }),
           h("span", { class: "ps-radar-ring" }),
-          h("span", { class: "ps-radar-core" }, icon("instagram", 26)),
+          h("span", { class: "ps-radar-core" }, icon(kind.ico, 26)),
         ]),
-        h("h2", { class: "ps-wait-title" }, "On cherche ta story…"),
+        h("h2", { class: "ps-wait-title" }, `On cherche ton ${kind.label.toLowerCase()}…`),
         h("p", { class: "ps-wait-sub" }, [
           "Dès que tu tagues ",
           h("strong", {}, `@${CLUB.igHandle}`),
@@ -129,7 +193,7 @@ export function PostStory(_params, ctx) {
     let gain = STORY_BASE_POINTS;
     let after = before + gain;
 
-    const res = await creditStory(0);
+    const res = await creditStory(0, kind.id);
     if (res && !res.error && typeof res.awarded === "number") {
       gain = res.awarded;
       after = res.balance;
@@ -155,7 +219,7 @@ export function PostStory(_params, ctx) {
         h("div", { class: "rw-burst", "aria-hidden": "true" }),
         h("div", { class: "rw-body" }, [
           h("div", { class: "rw-check pop", style: { "--d": "0ms" } }, icon("check", 34)),
-          h("p", { class: "label rw-label pop", style: { "--d": "120ms" } }, "Story validée"),
+          h("p", { class: "label rw-label pop", style: { "--d": "120ms" } }, `${kind.label} validé${kind.id === "story" ? "e" : ""}`),
           h("div", { class: "rw-gain pop", style: { "--d": "200ms" } }, [
             h("span", { class: "rw-gain-plus" }, "+"),
             gainEl,

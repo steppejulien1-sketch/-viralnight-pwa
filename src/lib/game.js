@@ -114,7 +114,7 @@ export function countdown(endsAt) {
 //
 // Retourne { awarded, balance, lifetime } ou null si Supabase n'est pas
 // configure (mode demo hors ligne), et { error } si l'appel echoue.
-export async function creditStory(views = 0) {
+export async function creditStory(views = 0, kind = "story") {
   if (!isConfigured) return null;
   await ensureSession();
   const cid = await clubId();
@@ -123,7 +123,9 @@ export async function creditStory(views = 0) {
   const n = Number(views);
   const { data, error } = await supabase.rpc("credit_story", {
     p_club: cid,
-    p_kind: "story",
+    // La base rejette tout type hors story/reel/tiktok : on n'invente pas
+    // de repli ici, une erreur vaut mieux qu'un credit au mauvais tarif.
+    p_kind: kind,
     p_views: Number.isFinite(n) && n > 0 ? Math.round(n) : 0,
   });
   if (error) return { error: error.message };
