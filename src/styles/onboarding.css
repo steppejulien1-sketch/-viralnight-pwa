@@ -356,3 +356,85 @@
     transform: none;
   }
 }
+
+/* ============================================================
+   Champs de connexion
+   ============================================================ */
+.ob-field {
+  width: 100%;
+  margin: 22px 0 4px;
+  text-align: left;
+}
+
+.ob-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  /* 16px minimum : en dessous, iOS zoome tout seul au focus. */
+  font-size: 16px;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+.ob-input::placeholder {
+  color: var(--text-faint);
+}
+
+.ob-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-2);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+/* Prefixe @ colle au champ pour le pseudo. */
+.ob-at {
+  display: flex;
+  align-items: stretch;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.ob-at:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+.ob-at-sign {
+  display: grid;
+  place-items: center;
+  padding: 0 4px 0 16px;
+  color: var(--text-mute);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ob-at .ob-input {
+  border: 0;
+  background: transparent;
+  padding-left: 2px;
+}
+
+.ob-at .ob-input:focus {
+  box-shadow: none;
+  background: transparent;
+}
+
+.ob-msg {
+  min-height: 18px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
+
+.ob-msg.err {
+  color: var(--magenta);
+}
