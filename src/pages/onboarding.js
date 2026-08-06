@@ -9,9 +9,11 @@
 //                 qui est gratuite et instantanee.
 //   3. Email    — lien magique, toujours disponible, aucun reseau requis.
 //
-// Les boutons sociaux n'apparaissent que si l'app correspondante est
-// configuree (cle + redirect_uri). Sinon il ne reste que l'email : mieux
-// vaut pas de bouton qu'un bouton qui echoue.
+// Les deux boutons sociaux sont TOUJOURS affiches, comme le "Continuer
+// avec Google" du site B2B : l'utilisateur doit voir ses options d'un
+// coup d'oeil. Tant qu'une app n'est pas configuree (cle + redirect_uri),
+// le bouton est attenue et annonce "bientot disponible" au tap, plutot
+// que de lancer une redirection cassee.
 //
 // A noter : meme sans connexion sociale, la propriete du compte reste
 // prouvee par la mention elle-meme -- seul le proprietaire peut publier
@@ -128,32 +130,38 @@ export function Onboarding(_params, ctx) {
       msg.textContent = erreur;
     }
 
-    // Boutons sociaux : uniquement ceux qui sont configures.
+    // Les deux boutons sont toujours visibles. S'ils ne sont pas encore
+    // configures, on le dit au tap plutot que de lancer une redirection
+    // qui echouerait chez l'utilisateur.
     const providers = availableProviders();
-    const social = providers.length
-      ? [
+    const social = [
+      h(
+        "div",
+        { class: "ob-social reveal", style: { "--d": "150ms" } },
+        providers.map((p) =>
           h(
-            "div",
-            { class: "ob-social reveal", style: { "--d": "150ms" } },
-            providers.map((p) =>
-              h(
-                "button",
-                {
-                  class: `btn btn-social btn-${p.id} btn-block`,
-                  onClick: () => {
-                    tap();
-                    startSocialLogin(p.id);
-                  },
-                },
-                [icon(p.ico, 19), `Continuer avec ${p.label}`]
-              )
-            )
-          ),
-          h("div", { class: "ob-sep reveal", style: { "--d": "180ms" } }, [
-            h("span", {}, "ou par email"),
-          ]),
-        ]
-      : [];
+            "button",
+            {
+              class: `btn btn-social btn-${p.id} btn-block${p.ready ? "" : " is-soon"}`,
+              onClick: () => {
+                tap();
+                if (p.ready) {
+                  startSocialLogin(p.id);
+                  return;
+                }
+                msg.className = "ob-msg err";
+                msg.textContent = `Connexion ${p.label} bientôt disponible. En attendant, reçois un lien par email.`;
+                input.focus();
+              },
+            },
+            [icon(p.ico, 19), `Continuer avec ${p.label}`]
+          )
+        )
+      ),
+      h("div", { class: "ob-sep reveal", style: { "--d": "180ms" } }, [
+        h("span", {}, "ou par email"),
+      ]),
+    ];
 
     swap(
       h("div", { class: "ob-inner" }, [
@@ -164,9 +172,7 @@ export function Onboarding(_params, ctx) {
           ]),
           h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Rejoins le Mirage"),
           h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
-            providers.length
-              ? "Connecte ton réseau, ou reçois un lien par email. "
-              : "Ton email, et c'est parti. ",
+            "Connecte ton réseau, ou reçois un lien par email. ",
             h("strong", {}, "Aucun mot de passe"),
             " à retenir.",
           ]),

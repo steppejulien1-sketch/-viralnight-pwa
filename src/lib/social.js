@@ -41,11 +41,20 @@ const PROVIDERS = {
   },
 };
 
-// Un reseau n'est propose que s'il est reellement configure : mieux vaut
-// pas de bouton qu'un bouton qui echoue.
+// Les deux boutons sont TOUJOURS affiches, comme le "Continuer avec
+// Google" du site B2B : l'utilisateur doit voir d'emblee ses options.
+// `ready` dit si l'app correspondante est reellement configuree ; sinon
+// le bouton l'annonce au lieu de partir sur une redirection cassee.
 export function availableProviders() {
-  if (!isConfigured) return [];
-  return Object.values(PROVIDERS).filter((p) => p.appId && p.redirect);
+  return Object.values(PROVIDERS).map((p) => ({
+    ...p,
+    ready: Boolean(isConfigured && p.appId && p.redirect),
+  }));
+}
+
+export function providerReady(providerId) {
+  const p = PROVIDERS[providerId];
+  return Boolean(isConfigured && p && p.appId && p.redirect);
 }
 
 export function startSocialLogin(providerId) {

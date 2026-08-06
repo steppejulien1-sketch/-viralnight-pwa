@@ -486,3 +486,9 @@
   height: 1px;
   background: var(--border);
 }
+
+/* Reseau pas encore configure : le bouton reste visible mais s'annonce
+   comme a venir, au lieu de lancer une redirection cassee. */
+.btn-social.is-soon {
+  opacity: 0.55;
+}
