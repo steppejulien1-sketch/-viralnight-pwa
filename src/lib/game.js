@@ -148,6 +148,7 @@ export async function creditStory(views = 0, kind = "story", url = "") {
     balance: row.new_balance,
     lifetime: row.new_lifetime,
     storyId: row.story_id,
+    unlocksAt: row.unlocks_at || null,
   };
 }
 
@@ -164,4 +165,36 @@ export async function loadMyProfile() {
     .eq("id", uid)
     .maybeSingle();
   return data || null;
+}
+
+// Points gagnes mais pas encore depensables, et date du prochain deblocage.
+// Voir migration 0011 : le gain d'une soiree n'est utilisable qu'apres le
+// delai fixe par le club (12 h par defaut), pour qu'il ne soit pas depense
+// le soir meme, avant que le contenu ait genere la moindre vue.
+export async function loadPendingPoints() {
+  if (!isConfigured) return { pending: 0, nextUnlock: null };
+  const uid = await myId();
+  if (!uid) return { pending: 0, nextUnlock: null };
+
+  // On verse d'abord ce qui est arrive a echeance, sinon le clubbeur
+  // verrait encore "en attente" des points deja disponibles.
+  await supabase.rpc("release_due_points", { p_uid: uid });
+
+  const { data } = await supabase.rpc("my_pending_points");
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    pending: Number(row?.pending || 0),
+    nextUnlock: row?.next_unlock || null,
+  };
+}
+
+// "dans 4 h", "dans 35 min", "bientot" — pour annoncer le deblocage.
+export function untilLabel(iso) {
+  if (!iso) return "";
+  const ms = new Date(iso) - new Date();
+  if (ms <= 0) return "maintenant";
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `dans ${m} min`;
+  const hStr = Math.round(m / 60);
+  return `dans ${hStr} h`;
 }

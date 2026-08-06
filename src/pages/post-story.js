@@ -11,7 +11,7 @@ import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, STORY_BASE_POINTS } from "../lib/mock.js";
 import { countUp } from "../lib/animations.js";
 import { tap, success } from "../lib/haptics.js";
-import { creditStory } from "../lib/game.js";
+import { creditStory, untilLabel } from "../lib/game.js";
 
 // Les trois formats acceptes. Le bareme affiche ici doit rester aligne sur
 // celui de la fonction SQL credit_story (migration 0005) : c'est elle qui
@@ -223,10 +223,15 @@ export function PostStory(_params, ctx) {
     let gain = STORY_BASE_POINTS;
     let after = before + gain;
 
+    // Depuis la migration 0011, le gain part en attente : le solde
+    // DEPENSABLE ne bouge pas tout de suite. On affiche donc le solde
+    // renvoye par la base tel quel, sans y ajouter le gain.
+    let unlock = null;
     const res = await creditStory(0, kind.id, lien || "");
     if (res && !res.error && typeof res.awarded === "number") {
       gain = res.awarded;
       after = res.balance;
+      unlock = res.unlocksAt || null;
       USER.totalEarned = res.lifetime;
     } else {
       USER.totalEarned += gain;
@@ -255,14 +260,24 @@ export function PostStory(_params, ctx) {
             gainEl,
             h("span", { class: "rw-gain-unit" }, "pts"),
           ]),
-          h("p", { class: "rw-mult pop", style: { "--d": "300ms" } }, [
-            "Story créditée. ",
-            h("span", { class: "rw-mult-x" }, "Ajoute tes vues"),
-            " pour un gros bonus.",
-          ]),
+          h(
+            "p",
+            { class: "rw-mult pop", style: { "--d": "300ms" } },
+            unlock
+              ? [
+                  "Dépensables ",
+                  h("span", { class: "rw-mult-x" }, untilLabel(unlock)),
+                  " — le temps que ton contenu tourne.",
+                ]
+              : [
+                  "Contenu crédité. ",
+                  h("span", { class: "rw-mult-x" }, "Ajoute tes vues"),
+                  " pour un gros bonus.",
+                ]
+          ),
 
           h("div", { class: "rw-bal card pop", style: { "--d": "400ms" } }, [
-            h("span", { class: "label" }, "Nouveau solde"),
+            h("span", { class: "label" }, unlock ? "Solde disponible" : "Nouveau solde"),
             h("span", { class: "rw-bal-val" }, [balEl, h("span", { class: "rw-bal-unit" }, " pts")]),
           ]),
         ]),

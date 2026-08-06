@@ -9,7 +9,7 @@
 import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, levelForPoints } from "../lib/mock.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
-import { loadMyProfile } from "../lib/game.js";
+import { loadMyProfile, loadPendingPoints, untilLabel } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
@@ -19,6 +19,16 @@ export function Profile(_params, ctx) {
   // Ligne "Abonnes" : masquee tant qu'on n'a pas le chiffre, plutot que
   // d'afficher un tiret qui laisse croire a une erreur.
   const abosRow = h("div", { hidden: true });
+
+  // Points gagnes mais pas encore depensables (migration 0011). Masque
+  // quand il n'y en a pas, plutot que d'afficher un zero sans objet.
+  const attenteRow = h("div", { hidden: true });
+  loadPendingPoints().then((p) => {
+    if (!p || !p.pending) return;
+    attenteRow.replaceWith(
+      infoRow("En attente", `${nf.format(p.pending)} pts · ${untilLabel(p.nextUnlock)}`)
+    );
+  });
   loadMyProfile().then((me) => {
     if (!me || me.follower_count == null) return;
     // Un chiffre saisi a la main est affiche comme tel : il ne doit
@@ -59,6 +69,7 @@ export function Profile(_params, ctx) {
     h("section", { class: "pf-section reveal", style: { "--d": "140ms" } }, [
       h("p", { class: "label pf-section-label" }, "Réglages"),
       toggleRow("Vibrations", hapticsEnabled(), (on) => setHaptics(on)),
+      attenteRow,
       abosRow,
       infoRow("Compte", USER.connected ? "Connecté" : "—"),
       infoRow("Club", `${CLUB.name} · ${CLUB.city}`),
