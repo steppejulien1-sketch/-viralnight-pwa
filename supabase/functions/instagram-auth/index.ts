@@ -1,45 +1,38 @@
 // Edge Function — instagram-auth
 // ----------------------------------------------------------------
-// Connexion "Continuer avec Instagram".
+// Connexion "Continuer avec Instagram". Meme forme que tiktok-auth :
+//   POST -> cree un state en base, renvoie l'URL d'autorisation
+//   GET  -> Instagram redirige ici, on echange le code et on ouvre la session
 //
-// POURQUOI CETTE FONCTION EXISTE
-// L'echange du code OAuth contre un jeton exige le CLIENT SECRET de
-// l'app Meta. Ce secret ne peut pas vivre dans le navigateur : il serait
-// lisible par n'importe qui dans le bundle. L'echange se fait donc ici,
-// cote serveur, en service_role.
-//
-// CE QUE FAIT LE FLUX
-//   1. le client redirige vers instagram.com/oauth/authorize
-//   2. Instagram renvoie sur la PWA avec ?code=...
-//   3. le client POST ce code ici
-//   4. on echange code -> access_token + user_id (API Instagram)
-//   5. on lit le username du compte
-//   6. on cree/retrouve l'utilisateur Supabase et on renvoie un lien de
-//      session que le client consomme
+// Le state vit en base (oauth_states) et non dans le navigateur : sur
+// mobile, l'ecran d'autorisation s'ouvre souvent dans un navigateur
+// externe et le retour arrive dans un contexte ou sessionStorage est vide.
 //
 // ⚠️ CONTRAINTE INSTAGRAM (verifiee, aout 2026)
 // L'API Basic Display est fermee depuis le 4 decembre 2024. Son
-// remplacant, "Instagram API with Instagram Login", n'accepte QUE les
-// comptes professionnels (Business ou Createur). Un compte PERSONNEL
-// recevra une erreur d'Instagram. Le passage en compte Createur est
-// gratuit, instantane, et ne demande AUCUNE page Facebook -- c'est ce
-// que le message d'erreur explique a l'utilisateur.
+// remplacant n'accepte QUE les comptes professionnels (Createur ou
+// Business). Un compte PERSONNEL sera refuse par Instagram. Le passage en
+// compte Createur est gratuit, instantane, et ne demande aucune page
+// Facebook : c'est ce que dit le message d'erreur.
 //
-// SECRETS A DEFINIR (Supabase > Edge Functions > Secrets) :
-//   INSTAGRAM_APP_ID       identifiant de l'app Meta
-//   INSTAGRAM_APP_SECRET   secret de l'app Meta
-//   INSTAGRAM_REDIRECT_URI doit correspondre AU CARACTERE PRES a celle
-//                          declaree dans la console Meta
-//   SITE_URL               origine de la PWA (pour le lien de session)
+// SECRETS : INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET,
+//           INSTAGRAM_REDIRECT_URI (= l'URL de CETTE fonction),
+//           APP_ORIGIN (origine de la PWA)
 
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
+
+const APP_ID = Deno.env.get("INSTAGRAM_APP_ID") ?? "";
+const APP_SECRET = Deno.env.get("INSTAGRAM_APP_SECRET") ?? "";
+const REDIRECT = Deno.env.get("INSTAGRAM_REDIRECT_URI") ?? "";
+const APP_ORIGIN = (Deno.env.get("APP_ORIGIN") ?? "").replace(/\/$/, "");
+
+const SCOPE = "instagram_business_basic";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -48,124 +41,127 @@ function json(body: unknown, status = 200) {
   });
 }
 
-serve(async (req) => {
+function back(qs: string) {
+  return new Response(null, { status: 302, headers: { Location: `${APP_ORIGIN}/${qs}` } });
+}
+
+function admin() {
+  return createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
+  if (!APP_ID || !APP_SECRET || !REDIRECT) {
+    if (req.method === "GET") return back("?social_error=not_configured");
+    return json(
+      { error: "not_configured", message: "Connexion Instagram pas encore configurée." },
+      503
+    );
+  }
+
+  if (req.method === "POST") {
+    const state = crypto.randomUUID();
+    const { error } = await admin().from("oauth_states").insert({ state, provider: "instagram" });
+    if (error) return json({ error: "state_failed", detail: error.message }, 500);
+
+    const u = new URL("https://www.instagram.com/oauth/authorize");
+    u.searchParams.set("client_id", APP_ID);
+    u.searchParams.set("redirect_uri", REDIRECT);
+    u.searchParams.set("scope", SCOPE);
+    u.searchParams.set("response_type", "code");
+    u.searchParams.set("state", state);
+    return json({ authorize_url: u.toString() });
+  }
+
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (url.searchParams.get("error")) return back("?social_error=cancelled");
+  if (!code || !state) return back("?social_error=missing_params");
+
+  const db = admin();
+
+  const { data: row } = await db
+    .from("oauth_states")
+    .select("state, provider, created_at")
+    .eq("state", state)
+    .maybeSingle();
+
+  if (!row || row.provider !== "instagram") return back("?social_error=invalid_state");
+  await db.from("oauth_states").delete().eq("state", state);
+  if (Date.now() - new Date(row.created_at).getTime() > 10 * 60 * 1000) {
+    return back("?social_error=expired_state");
+  }
+
   try {
-    const APP_ID = Deno.env.get("INSTAGRAM_APP_ID");
-    const APP_SECRET = Deno.env.get("INSTAGRAM_APP_SECRET");
-    const REDIRECT = Deno.env.get("INSTAGRAM_REDIRECT_URI");
-    const SITE_URL = Deno.env.get("SITE_URL") || "";
+    // Instagram attend du multipart. Le code peut arriver URL-encode et
+    // suffixe de "#_" : les deux cassent l'echange s'ils sont laisses.
+    const clean = decodeURIComponent(code).replace(/#_$/, "");
 
-    if (!APP_ID || !APP_SECRET || !REDIRECT) {
-      // On le dit franchement plutot que de renvoyer une erreur vague.
-      return json(
-        { error: "not_configured", message: "Connexion Instagram pas encore configurée." },
-        503
-      );
-    }
-
-    const { code } = await req.json();
-    if (!code) return json({ error: "missing_code" }, 400);
-
-    // --- 1. code -> access_token courte duree -------------------------
     const form = new FormData();
     form.append("client_id", APP_ID);
     form.append("client_secret", APP_SECRET);
     form.append("grant_type", "authorization_code");
     form.append("redirect_uri", REDIRECT);
-    form.append("code", code);
+    form.append("code", clean);
 
     const tokRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       body: form,
     });
     const tok = await tokRes.json();
-
-    if (!tokRes.ok || !tok.access_token) {
-      // Instagram refuse notamment les comptes personnels : on traduit.
-      return json(
-        {
-          error: "instagram_refused",
-          detail: tok?.error_message || tok?.error_type || "échange du code refusé",
-          message:
-            "Instagram a refusé la connexion. Vérifie que ton compte est bien un compte " +
-            "Créateur ou Professionnel : c'est gratuit et ça se change en 30 secondes " +
-            "dans Instagram (Paramètres › Type de compte).",
-        },
-        400
-      );
+    if (!tok.access_token) {
+      // Cas le plus frequent : compte personnel, refuse par Instagram.
+      console.error("instagram token error", tok);
+      return back("?social_error=ig_pro_required");
     }
 
-    const igUserId = String(tok.user_id ?? "");
-    const accessToken = String(tok.access_token);
-
-    // --- 2. lecture du username --------------------------------------
     const meRes = await fetch(
-      `https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${encodeURIComponent(accessToken)}`
+      `https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${encodeURIComponent(tok.access_token)}`
     );
     const me = await meRes.json();
     const username = String(me?.username || "").trim();
+    const igId = String(tok.user_id ?? me?.id ?? "");
+    if (!username || !igId) return back("?social_error=no_username");
 
-    if (!username) {
-      return json(
-        {
-          error: "no_username",
-          message: "Impossible de lire ton pseudo Instagram. Réessaie dans un instant.",
-        },
-        400
-      );
-    }
+    const email = `ig_${igId}@instagram.viralnight.local`;
 
-    // --- 3. utilisateur Supabase -------------------------------------
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-
-    // Adresse technique stable, derivee de l'identifiant Instagram : elle
-    // sert de cle de compte, l'utilisateur ne la voit jamais.
-    const email = `ig_${igUserId}@instagram.viralnight.local`;
-
-    // createUser echoue si le compte existe deja : c'est le cas nominal
-    // d'une reconnexion, on l'ignore.
-    await admin.auth.admin.createUser({
+    await db.auth.admin.createUser({
       email,
       email_confirm: true,
-      user_metadata: { instagram_id: igUserId, instagram_username: username },
+      user_metadata: { instagram_id: igId, instagram_username: username },
     });
 
-    // Le handle vient d'Instagram, jamais du client : c'est tout
-    // l'interet de passer par ici.
-    const { data: userRow } = await admin
+    const { data: userRow } = await db
       .from("users")
       .select("id")
       .eq("email", email)
       .maybeSingle();
-
     if (userRow?.id) {
-      await admin.from("users").update({ handle: username }).eq("id", userRow.id);
+      await db.from("users").update({ handle: username }).eq("id", userRow.id);
     }
 
-    // --- 4. lien de session ------------------------------------------
-    const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
+    const { data: link, error: linkErr } = await db.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: { redirectTo: SITE_URL || undefined },
+      options: { redirectTo: `${APP_ORIGIN}/?social_connected=instagram` },
     });
+    if (linkErr || !link?.properties?.action_link) {
+      console.error("generateLink error", linkErr);
+      return back("?social_error=session_failed");
+    }
 
-    if (linkErr) return json({ error: "session_failed", detail: linkErr.message }, 500);
-
-    return json({
-      username,
-      instagram_id: igUserId,
-      // Le client consomme ces jetons pour ouvrir la session.
-      email,
-      token_hash: link?.properties?.hashed_token ?? null,
-      action_link: link?.properties?.action_link ?? null,
+    return new Response(null, {
+      status: 302,
+      headers: { Location: link.properties.action_link },
     });
   } catch (e) {
-    return json({ error: "unexpected", detail: String(e) }, 500);
+    console.error(e);
+    return back("?social_error=unexpected");
   }
 });

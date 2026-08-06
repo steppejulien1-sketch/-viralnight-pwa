@@ -24,12 +24,7 @@ import { CLUB, USER } from "../lib/mock.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
-import {
-  availableProviders,
-  startSocialLogin,
-  hasSocialReturn,
-  completeSocialLogin,
-} from "../lib/social.js";
+import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
 
@@ -43,19 +38,13 @@ export function Onboarding(_params, ctx) {
   }
 
   async function start() {
-    // Retour d'un reseau social : on echange le code avant tout le reste.
-    if (hasSocialReturn()) {
-      renderPending("On termine la connexion…");
-      const res = await completeSocialLogin();
-      if (res.ok) {
-        USER.handle = res.username;
-        USER.connected = true;
-        return ctx.navigate("dashboard");
-      }
-      return renderConnect(res.message);
-    }
+    // Retour d'un reseau social. La session est deja ouverte par Supabase
+    // (l'edge function a renvoye le navigateur sur le lien d'action), il ne
+    // reste qu'a lire le resultat.
+    const retour = readSocialReturn();
+    if (retour && !retour.ok) return renderConnect(retour.message);
 
-    // Retour de lien magique : la session existe deja, on enchaine.
+    // Retour de lien magique ou de reseau social : la session existe, on enchaine.
     const s = await ensureSession();
     if (s?.user) return renderHandle(s.user);
     renderConnect();
@@ -143,15 +132,22 @@ export function Onboarding(_params, ctx) {
             "button",
             {
               class: `btn btn-social btn-${p.id} btn-block${p.ready ? "" : " is-soon"}`,
-              onClick: () => {
+              onClick: async (e) => {
                 tap();
-                if (p.ready) {
-                  startSocialLogin(p.id);
+                if (!p.ready) {
+                  msg.className = "ob-msg err";
+                  msg.textContent = `Connexion ${p.label} bientôt disponible. En attendant, reçois un lien par email.`;
+                  input.focus();
                   return;
                 }
-                msg.className = "ob-msg err";
-                msg.textContent = `Connexion ${p.label} bientôt disponible. En attendant, reçois un lien par email.`;
-                input.focus();
+                const bouton = e.currentTarget;
+                bouton.disabled = true;
+                const err = await startSocialLogin(p.id);
+                if (err) {
+                  bouton.disabled = false;
+                  msg.className = "ob-msg err";
+                  msg.textContent = err;
+                }
               },
             },
             [icon(p.ico, 19), `Continuer avec ${p.label}`]

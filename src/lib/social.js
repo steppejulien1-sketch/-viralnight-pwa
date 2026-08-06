@@ -1,17 +1,22 @@
-// Connexion sociale : "Continuer avec Instagram" / "avec TikTok".
+// Connexion sociale : "Continuer avec TikTok" / "avec Instagram".
 //
-// Les secrets des apps Meta et TikTok ne peuvent pas vivre ici : l'echange
-// du code se fait dans les edge functions instagram-auth / tiktok-auth.
-// Ce module gere l'aller (redirection) et le retour (code -> session).
+// FLUX (revu apres le paquet viralnight-followers fourni par Julien)
+//   1. la PWA POST sur l'edge function -> elle cree un state EN BASE et
+//      renvoie l'URL d'autorisation
+//   2. redirection vers TikTok / Instagram
+//   3. le reseau redirige vers l'EDGE FUNCTION (pas vers la PWA)
+//   4. la fonction echange le code, cree l'utilisateur, et renvoie le
+//      navigateur sur le lien de session Supabase
+//   5. la PWA se retrouve connectee, avec ?social_connected=... dans l'URL
 //
-// ⚠️ DIFFERENCE ENTRE LES DEUX RESEAUX, verifiee en aout 2026 :
-//   Instagram — l'API Basic Display est fermee depuis le 4 decembre 2024.
-//     Son remplacant n'accepte QUE les comptes professionnels (Createur
-//     ou Business). Un compte personnel sera refuse. Le passage en compte
-//     Createur est gratuit, instantane, sans page Facebook.
-//   TikTok — Login Kit accorde user.info.basic par defaut et n'exige
-//     aucun compte professionnel. Ouvert a tout le monde.
-// C'est pourquoi TikTok est propose en premier dans l'interface.
+// POURQUOI PAS DE STATE DANS sessionStorage
+// Sur mobile, l'ecran d'autorisation s'ouvre souvent dans un navigateur
+// externe : le retour se fait dans un contexte ou sessionStorage est VIDE.
+// Ma premiere version echouait donc silencieusement. Le state vit en base.
+//
+// ⚠️ Instagram n'accepte QUE les comptes professionnels (Createur ou
+// Business) depuis la fermeture de Basic Display, le 4 decembre 2024.
+// TikTok, lui, est ouvert a tous : il est donc propose en premier.
 
 import { supabase, isConfigured } from "./supabase.js";
 
@@ -21,101 +26,88 @@ const PROVIDERS = {
     label: "TikTok",
     ico: "tiktok",
     fn: "tiktok-auth",
-    appId: import.meta.env.VITE_TIKTOK_CLIENT_KEY || "",
-    redirect: import.meta.env.VITE_TIKTOK_REDIRECT_URI || "",
-    authorize: "https://www.tiktok.com/v2/auth/authorize/",
-    scope: "user.info.basic",
-    // TikTok nomme son identifiant d'app "client_key" et non "client_id".
-    idParam: "client_key",
+    // Seule la presence de la cle publique sert a savoir si le bouton est
+    // actif. Tout le reste (secret, redirect_uri) vit cote serveur.
+    ready: Boolean(import.meta.env.VITE_TIKTOK_CLIENT_KEY),
   },
   instagram: {
     id: "instagram",
     label: "Instagram",
     ico: "instagram",
     fn: "instagram-auth",
-    appId: import.meta.env.VITE_INSTAGRAM_APP_ID || "",
-    redirect: import.meta.env.VITE_INSTAGRAM_REDIRECT_URI || "",
-    authorize: "https://www.instagram.com/oauth/authorize",
-    scope: "instagram_business_basic",
-    idParam: "client_id",
+    ready: Boolean(import.meta.env.VITE_INSTAGRAM_APP_ID),
   },
 };
 
-// Les deux boutons sont TOUJOURS affiches, comme le "Continuer avec
-// Google" du site B2B : l'utilisateur doit voir d'emblee ses options.
-// `ready` dit si l'app correspondante est reellement configuree ; sinon
-// le bouton l'annonce au lieu de partir sur une redirection cassee.
+// Les deux boutons sont toujours renvoyes : l'ecran les affiche meme non
+// configures, et l'indique au tap. Voir onboarding.js.
 export function availableProviders() {
   return Object.values(PROVIDERS).map((p) => ({
     ...p,
-    ready: Boolean(isConfigured && p.appId && p.redirect),
+    ready: Boolean(isConfigured && p.ready),
   }));
 }
 
-export function providerReady(providerId) {
+export function providerReady(id) {
+  const p = PROVIDERS[id];
+  return Boolean(isConfigured && p && p.ready);
+}
+
+// Demande l'URL d'autorisation puis redirige. Retourne un message
+// d'erreur, ou null si la redirection est partie.
+export async function startSocialLogin(providerId) {
   const p = PROVIDERS[providerId];
-  return Boolean(isConfigured && p && p.appId && p.redirect);
+  if (!p) return "Réseau inconnu.";
+  if (!isConfigured) return "L'app n'est pas reliée à sa base.";
+
+  const { data, error } = await supabase.functions.invoke(p.fn, { body: {} });
+
+  if (error) return `Connexion ${p.label} indisponible pour le moment.`;
+  if (data?.error) return data.message || `Connexion ${p.label} indisponible.`;
+  if (!data?.authorize_url) return `Réponse ${p.label} incomplète.`;
+
+  window.location.href = data.authorize_url;
+  return null;
 }
 
-export function startSocialLogin(providerId) {
-  const p = PROVIDERS[providerId];
-  if (!p || !p.appId || !p.redirect) return false;
-
-  // state anti-CSRF, verifie au retour. On y range aussi le reseau, sinon
-  // on ne saurait pas quelle fonction appeler en revenant.
-  const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  sessionStorage.setItem("social_state", state);
-  sessionStorage.setItem("social_provider", p.id);
-
-  const u = new URL(p.authorize);
-  u.searchParams.set(p.idParam, p.appId);
-  u.searchParams.set("redirect_uri", p.redirect);
-  u.searchParams.set("scope", p.scope);
-  u.searchParams.set("response_type", "code");
-  u.searchParams.set("state", state);
-  window.location.href = u.toString();
-  return true;
-}
-
-export function hasSocialReturn() {
+// Retour de flux : la session est deja ouverte par Supabase, il ne reste
+// qu'a lire le resultat et nettoyer l'URL.
+export function readSocialReturn() {
   const q = new URLSearchParams(window.location.search);
-  return q.has("code") || q.has("error");
-}
+  const ok = q.get("social_connected");
+  const err = q.get("social_error");
+  if (!ok && !err) return null;
 
-// Consomme le retour : echange le code et ouvre la session Supabase.
-export async function completeSocialLogin() {
-  const q = new URLSearchParams(window.location.search);
-  const code = q.get("code");
-  const err = q.get("error");
-  const state = q.get("state");
-  const expected = sessionStorage.getItem("social_state");
-  const providerId = sessionStorage.getItem("social_provider") || "tiktok";
-  const p = PROVIDERS[providerId] || PROVIDERS.tiktok;
-
-  // On nettoie l'URL tout de suite : le code ne doit ni rester visible ni
-  // pouvoir etre rejoue si l'utilisateur rafraichit.
   window.history.replaceState({}, "", window.location.pathname);
-  sessionStorage.removeItem("social_state");
-  sessionStorage.removeItem("social_provider");
 
-  if (err) return { ok: false, message: `Connexion ${p.label} annulée.` };
-  if (!code) return { ok: false, message: `Retour ${p.label} incomplet.` };
-  if (expected && state && state !== expected) {
-    return { ok: false, message: `Retour ${p.label} invalide. Recommence.` };
+  if (ok) return { ok: true, provider: ok };
+  return { ok: false, message: messageFor(err) };
+}
+
+function messageFor(code) {
+  switch (code) {
+    case "cancelled":
+      return "Connexion annulée.";
+    case "expired_state":
+      return "La connexion a expiré. Recommence.";
+    case "invalid_state":
+      return "Retour invalide. Recommence.";
+    case "not_configured":
+      return "Cette connexion n'est pas encore activée.";
+    case "token_failed":
+    case "info_failed":
+      return "Le réseau a refusé la connexion. Réessaie dans un instant.";
+    case "ig_pro_required":
+      return (
+        "Instagram a refusé : ton compte doit être Créateur ou Professionnel. " +
+        "C'est gratuit et ça se change en 30 secondes dans Instagram " +
+        "(Paramètres › Type de compte). Ou connecte-toi avec TikTok."
+      );
+    case "no_username":
+      return "Impossible de lire ton pseudo.";
+    case "session_failed":
+      return "Impossible d'ouvrir la session. Réessaie.";
+    default:
+      return "La connexion n'a pas abouti. Réessaie.";
   }
-
-  const { data, error } = await supabase.functions.invoke(p.fn, { body: { code } });
-
-  if (error) return { ok: false, message: `Connexion ${p.label} indisponible pour le moment.` };
-  if (data?.error) return { ok: false, message: data.message || `${p.label} a refusé la connexion.` };
-  if (!data?.email || !data?.token_hash) return { ok: false, message: "Session incomplète." };
-
-  const { error: verifyErr } = await supabase.auth.verifyOtp({
-    email: data.email,
-    token_hash: data.token_hash,
-    type: "magiclink",
-  });
-  if (verifyErr) return { ok: false, message: "Impossible d'ouvrir la session. Réessaie." };
-
-  return { ok: true, username: data.username, provider: p.id };
 }
