@@ -229,6 +229,28 @@ export function Onboarding(_params, ctx) {
     const msg = h("p", { class: "ob-msg" });
     const btn = h("button", { class: "btn btn-primary btn-block" }, "C'est parti");
 
+    // Repli pour les comptes qu'aucune API ne sert (Instagram perso).
+    // Facultatif : le chiffre est decoratif, il ne donne aucun point.
+    const abosInput = h("input", {
+      class: "ob-input",
+      type: "number",
+      inputmode: "numeric",
+      min: "0",
+      placeholder: "1 250",
+      "aria-label": "Ton nombre d'abonnés",
+    });
+    const fileInput = h("input", {
+      class: "ob-file",
+      type: "file",
+      accept: "image/*",
+      "aria-label": "Capture de ton profil",
+    });
+    const fileName = h("span", { class: "ob-file-name" }, "Aucune capture");
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files && fileInput.files[0];
+      fileName.textContent = f ? f.name : "Aucune capture";
+    });
+
     async function save() {
       const handle = input.value.trim().replace(/^@/, "");
       if (!HANDLE_RE.test(handle)) {
@@ -237,17 +259,54 @@ export function Onboarding(_params, ctx) {
         input.focus();
         return;
       }
+
+      const abosRaw = abosInput.value.trim();
+      const abos = abosRaw === "" ? null : Number(abosRaw);
+      if (abos !== null && (!Number.isFinite(abos) || abos < 0)) {
+        msg.className = "ob-msg err";
+        msg.textContent = "Nombre d'abonnés invalide.";
+        abosInput.focus();
+        return;
+      }
+
       tap();
       btn.disabled = true;
       btn.textContent = "Enregistrement…";
 
       if (isConfigured) {
-        // La migration 0004 n'autorise l'ecriture que sur handle et email :
-        // impossible de toucher a son solde en passant par ici.
-        const { error } = await supabase
-          .from("users")
-          .update({ handle })
-          .eq("id", user.id);
+        let proofPath = null;
+
+        // La capture part dans un bucket PRIVE, dans un dossier nomme par
+        // l'id du clubbeur : personne ne voit celle des autres.
+        const f = fileInput.files && fileInput.files[0];
+        if (f && abos !== null) {
+          const ext = (f.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+          const path = `${user.id}/profil.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("follower-proofs")
+            .upload(path, f, { upsert: true, contentType: f.type || "image/jpeg" });
+          // Une capture qui ne part pas ne doit pas bloquer l'inscription.
+          if (!upErr) proofPath = path;
+        }
+
+        let error = null;
+        if (abos !== null) {
+          // declare_followers force follower_source = 'declared' : un
+          // chiffre saisi a la main ne peut pas se faire passer pour un
+          // chiffre verifie par le reseau.
+          const r = await supabase.rpc("declare_followers", {
+            p_handle: handle,
+            p_count: Math.round(abos),
+            p_proof: proofPath,
+          });
+          error = r.error;
+        } else {
+          // La migration 0004 n'autorise l'ecriture que sur handle et email :
+          // impossible de toucher a son solde en passant par ici.
+          const r = await supabase.from("users").update({ handle }).eq("id", user.id);
+          error = r.error;
+        }
+
         if (error) {
           btn.disabled = false;
           btn.textContent = "C'est parti";
@@ -280,8 +339,24 @@ export function Onboarding(_params, ctx) {
           ]),
           h("div", { class: "ob-field reveal", style: { "--d": "190ms" } }, [
             h("div", { class: "ob-at" }, [h("span", { class: "ob-at-sign" }, "@"), input]),
-            msg,
           ]),
+
+          h("div", { class: "ob-declare reveal", style: { "--d": "230ms" } }, [
+            h("p", { class: "label ob-declare-label" }, "Tes abonnés — facultatif"),
+            h(
+              "p",
+              { class: "ob-declare-note" },
+              "Si tu ne connectes pas ton réseau, tu peux les saisir. Le chiffre sera affiché comme déclaré et ne change rien à tes points."
+            ),
+            abosInput,
+            h("label", { class: "ob-file-row" }, [
+              h("span", { class: "ob-file-btn" }, "Joindre une capture"),
+              fileName,
+              fileInput,
+            ]),
+          ]),
+
+          h("div", { class: "ob-field" }, [msg]),
         ]),
         h("footer", { class: "ob-foot reveal", style: { "--d": "260ms" } }, [
           btn,

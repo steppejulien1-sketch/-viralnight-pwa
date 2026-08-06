@@ -21,12 +21,19 @@ export function Profile(_params, ctx) {
   const abosRow = h("div", { hidden: true });
   loadMyProfile().then((me) => {
     if (!me || me.follower_count == null) return;
-    abosRow.replaceWith(
-      infoRow(
-        me.follower_source === "tiktok" ? "Abonnés TikTok" : "Abonnés Instagram",
-        nf.format(me.follower_count)
-      )
-    );
+    // Un chiffre saisi a la main est affiche comme tel : il ne doit
+    // jamais se faire passer pour une donnee verifiee par le reseau.
+    const libelle =
+      me.follower_source === "tiktok"
+        ? "Abonnés TikTok"
+        : me.follower_source === "instagram"
+          ? "Abonnés Instagram"
+          : "Abonnés";
+    const valeur =
+      me.follower_source === "declared"
+        ? `${nf.format(me.follower_count)} · déclaré`
+        : nf.format(me.follower_count);
+    abosRow.replaceWith(infoRow(libelle, valeur));
   });
 
   return h("div", { class: "pf-inner" }, [
