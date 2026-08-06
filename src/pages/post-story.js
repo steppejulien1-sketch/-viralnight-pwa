@@ -10,6 +10,7 @@ import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, STORY_BASE_POINTS } from "../lib/mock.js";
 import { countUp } from "../lib/animations.js";
 import { tap, success } from "../lib/haptics.js";
+import { creditStory } from "../lib/game.js";
 
 export function PostStory(_params, ctx) {
   const root = h("div", { class: "ps" });
@@ -115,12 +116,29 @@ export function PostStory(_params, ctx) {
   }
 
   /* ---------- 3. Gain de points ---------- */
-  function renderReward() {
-    const gain = STORY_BASE_POINTS;
+  // Le credit se fait EN BASE via credit_story (transaction : story_events +
+  // solde + classement). Avant, cette fonction se contentait d'incrementer
+  // USER.points en memoire : les points disparaissaient au rafraichissement,
+  // alors que la boutique, elle, debitait de vrais points.
+  //
+  // Repli : si Supabase n'est pas configure ou refuse, on retombe sur le
+  // comportement local pour que la demo hors ligne reste jouable.
+  async function renderReward() {
     const before = USER.points;
-    const after = before + gain;
+
+    let gain = STORY_BASE_POINTS;
+    let after = before + gain;
+
+    const res = await creditStory(0);
+    if (res && !res.error && typeof res.awarded === "number") {
+      gain = res.awarded;
+      after = res.balance;
+      USER.totalEarned = res.lifetime;
+    } else {
+      USER.totalEarned += gain;
+    }
+
     USER.points = after;
-    USER.totalEarned += gain;
     HISTORY.unshift({
       date: "À l'instant",
       views: 0,

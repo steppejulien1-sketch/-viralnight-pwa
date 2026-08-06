@@ -104,3 +104,35 @@ export function countdown(endsAt) {
   if (h > 0) return `${h}h ${mm}m`;
   return `${mm}m`;
 }
+
+// Credite une story publiee : ecrit story_events, le solde et le classement
+// dans la meme transaction cote base (fonction credit_story, security definer).
+//
+// On ne fait PAS un update de users depuis le client : la migration 0004 le
+// bloque justement, parce que n'importe qui pouvait sinon s'attribuer des
+// points. Le nombre de vues est une PROPOSITION, la base le plafonne.
+//
+// Retourne { awarded, balance, lifetime } ou null si Supabase n'est pas
+// configure (mode demo hors ligne), et { error } si l'appel echoue.
+export async function creditStory(views = 0) {
+  if (!isConfigured) return null;
+  await ensureSession();
+  const cid = await clubId();
+  if (!cid) return null;
+
+  const n = Number(views);
+  const { data, error } = await supabase.rpc("credit_story", {
+    p_club: cid,
+    p_kind: "story",
+    p_views: Number.isFinite(n) && n > 0 ? Math.round(n) : 0,
+  });
+  if (error) return { error: error.message };
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    awarded: row.awarded,
+    balance: row.new_balance,
+    lifetime: row.new_lifetime,
+  };
+}
