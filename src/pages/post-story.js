@@ -73,9 +73,23 @@ export function PostStory(_params, ctx) {
 
     function go() {
       tap();
+      const lien = kind.id === "story" ? "" : linkInput.value.trim();
       window.open(kind.url, "_blank", "noopener");
-      renderWaiting();
+      renderWaiting(lien);
     }
+
+    // Lien du contenu. Une story Instagram n'a PAS d'URL publique : on ne
+    // demande donc le lien que pour les Reels et TikToks. C'est lui qui
+    // permet au contenu de remonter sur le dashboard du gerant.
+    const linkInput = h("input", {
+      class: "ob-input",
+      type: "url",
+      inputmode: "url",
+      autocapitalize: "none",
+      spellcheck: "false",
+      placeholder: kind.id === "tiktok" ? "https://tiktok.com/@toi/video/..." : "https://instagram.com/reel/...",
+      "aria-label": "Lien de ta publication",
+    });
 
     // Choix du format : il change le bareme, donc il est annonce avant le
     // parcours et pas cache dans un reglage.
@@ -127,6 +141,22 @@ export function PostStory(_params, ctx) {
             kind.why,
           ]),
 
+          kind.id === "story"
+            ? h(
+                "p",
+                { class: "ps-hint reveal", style: { "--d": "110ms" } },
+                "Une story n'a pas de lien public : on la detecte via la mention."
+              )
+            : h("div", { class: "ps-link reveal", style: { "--d": "110ms" } }, [
+                h("span", { class: "label" }, "Lien de ta publication"),
+                linkInput,
+                h(
+                  "span",
+                  { class: "ps-link-note" },
+                  "Colle-le pour que ton contenu remonte au club."
+                ),
+              ]),
+
           h(
             "ol",
             { class: "ps-steps" },
@@ -157,7 +187,7 @@ export function PostStory(_params, ctx) {
   }
 
   /* ---------- 2. Attente de confirmation ---------- */
-  function renderWaiting() {
+  function renderWaiting(lien) {
     swap(
       h("div", { class: "ps-inner ps-waiting" }, [
         h("div", { class: "ps-radar", "aria-hidden": "true" }, [
@@ -176,7 +206,7 @@ export function PostStory(_params, ctx) {
     );
 
     // Stub webhook : confirmation apres ~4,5 s.
-    setTimeout(renderReward, 4500);
+    setTimeout(() => renderReward(lien), 4500);
   }
 
   /* ---------- 3. Gain de points ---------- */
@@ -187,13 +217,13 @@ export function PostStory(_params, ctx) {
   //
   // Repli : si Supabase n'est pas configure ou refuse, on retombe sur le
   // comportement local pour que la demo hors ligne reste jouable.
-  async function renderReward() {
+  async function renderReward(lien) {
     const before = USER.points;
 
     let gain = STORY_BASE_POINTS;
     let after = before + gain;
 
-    const res = await creditStory(0, kind.id);
+    const res = await creditStory(0, kind.id, lien || "");
     if (res && !res.error && typeof res.awarded === "number") {
       gain = res.awarded;
       after = res.balance;

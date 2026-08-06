@@ -114,7 +114,7 @@ export function countdown(endsAt) {
 //
 // Retourne { awarded, balance, lifetime } ou null si Supabase n'est pas
 // configure (mode demo hors ligne), et { error } si l'appel echoue.
-export async function creditStory(views = 0, kind = "story") {
+export async function creditStory(views = 0, kind = "story", url = "") {
   if (!isConfigured) return null;
   await ensureSession();
   const cid = await clubId();
@@ -127,14 +127,26 @@ export async function creditStory(views = 0, kind = "story") {
     // de repli ici, une erreur vaut mieux qu'un credit au mauvais tarif.
     p_kind: kind,
     p_views: Number.isFinite(n) && n > 0 ? Math.round(n) : 0,
+    p_url: url || null,
   });
   if (error) return { error: error.message };
 
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
+
+  // Remontee vers le dashboard du gerant (site B2B). Volontairement en
+  // "au mieux" : si elle echoue, le clubbeur garde ses points. L'erreur
+  // est tracee dans story_events.push_error, pas perdue.
+  if (url && row.story_id) {
+    supabase.functions
+      .invoke("push-submission", { body: { story_id: row.story_id } })
+      .catch(() => {});
+  }
+
   return {
     awarded: row.awarded,
     balance: row.new_balance,
     lifetime: row.new_lifetime,
+    storyId: row.story_id,
   };
 }
