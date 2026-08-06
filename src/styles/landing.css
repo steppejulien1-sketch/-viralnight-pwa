@@ -70,7 +70,7 @@
 .lp-brand-mark {
   width: 16px;
   height: 16px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: var(--grad-fresh);
   box-shadow: 0 0 14px var(--lime-glow);
 }

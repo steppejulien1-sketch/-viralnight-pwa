@@ -62,10 +62,13 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* --- Rayons : plus ronds, plus fun --- */
-  --r-btn: 14px;
-  --r-card: 18px;
-  --r-lg: 22px;
-  --r-hero: 28px;
+  /* Angles secs, alignes sur le site B2B : meme famille visuelle.
+     La palette lime / magenta ne bouge pas -- c'est elle qui porte
+     l'energie nightlife, le public de la PWA n'est pas celui du B2B. */
+  --r-btn: 2px;
+  --r-card: 3px;
+  --r-lg: 3px;
+  --r-hero: 4px;
   --r-pill: 999px;
 
   /* --- Elevation --- */

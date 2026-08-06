@@ -158,7 +158,7 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: 3px;
   background: var(--accent-tint);
   color: var(--accent);
 }

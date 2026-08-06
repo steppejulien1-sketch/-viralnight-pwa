@@ -24,7 +24,7 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 3px;
   border: 1px solid var(--border);
   color: var(--text-dim);
   transition: background 0.2s, border-color 0.2s;
@@ -137,7 +137,7 @@
   place-items: center;
   width: 72px;
   height: 72px;
-  border-radius: 22px;
+  border-radius: 4px;
   background: var(--grad-hot);
   color: #fff;
   margin-bottom: 24px;
@@ -327,7 +327,7 @@
   place-items: center;
   width: 46px;
   height: 46px;
-  border-radius: 12px;
+  border-radius: 3px;
   background: var(--accent-tint);
   color: var(--accent);
   font-size: 17px;

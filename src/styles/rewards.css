@@ -85,7 +85,7 @@
 .rw-empty-msg { padding: 30px 10px; text-align: center; color: var(--text-mute); font-size: 14px; }
 
 .rc-meta { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-.rc-cat { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.rc-cat { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .rc-cat-boisson { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
 .rc-cat-entree { background: var(--lime-tint); color: var(--lime); }
 .rc-cat-vip { background: var(--magenta-tint); color: #ff9ac4; }
@@ -137,7 +137,7 @@
   transition: transform 0.28s var(--ease-out);
 }
 .rw-sheet-backdrop.is-open .rw-sheet { transform: none; }
-.rw-sheet-grip { width: 40px; height: 4px; border-radius: 999px; background: var(--border); margin: 0 auto 18px; }
+.rw-sheet-grip { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 18px; }
 .rw-sheet-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; text-align: center; }
 .rw-sheet-sub { margin: 10px 0 22px; text-align: center; font-size: 14px; line-height: 1.5; color: var(--text-dim); }
 .rw-sheet-sub strong { color: var(--text); font-weight: 700; }
@@ -261,7 +261,7 @@
 }
 .tk-qr-wrap {
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 3px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
 }

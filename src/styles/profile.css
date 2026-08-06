@@ -22,7 +22,7 @@
   width: 56px;
   height: 56px;
   flex: none;
-  border-radius: 18px;
+  border-radius: 4px;
   background: var(--grad-hot);
   color: #fff;
   box-shadow: 0 10px 30px -12px var(--magenta-glow);

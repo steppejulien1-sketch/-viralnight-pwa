@@ -249,7 +249,7 @@
   width: 36px;
   height: 36px;
   flex: none;
-  border-radius: 10px;
+  border-radius: 3px;
   background: var(--surface-2);
   color: var(--text-dim);
 }
