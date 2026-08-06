@@ -150,3 +150,18 @@ export async function creditStory(views = 0, kind = "story", url = "") {
     storyId: row.story_id,
   };
 }
+
+// Profil du clubbeur connecte : solde, cumul et nombre d'abonnes.
+// follower_count est ECRIT uniquement par les edge functions de connexion
+// (migration 0009). Ici on ne fait que le lire.
+export async function loadMyProfile() {
+  if (!isConfigured) return null;
+  const uid = await myId();
+  if (!uid) return null;
+  const { data } = await supabase
+    .from("users")
+    .select("handle, points_balance, lifetime_points, follower_count, follower_source")
+    .eq("id", uid)
+    .maybeSingle();
+  return data || null;
+}

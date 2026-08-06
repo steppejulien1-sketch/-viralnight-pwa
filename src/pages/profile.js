@@ -1,14 +1,33 @@
 // Ecran — Profil (v2).
-// Compte Instagram connecte + niveau + reglages. Plus d'abonnes/palier.
+// Compte connecte + niveau + reglages.
+//
+// Le nombre d'abonnes est AFFICHE mais n'entre dans AUCUN calcul de
+// points : la v2 recompense les VUES REELLES, pas la taille de l'audience.
+// Il est lu depuis la base, ou seules les edge functions peuvent l'ecrire
+// (migration 0009) -- un clubbeur ne peut pas s'inventer 2 millions d'abonnes.
 
 import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, levelForPoints } from "../lib/mock.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
+import { loadMyProfile } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
 export function Profile(_params, ctx) {
   const level = levelForPoints(USER.totalEarned);
+
+  // Ligne "Abonnes" : masquee tant qu'on n'a pas le chiffre, plutot que
+  // d'afficher un tiret qui laisse croire a une erreur.
+  const abosRow = h("div", { hidden: true });
+  loadMyProfile().then((me) => {
+    if (!me || me.follower_count == null) return;
+    abosRow.replaceWith(
+      infoRow(
+        me.follower_source === "tiktok" ? "Abonnés TikTok" : "Abonnés Instagram",
+        nf.format(me.follower_count)
+      )
+    );
+  });
 
   return h("div", { class: "pf-inner" }, [
     h("header", { class: "bn-head" }, [
@@ -33,7 +52,8 @@ export function Profile(_params, ctx) {
     h("section", { class: "pf-section reveal", style: { "--d": "140ms" } }, [
       h("p", { class: "label pf-section-label" }, "Réglages"),
       toggleRow("Vibrations", hapticsEnabled(), (on) => setHaptics(on)),
-      infoRow("Instagram", USER.connected ? "Connecté" : "—"),
+      abosRow,
+      infoRow("Compte", USER.connected ? "Connecté" : "—"),
       infoRow("Club", `${CLUB.name} · ${CLUB.city}`),
     ]),
 

@@ -33,9 +33,11 @@ const SECRET = Deno.env.get("TIKTOK_CLIENT_SECRET") ?? "";
 const REDIRECT = Deno.env.get("TIKTOK_REDIRECT_URI") ?? "";
 const APP_ORIGIN = (Deno.env.get("APP_ORIGIN") ?? "").replace(/\/$/, "");
 
-// Scope minimal : juste de quoi identifier la personne. On ne demande ni
-// ses stats ni ses videos -- l'ecran d'onboarding s'y engage.
-const SCOPE = "user.info.basic";
+// user.info.basic identifie la personne ; user.info.stats ajoute le
+// nombre d'abonnes, AFFICHE sur le profil et utilise dans AUCUN calcul de
+// points (voir migration 0009). On ne demande rien de plus : chaque scope
+// supplementaire doit etre justifie a la revue d'app TikTok.
+const SCOPE = "user.info.basic,user.info.stats";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -125,7 +127,7 @@ Deno.serve(async (req) => {
     }
 
     const infoRes = await fetch(
-      "https://open.tiktokapis.com/v2/user/info/?fields=open_id,username,display_name",
+      "https://open.tiktokapis.com/v2/user/info/?fields=open_id,username,display_name,follower_count",
       { headers: { Authorization: `Bearer ${tok.access_token}` } }
     );
     const info = await infoRes.json();
@@ -158,7 +160,18 @@ Deno.serve(async (req) => {
       .eq("email", email)
       .maybeSingle();
     if (userRow?.id) {
-      await db.from("users").update({ handle: username }).eq("id", userRow.id);
+      // follower_count : affichage seul. Le client ne peut pas l'ecrire
+      // (grant limite a handle/email depuis la migration 0004).
+      const followers = Number(u.follower_count);
+      await db
+        .from("users")
+        .update({
+          handle: username,
+          follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
+          follower_source: "tiktok",
+          follower_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userRow.id);
     }
 
     // On ne conserve PAS l'access_token : on a ce qu'il fallait.

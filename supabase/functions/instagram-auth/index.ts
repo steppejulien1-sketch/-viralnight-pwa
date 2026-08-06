@@ -122,7 +122,10 @@ Deno.serve(async (req) => {
     }
 
     const meRes = await fetch(
-      `https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${encodeURIComponent(tok.access_token)}`
+      // followers_count n'existe que pour les comptes professionnels.
+      // Sur un compte qui ne le sert pas, le champ revient absent : on
+      // stocke null plutot que d'inventer un chiffre.
+      `https://graph.instagram.com/v21.0/me?fields=id,username,followers_count&access_token=${encodeURIComponent(tok.access_token)}`
     );
     const me = await meRes.json();
     const username = String(me?.username || "").trim();
@@ -143,7 +146,16 @@ Deno.serve(async (req) => {
       .eq("email", email)
       .maybeSingle();
     if (userRow?.id) {
-      await db.from("users").update({ handle: username }).eq("id", userRow.id);
+      const followers = Number(me?.followers_count);
+      await db
+        .from("users")
+        .update({
+          handle: username,
+          follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
+          follower_source: "instagram",
+          follower_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userRow.id);
     }
 
     const { data: link, error: linkErr } = await db.auth.admin.generateLink({
