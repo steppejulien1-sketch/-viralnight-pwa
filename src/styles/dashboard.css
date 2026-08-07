@@ -57,8 +57,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--grad-hot);
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* --- Niveau --- */

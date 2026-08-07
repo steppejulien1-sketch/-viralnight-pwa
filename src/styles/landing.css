@@ -1,5 +1,8 @@
 /* ============================================================
-   Ecran Landing (scan QR) — v2 énergie
+   Ecran Landing (scan QR) — v3 "vitrine", rouge sur noir
+   ------------------------------------------------------------
+   L'ecran defile : accroche, recompenses, 3 etapes, preuve.
+   Le bouton reste colle en bas, toujours atteignable au pouce.
    ============================================================ */
 
 .lp {
@@ -7,46 +10,31 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: calc(var(--safe-top) + 20px) var(--pad-x) calc(var(--safe-bottom) + 26px);
-  overflow: hidden;
+  padding-top: calc(var(--safe-top) + 18px);
 }
 
-/* --- Atmosphere : deux projecteurs qui claquent, lime + magenta --- */
+/* --- Atmosphere : UNE lueur rouge. Une seule couleur sur l'ecran. --- */
 .lp-atmos {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
 }
 .lp-glow {
   position: absolute;
+  top: -150px;
+  left: -70px;
+  width: 360px;
+  height: 300px;
   border-radius: 50%;
-  filter: blur(72px);
+  filter: blur(70px);
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.42), transparent 72%);
+  animation: lp-float 11s var(--ease-out) infinite alternate;
 }
-.lp-glow-top {
-  top: -160px;
-  left: -60px;
-  width: 420px;
-  height: 380px;
-  background: radial-gradient(closest-side, rgba(255, 61, 139, 0.45), transparent 70%);
-  animation: lp-float-a 9s var(--ease-out) infinite alternate;
-}
-.lp-glow-floor {
-  bottom: -140px;
-  right: -80px;
-  width: 460px;
-  height: 400px;
-  background: radial-gradient(closest-side, rgba(200, 255, 47, 0.4), transparent 72%);
-  animation: lp-float-b 11s var(--ease-out) infinite alternate;
-}
-@keyframes lp-float-a {
+@keyframes lp-float {
   to {
-    transform: translate(40px, 30px) scale(1.12);
-  }
-}
-@keyframes lp-float-b {
-  to {
-    transform: translate(-40px, -30px) scale(1.1);
+    transform: translate(36px, 26px) scale(1.12);
   }
 }
 
@@ -57,6 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 var(--pad-x);
 }
 .lp-brand {
   display: inline-flex;
@@ -65,35 +54,34 @@
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text);
 }
 .lp-brand-mark {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 2px;
   background: var(--grad-fresh);
-  box-shadow: 0 0 14px var(--lime-glow);
+  box-shadow: 0 0 14px var(--accent-glow);
 }
 .lp-live {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 13px;
+  padding: 6px 12px;
   border-radius: var(--r-pill);
-  background: var(--magenta-tint);
-  border: 1px solid rgba(255, 61, 139, 0.3);
-  font-size: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #ff9ac4;
+  color: var(--text-dim);
 }
 .lp-live-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--magenta);
-  box-shadow: 0 0 9px var(--magenta-glow);
+  background: var(--accent);
+  box-shadow: 0 0 9px var(--accent-glow);
   animation: lp-pulse 1.6s ease-in-out infinite;
 }
 @keyframes lp-pulse {
@@ -108,65 +96,211 @@
   }
 }
 
-/* --- Hero --- */
-.lp-hero {
+/* --- Corps defilant --- */
+.lp-body {
   position: relative;
   z-index: 1;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-bottom: 4vh;
 }
-.lp-eyebrow {
+
+/* --- Accroche --- */
+.lp-hook {
+  padding: 22px var(--pad-x) 0;
+}
+.lp-here {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  align-self: flex-start;
-  padding: 8px 14px 8px 12px;
-  margin-bottom: 20px;
+  padding: 6px 12px;
+  margin-bottom: 14px;
   border-radius: var(--r-pill);
-  background: var(--lime-tint);
-  border: 1px solid rgba(200, 255, 47, 0.28);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--lime);
+  background: var(--accent-tint);
+  border: 1px solid rgba(var(--accent-rgb), 0.32);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
 }
-.lp-eyebrow svg {
-  color: var(--lime);
+.lp-here svg {
+  color: var(--accent);
 }
+/* Pas de background-clip sur ce titre : c'est ce qui rognait le jambage
+   du "g" dans l'ancienne version. Texte plein, line-height >= 1. */
 .lp-title {
-  font-size: clamp(72px, 24vw, 112px);
+  margin: 0;
+  font-size: clamp(30px, 8.6vw, 36px);
   font-weight: 800;
-  line-height: 0.88;
-  letter-spacing: -0.05em;
-  margin-bottom: 22px;
-  background: var(--grad-fresh);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 6px 30px rgba(200, 255, 47, 0.18));
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.lp-title em {
+  font-style: normal;
+  color: var(--accent);
 }
 .lp-sub {
-  max-width: 19em;
-  font-size: 16.5px;
-  line-height: 1.5;
+  margin: 10px 0 0;
+  font-size: 15px;
   color: var(--text-dim);
-  font-weight: 450;
 }
-.lp-sub strong {
+
+/* --- Vitrine des recompenses --- */
+.lp-shelf {
+  margin-top: 26px;
+}
+.lp-shelf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 var(--pad-x);
+  margin-bottom: 12px;
+}
+.lp-shelf-count {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* Rail horizontal : on voit qu'il y en a d'autres a droite, ce qui
+   invite a faire defiler. scroll-snap pour que ca s'arrete net. */
+.lp-rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  list-style: none;
+  margin: 0;
+  padding: 2px var(--pad-x) 8px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lp-rail::-webkit-scrollbar {
+  display: none;
+}
+.lp-reward {
+  flex: none;
+  width: 168px;
+  min-height: 132px;
+  padding: 15px;
+  border-radius: var(--r-card);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  scroll-snap-align: start;
+}
+/* La moins chere est mise en avant : c'est la porte d'entree. */
+.lp-reward.is-first {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background-color: var(--surface-2);
+  background-image: linear-gradient(165deg, rgba(var(--accent-rgb), 0.1), transparent 55%);
+}
+.lp-reward-icn {
+  color: var(--accent);
+}
+.lp-reward-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+.lp-reward-cost {
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.lp-reward-cost small {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+/* --- Les 3 etapes --- */
+.lp-how {
+  margin: 26px var(--pad-x) 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.lp-step {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.lp-step-n {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.lp-step-txt {
+  display: flex;
+  flex-direction: column;
+}
+.lp-step-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.lp-step-detail {
+  font-size: 13.5px;
+  color: var(--text-mute);
+}
+
+/* --- Preuve chiffree --- */
+.lp-proof {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 22px var(--pad-x) 0;
+  padding: 14px 16px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.lp-proof-num {
+  flex: none;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.lp-proof-txt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-dim);
+}
+.lp-proof-txt strong {
   color: var(--text);
   font-weight: 700;
 }
 
-/* --- CTA --- */
+/* --- Action : collee en bas, toujours au pouce --- */
 .lp-cta {
-  position: relative;
-  z-index: 1;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 26px;
+  padding: 18px var(--pad-x) calc(var(--safe-bottom) + 18px);
+  /* Degrade vers le fond : le contenu qui passe dessous s'efface au
+     lieu de se couper net sur une arete. */
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), var(--bg) 38%);
 }
 .lp-join {
   font-size: 17px;
-  height: 58px;
+  height: 56px;
 }
 .lp-join svg {
   transition: transform 0.25s var(--ease-out);
@@ -175,20 +309,14 @@
   transform: translateX(4px);
 }
 .lp-reassure {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  margin-top: 15px;
+  text-align: center;
+  margin: 11px 0 0;
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-mute);
 }
-.lp-reassure svg {
-  color: var(--magenta);
-}
 
-/* --- Reveal --- */
+/* --- Reveal (utilise aussi par les autres ecrans) --- */
 .reveal {
   opacity: 0;
   transform: translateY(11px);

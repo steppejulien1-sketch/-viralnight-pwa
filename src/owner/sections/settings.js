@@ -18,7 +18,7 @@ export async function SettingsAdmin(mount, club) {
     name: c.name || "",
     city: c.city || "",
     ig_handle: c.ig_handle || "",
-    primary_color: c.primary_color || "#c8ff2f",
+    primary_color: c.primary_color || "#ff2d2d",
     leaderboard_enabled: c.leaderboard_enabled !== false,
   };
 

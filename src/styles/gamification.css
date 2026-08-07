@@ -17,8 +17,8 @@
   gap: 5px;
   padding: 5px 11px 5px 8px;
   border-radius: var(--r-pill);
-  background: var(--grad-hot);
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 13px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -55,8 +55,8 @@
   padding: 14px 15px;
   margin-bottom: 20px;
   border-radius: var(--r-card);
-  border: 1px solid rgba(255, 61, 139, 0.28);
-  background: linear-gradient(135deg, var(--magenta-tint), rgba(53, 224, 232, 0.06));
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  background: linear-gradient(135deg, var(--accent-tint), transparent 60%);
   position: relative;
   overflow: hidden;
   transition: transform 0.15s var(--ease-out), border-color 0.2s;
@@ -257,7 +257,7 @@
 }
 .lb-pod-1 {
   padding-top: 22px;
-  border-color: rgba(200, 255, 47, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.42);
   background: linear-gradient(180deg, var(--lime-tint), var(--surface) 70%);
   box-shadow: 0 0 26px -8px var(--lime-glow);
 }

@@ -1,61 +1,95 @@
 /* ============================================================
-   VIRALNIGHT PWA — Design tokens (v2 · énergie nightlife)
+   VIRALNIGHT PWA — Design tokens (v3 · rouge sur noir)
    ------------------------------------------------------------
-   Direction : fun, jeune, électrique — pour un clubbeur à 1h du
-   mat. Fond nuit violacé (pas noir plat), accent LIME qui claque
-   + MAGENTA pour le contraste. Grosses typos, formes rondes,
-   dégradés assumés mais avec goût. Pas de violet "IA".
+   Direction : nightlife, franc, une seule couleur. Fond NOIR
+   NEUTRE (le même que le site B2B) pour que le rouge claque —
+   sur l'ancien fond violet il tirait vers le brun.
+
+   ⚠️ Le LIME #c8ff2f a été REJETÉ par Julien le 2026-08-07
+   (« le vert dégueulasse »). Ne pas le réintroduire.
    ============================================================ */
 
 :root {
-  /* --- Surfaces : nuit violacée, riche --- */
-  --bg: #0d0b14; /* fond, violet-nuit profond */
-  --bg-2: #120f1b;
-  --surface: #1a1626; /* cartes */
-  --surface-2: #241d33; /* empilé */
-  --surface-hover: #2c2440;
+  /* --- Surfaces : noir neutre, relief franc ---
+     L'écart de luminance fond/carte était de 3,6 sur 100 : sous le
+     seuil de perception, tout s'écrasait en une nappe. Les surfaces
+     montent nettement. Mêmes valeurs que le site B2B. */
+  --bg: #000000;
+  --bg-2: #0a0a0a;
+  --surface: #1c1c1c; /* cartes */
+  --surface-2: #2e2e2e; /* empilé — écart de luminance ~18 avec le fond */
+  --surface-hover: #3a3a3a;
 
-  /* --- Bordures --- */
-  --border: #2e2740;
-  --border-soft: rgba(255, 255, 255, 0.07);
+  /* --- Bordures ---
+     Claires volontairement : une bordure nette fait autant pour la
+     lisibilité d'une carte que le fond lui-même. */
+  --border: #3a3a3a;
+  --border-soft: rgba(255, 255, 255, 0.1);
 
   /* --- Texte --- */
-  --text: #f7f5ff;
-  --text-dim: #b3adc9;
-  --text-mute: #7d7794;
-  --text-faint: #574f6e;
+  --text: #f5f5f7;
+  --text-dim: #a8a8ad;
+  --text-mute: #7a7a80;
+  --text-faint: #4e4e55;
 
-  /* --- Accent 1 : LIME électrique (énergie, CTA) --- */
-  --lime: #c8ff2f;
-  --lime-hover: #d4ff5c;
-  --lime-press: #b3f01a;
-  --lime-ink: #131a02; /* texte sur lime */
-  --lime-glow: rgba(200, 255, 47, 0.4);
-  --lime-tint: rgba(200, 255, 47, 0.12);
+  /* --- Accent : ROUGE VIF ---
+     ⚠️ Le rouge est une couleur SOMBRE, contrairement au lime qui
+     était clair. L'encre posée dessus (--accent-ink) est donc BLANCHE.
+     Inverser la rendrait tous les boutons illisibles. */
+  --red: #ff2d2d;
+  --red-rgb: 255, 45, 45; /* pour composer des rgba() */
+  --red-hover: #ff4d4d;
+  --red-press: #e81f1f;
+  --red-ink: #ffffff; /* texte sur rouge */
+  --red-glow: rgba(255, 45, 45, 0.45);
+  --red-tint: rgba(255, 45, 45, 0.13);
 
-  /* --- Accent 2 : MAGENTA (fun, contraste, "hot") --- */
-  --magenta: #ff3d8b;
-  --magenta-glow: rgba(255, 61, 139, 0.4);
-  --magenta-tint: rgba(255, 61, 139, 0.14);
+  /* --- Compatibilité ---
+     Les anciens noms --lime-* restent définis et pointent sur le rouge,
+     le temps que les feuilles qui les utilisent encore soient renommées
+     (celebrate.js, owner.css, gamification.css…). Ils ne sont PAS verts. */
+  --lime: var(--red);
+  --lime-hover: var(--red-hover);
+  --lime-press: var(--red-press);
+  --lime-ink: var(--red-ink);
+  --lime-glow: var(--red-glow);
+  --lime-tint: var(--red-tint);
 
-  /* --- Accent 3 : CYAN (touches fraîches) --- */
+  /* --- MAGENTA : neutralisé, il pointe sur le rouge ---
+     ⚠️ À côté du rouge, le magenta se marchait dessus (défis, streak,
+     badges). L'app tient sur UNE couleur, comme le site B2B. Les noms
+     --magenta-* restent le temps que les feuilles soient renommées ;
+     ils ne sont plus roses.
+     Seul --grad-hot garde le vrai dégradé Instagram : là, c'est la
+     couleur d'une marque tierce, pas une décoration. */
+  --magenta: var(--red);
+  --magenta-glow: var(--red-glow);
+  --magenta-tint: var(--red-tint);
+
+  /* --- CYAN : catégorie "boisson" de la boutique + état "à venir"
+     des défis. Purement fonctionnel, jamais décoratif. --- */
   --cyan: #35e0e8;
 
-  /* --- Dégradé signature (moments forts uniquement) --- */
-  --grad-hot: linear-gradient(115deg, #ff3d8b, #ff8a3d);
-  --grad-fresh: linear-gradient(115deg, #c8ff2f, #35e0e8);
+  /* --- Dégradés --- */
+  --grad-hot: linear-gradient(115deg, #ff3d8b, #ff8a3d); /* Instagram */
+  --grad-fresh: linear-gradient(115deg, #ff2d2d, #ff7a3d); /* rouge -> orange */
 
-  /* --- Accent principal générique = lime --- */
-  --accent: var(--lime);
-  --accent-hover: var(--lime-hover);
-  --accent-press: var(--lime-press);
-  --accent-ink: var(--lime-ink);
-  --accent-glow: var(--lime-glow);
-  --accent-tint: var(--lime-tint);
+  /* --- Accent principal générique = rouge --- */
+  --accent: var(--red);
+  --accent-rgb: var(--red-rgb);
+  --accent-hover: var(--red-hover);
+  --accent-press: var(--red-press);
+  --accent-ink: var(--red-ink);
+  --accent-glow: var(--red-glow);
+  --accent-tint: var(--red-tint);
 
-  /* --- États --- */
-  --success: #4be3a0;
-  --success-tint: rgba(75, 227, 160, 0.14);
+  /* --- États ---
+     ⚠️ --success était un VERT menthe (#4be3a0) : c'est exactement la
+     famille rejetée. Les gains de points et les validations passent au
+     rouge de marque. Il n'y a pas d'état "perte" dans l'app, donc le
+     rouge n'est jamais ambigu ici. */
+  --success: var(--red);
+  --success-tint: var(--red-tint);
 
   /* --- Typo --- */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

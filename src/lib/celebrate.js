@@ -4,7 +4,9 @@
 
 import { h } from "./dom.js";
 
-const COLORS = ["#c8ff2f", "#ff3d8b", "#35e0e8", "#ff8a3d"];
+// Confettis : camaieu de rouge + blanc. Pas de vert (rejete), pas de
+// multicolore (ca fait "genere par IA", Julien l'a dit plusieurs fois).
+const COLORS = ["#ff2d2d", "#ff7a3d", "#ffffff", "#ff5c5c"];
 
 export function celebrate({ title = "Débloqué !", sub = "" } = {}) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
