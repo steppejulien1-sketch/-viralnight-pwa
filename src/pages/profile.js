@@ -48,7 +48,6 @@ export function Profile(_params, ctx) {
 
   return h("div", { class: "pf-inner" }, [
     h("header", { class: "bn-head" }, [
-      h("button", { class: "ob-back", "aria-label": "Retour", onClick: () => ctx.back("dashboard") }, icon("arrowRight", 18)),
       h("span", { class: "label" }, "Profil"),
     ]),
 

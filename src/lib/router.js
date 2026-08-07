@@ -4,7 +4,7 @@
 // un element DOM (le .screen). Le routeur gere le montage et l'animation
 // d'entree/sortie. Pas de dependance : ~1 KB.
 
-export function createRouter({ mount, routes, initial }) {
+export function createRouter({ mount, routes, initial, onNavigate }) {
   let currentEl = null;
   let animating = false;
 
@@ -23,6 +23,11 @@ export function createRouter({ mount, routes, initial }) {
 
     const nextEl = await factory(params, ctx);
     nextEl.classList.add("screen");
+
+    // Previent la coquille (barre de navigation) du changement d'ecran.
+    // Appele AVANT le montage pour que la barre soit deja dans le bon etat
+    // quand l'ecran entre, sans clignotement.
+    onNavigate?.(name);
 
     // Premier montage : pas d'animation de sortie.
     if (!currentEl) {

@@ -27,6 +27,8 @@ export function h(tag, attrs = {}, children = []) {
    utilisees, pour ne pas charger toute la librairie. */
 const ICONS = {
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5"/>',
+  user: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
   instagram:
     '<rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.4A4 4 0 1 1 12.6 8 4 4 0 0 1 16 11.4z"/><path d="M17.5 6.5h.01"/>',
   sparkles:

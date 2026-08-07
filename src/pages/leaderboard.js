@@ -16,7 +16,6 @@ export function Leaderboard(_params, ctx) {
 
   function render(data) {
     const head = h("header", { class: "lb-head" }, [
-      h("button", { class: "ob-back", "aria-label": "Retour", onClick: () => ctx.back("dashboard") }, icon("arrowRight", 18)),
       h("span", { class: "label" }, "Classement"),
       h("span", {}),
     ]);

@@ -13,6 +13,7 @@ import "./styles/profile.css";
 import "./styles/gamification.css";
 
 import { createRouter } from "./lib/router.js";
+import { mountTabBar } from "./components/TabBar.js";
 import { Landing } from "./pages/landing.js";
 import { Onboarding } from "./pages/onboarding.js";
 import { Dashboard } from "./pages/dashboard.js";
@@ -25,9 +26,17 @@ import { Collection } from "./pages/collection.js";
 
 const mount = document.getElementById("app");
 
-createRouter({
+// Poule et oeuf : la barre a besoin de `navigate`, que seul le routeur
+// fournit, et le routeur monte son premier ecran des sa creation. On monte
+// donc la barre d'abord, avec un relais qui pointera sur le routeur une
+// fois celui-ci construit — un tap ne peut pas arriver avant.
+let router;
+const setTabRoute = mountTabBar({ navigate: (name) => router?.navigate(name) });
+
+router = createRouter({
   mount,
   initial: "landing",
+  onNavigate: setTabRoute,
   routes: {
     landing: Landing,
     onboarding: Onboarding,

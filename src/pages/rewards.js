@@ -86,7 +86,6 @@ export function Rewards(_params, ctx) {
     swap(
       h("div", { class: "rw-inner" }, [
         h("header", { class: "rw-head" }, [
-          h("button", { class: "ob-back", "aria-label": "Retour", onClick: () => ctx.back("dashboard") }, icon("arrowRight", 18)),
           h("span", { class: "label" }, "Boutique"),
           h("span", { class: "rw-balance mono" }, `${nf.format(me.points_balance)} pts`),
         ]),
@@ -220,7 +219,7 @@ export function Rewards(_params, ctx) {
 
   function loading() {
     return h("div", { class: "rw-inner" }, [
-      h("header", { class: "rw-head" }, [h("button", { class: "ob-back", onClick: () => ctx.back("dashboard") }, icon("arrowRight", 18)), h("span", { class: "label" }, "Boutique")]),
+      h("header", { class: "rw-head" }, [h("span", { class: "label" }, "Boutique")]),
       h("div", { class: "rw-grid" }, [skeleton(), skeleton(), skeleton()]),
     ]);
   }

@@ -53,3 +53,76 @@
 .tier-sm .tier-mult {
   font-size: 15px;
 }
+
+/* ============================================================
+   Barre de navigation basse
+   ------------------------------------------------------------
+   Collee en bas de la fenetre, largeur de l'app. Le fond est opaque :
+   un fond translucide sur du contenu rouge devenait sale.
+   ============================================================ */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: 100%;
+  max-width: var(--app-max);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ⚠️ Indispensable : `display: grid` ci-dessus ecrase le `display: none`
+   que le navigateur applique a [hidden]. Sans cette regle, la barre reste
+   visible sur la landing et l'onboarding. */
+.tabbar[hidden] {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  /* 56px : la cible tactile reste confortable au pouce. */
+  min-height: 56px;
+  padding: 8px 4px 7px;
+  color: var(--text-mute);
+  transition: color 0.18s var(--ease-out);
+}
+.tab:hover {
+  color: var(--text-dim);
+}
+
+/* Onglet actif : couleur PLUS un trait en haut. La couleur seule ne
+   suffit pas — daltonisme, et le rouge sur noir se lit mal en biais. */
+.tab.is-on {
+  color: var(--accent);
+}
+.tab.is-on::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 26px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 0 0 2px 2px;
+}
+
+.tab-lbl {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Reserve la hauteur de la barre : sans ca, le dernier element de chaque
+   ecran passe SOUS elle et devient inatteignable. La classe est posee sur
+   <body> par TabBar.js, donc elle suit l'apparition de la barre. */
+body.has-tabbar .screen {
+  padding-bottom: calc(56px + var(--safe-bottom) + 16px);
+}
