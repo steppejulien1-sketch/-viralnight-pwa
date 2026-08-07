@@ -85,7 +85,7 @@
   height: 15px;
   border-radius: 5px;
   background: var(--grad-fresh);
-  box-shadow: 0 0 10px var(--lime-glow);
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 .db-level-next {
   font-size: 11px;
@@ -96,7 +96,7 @@
 }
 .db-bar-fill-lvl {
   background: var(--grad-fresh) !important;
-  box-shadow: 0 0 12px -2px var(--lime-glow) !important;
+  box-shadow: 0 0 12px -2px var(--accent-glow) !important;
 }
 
 .db-body {

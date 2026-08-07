@@ -21,7 +21,7 @@ svg { display: block; }
 }
 .ow-muted { color: var(--text-mute); font-size: 13px; }
 
-.ow-logo-mark { width: 15px; height: 15px; border-radius: 5px; background: var(--grad-fresh); box-shadow: 0 0 12px var(--lime-glow); }
+.ow-logo-mark { width: 15px; height: 15px; border-radius: 5px; background: var(--grad-fresh); box-shadow: 0 0 12px var(--accent-glow); }
 
 /* --- Boutons --- */
 .ow-btn {
@@ -30,10 +30,10 @@ svg { display: block; }
   transition: transform 0.15s var(--ease-out), filter 0.2s, background 0.2s;
 }
 .ow-btn:active { transform: scale(0.98); }
-.ow-btn-primary { background: var(--lime); color: var(--lime-ink); box-shadow: 0 8px 24px -10px var(--lime-glow); }
+.ow-btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 24px -10px var(--accent-glow); }
 .ow-btn-primary:hover { filter: brightness(1.05); }
 .ow-btn-danger { background: transparent; color: #ff7a9c; border: 1px solid rgba(255, 61, 139, 0.35); }
-.ow-btn-danger:hover { background: var(--magenta-tint); }
+.ow-btn-danger:hover { background: var(--accent-tint); }
 
 /* ============================================================
    Login
@@ -58,7 +58,7 @@ svg { display: block; }
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 select.ow-input { cursor: pointer; }
-.ow-input:focus { outline: none; border-color: var(--lime); box-shadow: 0 0 0 3px var(--lime-tint); }
+.ow-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
 .ow-input::placeholder { color: var(--text-faint); }
 
 /* ============================================================
@@ -71,14 +71,14 @@ select.ow-input { cursor: pointer; }
 }
 .ow-brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; padding: 0 8px; }
 .ow-club { display: inline-flex; align-items: center; gap: 8px; margin: 8px 8px 22px; font-size: 12.5px; color: var(--text-dim); }
-.ow-club-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--magenta); box-shadow: 0 0 8px var(--magenta-glow); }
+.ow-club-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
 .ow-nav { display: flex; flex-direction: column; gap: 3px; }
 .ow-nav-item {
   display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 3px;
   font-size: 14px; font-weight: 500; color: var(--text-dim); text-align: left; transition: background 0.15s, color 0.15s;
 }
 .ow-nav-item:hover { background: rgba(255, 255, 255, 0.03); color: var(--text); }
-.ow-nav-item.is-active { background: var(--lime-tint); color: var(--lime); font-weight: 600; }
+.ow-nav-item.is-active { background: var(--accent-tint); color: var(--accent); font-weight: 600; }
 .ow-nav-item svg { flex: none; }
 .ow-signout { margin-top: auto; padding: 11px 12px; text-align: left; font-size: 13.5px; color: var(--text-mute); border-radius: 3px; }
 .ow-signout:hover { color: var(--text); background: rgba(255, 255, 255, 0.03); }
@@ -107,8 +107,8 @@ select.ow-input { cursor: pointer; }
 
 .ow-cat { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 600; }
 .ow-cat-boisson { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
-.ow-cat-entree { background: var(--lime-tint); color: var(--lime); }
-.ow-cat-vip { background: var(--magenta-tint); color: #ff9ac4; }
+.ow-cat-entree { background: var(--accent-tint); color: var(--accent); }
+.ow-cat-vip { background: var(--accent-tint); color: #ff9ac4; }
 .ow-cat-exclusif { background: rgba(255, 138, 61, 0.14); color: #ffb37a; }
 .ow-lvl-tag { display: inline-block; padding: 3px 9px; border-radius: 2px; background: var(--surface-2); font-size: 11.5px; font-weight: 600; text-transform: capitalize; }
 
@@ -117,9 +117,9 @@ select.ow-input { cursor: pointer; }
 
 /* Toggle */
 .ow-toggle { position: relative; width: 42px; height: 25px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--border); transition: background 0.2s, border-color 0.2s; }
-.ow-toggle.is-on { background: var(--lime); border-color: var(--lime); }
+.ow-toggle.is-on { background: var(--accent); border-color: var(--accent); }
 .ow-toggle-knob { position: absolute; top: 50%; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); transform: translateY(-50%); transition: left 0.2s var(--ease-spring); }
-.ow-toggle.is-on .ow-toggle-knob { left: 20px; background: var(--lime-ink); }
+.ow-toggle.is-on .ow-toggle-knob { left: 20px; background: var(--accent-ink); }
 
 /* ============================================================
    Drawer (formulaire créer/éditer)
@@ -142,14 +142,14 @@ select.ow-input { cursor: pointer; }
 .ow-form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ow-form-row { display: grid; }
 .ow-check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dim); cursor: pointer; padding: 4px 0; }
-.ow-check input { width: 18px; height: 18px; accent-color: var(--lime); }
+.ow-check input { width: 18px; height: 18px; accent-color: var(--accent); }
 .ow-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
 
 /* ============================================================
    Défis — état (à venir / en cours / terminé)
    ============================================================ */
 .ow-state { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 600; }
-.ow-state-live { background: var(--lime-tint); color: var(--lime); }
+.ow-state-live { background: var(--accent-tint); color: var(--accent); }
 .ow-state-soon { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
 .ow-state-over { background: var(--surface-2); color: var(--text-mute); }
 
@@ -171,7 +171,7 @@ select.ow-input { cursor: pointer; }
 .ow-save-bar { display: flex; align-items: center; gap: 16px; }
 .ow-save-msg { font-size: 13px; color: var(--text-mute); }
 .ow-save-msg.is-ok { color: var(--success); }
-.ow-save-msg.is-err { color: var(--magenta); }
+.ow-save-msg.is-err { color: var(--accent); }
 
 @media (max-width: 760px) {
   .ow-shell { grid-template-columns: 1fr; }

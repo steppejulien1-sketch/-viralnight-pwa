@@ -1,8 +1,8 @@
 /* ============================================================
    VIRALNIGHT PWA — Gamification
    Streak (flamme), défi du moment, tuiles d'accès, classement
-   hebdo, collection de badges. Palette lime + magenta, pas de
-   violet "IA". Mobile-first (375px).
+   hebdo, collection de badges. Une seule couleur : le rouge de
+   marque. Mobile-first (375px).
    ============================================================ */
 
 /* ------------------------------------------------------------
@@ -23,7 +23,7 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
-  box-shadow: 0 0 14px var(--magenta-glow);
+  box-shadow: 0 0 14px var(--accent-glow);
 }
 .db-streak svg {
   color: #ffe08a;
@@ -65,7 +65,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 100% 0%, var(--magenta-tint), transparent 60%);
+  background: radial-gradient(circle at 100% 0%, var(--accent-tint), transparent 60%);
   pointer-events: none;
 }
 .db-challenge:active {
@@ -84,7 +84,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--magenta);
+  color: var(--accent);
   margin-bottom: 6px;
 }
 .db-chal-title {
@@ -163,8 +163,8 @@
   color: var(--accent);
 }
 .db-tiles .db-tile:last-child .db-tile-icn {
-  background: var(--magenta-tint);
-  color: var(--magenta);
+  background: var(--accent-tint);
+  color: var(--accent);
 }
 .db-tile-txt {
   display: flex;
@@ -233,7 +233,7 @@
 }
 .cl-count {
   font-weight: 800;
-  color: var(--lime);
+  color: var(--accent);
 }
 
 /* --- Podium top 3 --- */
@@ -258,8 +258,8 @@
 .lb-pod-1 {
   padding-top: 22px;
   border-color: rgba(var(--accent-rgb), 0.42);
-  background: linear-gradient(180deg, var(--lime-tint), var(--surface) 70%);
-  box-shadow: 0 0 26px -8px var(--lime-glow);
+  background: linear-gradient(180deg, var(--accent-tint), var(--surface) 70%);
+  box-shadow: 0 0 26px -8px var(--accent-glow);
 }
 .lb-pod-2 { transform: translateY(6px); }
 .lb-pod-3 { transform: translateY(12px); }
@@ -268,7 +268,7 @@
   font-weight: 800;
   color: var(--text-mute);
 }
-.lb-pod-1 .lb-pod-rank { color: var(--lime); }
+.lb-pod-1 .lb-pod-rank { color: var(--accent); }
 .lb-pod-ava {
   display: grid;
   place-items: center;
@@ -285,9 +285,9 @@
 .lb-pod-1 .lb-pod-ava {
   width: 54px;
   height: 54px;
-  border-color: var(--lime);
+  border-color: var(--accent);
   background: var(--grad-fresh);
-  color: var(--lime-ink);
+  color: var(--accent-ink);
 }
 .lb-pod-handle {
   font-size: 11.5px;
@@ -304,7 +304,7 @@
   color: var(--text);
 }
 .lb-pod.is-me {
-  outline: 1.5px solid var(--magenta);
+  outline: 1.5px solid var(--accent);
   outline-offset: 1px;
 }
 
@@ -364,7 +364,7 @@
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: var(--r-pill);
-  background: var(--magenta);
+  background: var(--accent);
   color: #fff;
 }
 .lb-pts {
@@ -374,8 +374,8 @@
   color: var(--text);
 }
 .lb-row.is-me {
-  border-color: var(--magenta);
-  background: linear-gradient(90deg, var(--magenta-tint), var(--surface) 60%);
+  border-color: var(--accent);
+  background: linear-gradient(90deg, var(--accent-tint), var(--surface) 60%);
 }
 
 /* --- Ma ligne épinglée (hors top 10) --- */
@@ -427,8 +427,8 @@
 }
 .cl-badge.is-on .cl-badge-icn {
   background: var(--grad-fresh);
-  color: var(--lime-ink);
-  box-shadow: 0 0 22px -6px var(--lime-glow);
+  color: var(--accent-ink);
+  box-shadow: 0 0 22px -6px var(--accent-glow);
 }
 .cl-badge.is-locked {
   border-style: dashed;
@@ -489,7 +489,7 @@
   margin: 0 auto 14px;
   border-radius: 50%;
   background: var(--grad-fresh);
-  box-shadow: 0 0 30px -4px var(--lime-glow);
+  box-shadow: 0 0 30px -4px var(--accent-glow);
   animation: cbr-pulse 0.9s var(--ease-spring) infinite alternate;
 }
 @keyframes cbr-pulse {

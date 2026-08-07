@@ -164,8 +164,8 @@
   height: 24px;
   flex: none;
   border-radius: 50%;
-  background: var(--lime-tint);
-  color: var(--lime);
+  background: var(--accent-tint);
+  color: var(--accent);
 }
 
 /* ============================================================
@@ -436,7 +436,7 @@
 }
 
 .ob-msg.err {
-  color: var(--magenta);
+  color: var(--accent);
 }
 
 /* ============================================================
@@ -558,4 +558,72 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ============================================================
+   Rappel de la recompense (bas du formulaire)
+   ------------------------------------------------------------
+   L'accueil promet une recompense precise ; ce formulaire la faisait
+   oublier et laissait un grand vide avant le bouton. Le rappel occupe
+   ce vide et tient la promesse jusqu'a la validation.
+   ============================================================ */
+.ob-goal {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: var(--r-card);
+  background: linear-gradient(150deg, rgba(var(--accent-rgb), 0.1), var(--surface) 62%);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  text-align: left;
+}
+.ob-goal-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: var(--r-card);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
+}
+.ob-goal-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ob-goal-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.ob-goal-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  /* Un intitule long ne doit pas pousser le prix hors de la carte. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ob-goal-cost {
+  margin-left: auto;
+  flex: none;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ob-goal-cost small {
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }

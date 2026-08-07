@@ -49,27 +49,20 @@
   --red-glow: rgba(255, 45, 45, 0.45);
   --red-tint: rgba(255, 45, 45, 0.13);
 
-  /* --- Compatibilité ---
-     Les anciens noms --lime-* restent définis et pointent sur le rouge,
-     le temps que les feuilles qui les utilisent encore soient renommées
-     (celebrate.js, owner.css, gamification.css…). Ils ne sont PAS verts. */
-  --lime: var(--red);
-  --lime-hover: var(--red-hover);
-  --lime-press: var(--red-press);
-  --lime-ink: var(--red-ink);
-  --lime-glow: var(--red-glow);
-  --lime-tint: var(--red-tint);
+  /* Les alias --lime-* ont été SUPPRIMÉS le 2026-08-07 : ils pointaient
+     sur le rouge, ce qui rendait le code mensonger (27 références qui
+     affichaient du rouge sous un nom vert). Tout passe par --accent-*. */
 
-  /* --- MAGENTA : neutralisé, il pointe sur le rouge ---
-     ⚠️ À côté du rouge, le magenta se marchait dessus (défis, streak,
-     badges). L'app tient sur UNE couleur, comme le site B2B. Les noms
-     --magenta-* restent le temps que les feuilles soient renommées ;
-     ils ne sont plus roses.
-     Seul --grad-hot garde le vrai dégradé Instagram : là, c'est la
-     couleur d'une marque tierce, pas une décoration. */
-  --magenta: var(--red);
-  --magenta-glow: var(--red-glow);
-  --magenta-tint: var(--red-tint);
+  /* --- MAGENTA : réservé à INSTAGRAM, nulle part ailleurs ---
+     Il a d'abord été aliasé sur le rouge pour neutraliser ses usages
+     décoratifs (défis, streak, badges) qui juraient. Ces usages sont
+     maintenant passés à --accent, donc il retrouve sa vraie valeur.
+     ⚠️ Ne l'utiliser QUE là où il désigne la marque Instagram :
+     le bouton .btn-ig, le badge d'inscription, l'avatar du profil.
+     Comme --grad-hot : couleur d'une marque tierce, pas décoration. */
+  --magenta: #ff3d8b;
+  --magenta-glow: rgba(255, 61, 139, 0.4);
+  --magenta-tint: rgba(255, 61, 139, 0.14);
 
   /* --- CYAN : catégorie "boisson" de la boutique + état "à venir"
      des défis. Purement fonctionnel, jamais décoratif. --- */

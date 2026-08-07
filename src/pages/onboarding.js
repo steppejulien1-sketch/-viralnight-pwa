@@ -25,6 +25,8 @@ import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
+import { currentClub } from "../lib/club.js";
+import { loadPublicRewards } from "../lib/game.js";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
 
@@ -357,6 +359,12 @@ export function Onboarding(_params, ctx) {
           ]),
 
           h("div", { class: "ob-field" }, [msg]),
+
+          // Rappel de la recompense. L'accueil vend "un verre a 300 pts",
+          // puis cet ecran demandait un pseudo sans jamais redire pourquoi
+          // — et laissait un grand vide avant le bouton. Le rappel comble
+          // le vide ET tient la promesse jusqu'au bout du formulaire.
+          rappelRecompense(),
         ]),
         h("footer", { class: "ob-foot reveal", style: { "--d": "260ms" } }, [
           btn,
@@ -367,6 +375,36 @@ export function Onboarding(_params, ctx) {
         ]),
       ])
     );
+  }
+
+  // Bandeau "voila ce que tu viens chercher". Rempli en async : s'il n'y
+  // a pas de catalogue, il reste vide plutot que d'annoncer une
+  // recompense inventee.
+  function rappelRecompense() {
+    const slot = h("div", { class: "ob-goal-slot" });
+
+    currentClub()
+      .then((club) => (club ? loadPublicRewards(club.id) : null))
+      .then((liste) => {
+        if (!liste || !liste.length) return;
+        const premiere = liste[0];
+        slot.replaceChildren(
+          h("div", { class: "ob-goal" }, [
+            h("span", { class: "ob-goal-ico", "aria-hidden": "true" }, icon("gift", 18)),
+            h("div", { class: "ob-goal-txt" }, [
+              h("span", { class: "ob-goal-label" }, "Ton premier objectif"),
+              h("span", { class: "ob-goal-title" }, premiere.title),
+            ]),
+            h("span", { class: "ob-goal-cost mono" }, [
+              new Intl.NumberFormat("fr-FR").format(premiere.cost_points),
+              h("small", {}, "pts"),
+            ]),
+          ])
+        );
+      })
+      .catch(() => {});
+
+    return slot;
   }
 
   /* ---------- utilitaires ---------- */

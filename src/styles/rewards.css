@@ -76,20 +76,28 @@
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .rw-chip.is-on {
-  background: var(--lime);
-  color: var(--lime-ink);
-  border-color: var(--lime);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
 }
 
 .rw-grid { display: flex; flex-direction: column; gap: 12px; }
 .rw-empty-msg { padding: 30px 10px; text-align: center; color: var(--text-mute); font-size: 14px; }
 
 .rc-meta { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-.rc-cat { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.rc-cat-boisson { background: rgba(53, 224, 232, 0.12); color: var(--cyan); }
-.rc-cat-entree { background: var(--lime-tint); color: var(--lime); }
-.rc-cat-vip { background: var(--magenta-tint); color: #ff9ac4; }
-.rc-cat-exclusif { background: rgba(255, 138, 61, 0.14); color: #ffb37a; }
+/* Une seule teinte : la categorie se lit au LIBELLE. Trois couleurs de
+   plus (cyan, magenta, orange) faisaient un arc-en-ciel sur un produit
+   qui tient sur une couleur. */
+.rc-cat {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
 .rc-stock { font-size: 11.5px; color: var(--text-mute); }
 
 .rc-locked-lvl {
@@ -105,11 +113,10 @@
   font-weight: 600;
   color: var(--text-dim);
 }
-.rc-locked-lvl svg { color: var(--magenta); }
+.rc-locked-lvl svg { color: var(--accent); }
 
 .rc-skeleton { height: 120px; opacity: 0.5; animation: rc-pulse 1.3s ease-in-out infinite; }
 @keyframes rc-pulse { 50% { opacity: 0.25; } }
-.rc.is-locked { opacity: 0.72; }
 
 /* --- Sheet de confirmation (bottom sheet) --- */
 .rw-sheet-backdrop {
@@ -144,76 +151,140 @@
 .rw-sheet-cancel { display: block; width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; color: var(--text-mute); }
 .rw-sheet-cancel:hover { color: var(--text); }
 
-/* --- Reward card --- */
+/* ============================================================
+   Carte recompense
+   ------------------------------------------------------------
+   C'est le moteur de motivation de l'app : le clubbeur poste POUR ca.
+   Avant, les quatre cartes etaient quatre rectangles gris identiques,
+   le prix en petit dans un coin et la barre de progression invisible.
+   Rien ne distinguait "je peux le prendre" de "pas encore".
+
+   Deux etats, lisibles d'un coup d'oeil :
+     .is-open   -> rail rouge a gauche, prix rouge, bouton plein
+     .is-locked -> retrait, mais la progression devient VISIBLE
+   ============================================================ */
 .rc {
-  padding: 17px 18px;
-  transition: border-color 0.2s;
+  position: relative;
+  padding: 18px 18px 18px 20px;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.16s var(--ease-out);
+}
+
+/* Rail vertical : signale l'accessible sans ajouter de texte. */
+.rc::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  transition: background 0.2s;
+}
+.rc.is-open::before {
+  background: var(--accent);
 }
 .rc.is-open {
-  border-color: rgba(var(--accent-rgb), 0.35);
-  box-shadow: var(--shadow-card), 0 0 30px -14px var(--accent-glow);
+  border-color: rgba(var(--accent-rgb), 0.34);
 }
+.rc.is-open:hover {
+  transform: translateY(-1px);
+}
+
 .rc-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 .rc-title {
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 .rc-desc {
-  margin-top: 4px;
+  margin-top: 5px;
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--text-mute);
+  max-width: 30ch;
 }
+
+/* Le PRIX est le personnage principal : c'est la monnaie du desir. */
 .rc-cost {
   flex: none;
   text-align: right;
+  line-height: 1;
 }
 .rc-cost-num {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  /* "1 200" contient une espace insecable fine : sans ceci elle peut
+     casser en fin de ligne et le prix s'affiche sur deux lignes. */
+  white-space: nowrap;
   color: var(--text);
+}
+.rc.is-open .rc-cost-num {
+  color: var(--accent);
 }
 .rc-cost-unit {
   display: block;
+  margin-top: 3px;
   font-size: 10px;
-  color: var(--text-mute);
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
+
 .rc-btn {
-  margin-top: 15px;
-  height: 46px;
-  font-size: 14.5px;
+  margin-top: 16px;
+  height: 48px;
+  font-size: 15px;
+  font-weight: 700;
 }
 .rc-locked {
-  margin-top: 15px;
+  margin-top: 16px;
 }
+
+/* La barre etait a #3a3a42 sur un fond sombre : elle ne se voyait pas.
+   Elle porte pourtant la seule information qui fait revenir — "il te
+   manque tant". Piste rouge tres diluee, remplissage plein. */
 .rc-bar {
-  height: 6px;
+  height: 8px;
   border-radius: var(--r-pill);
-  background: var(--surface-2);
+  background: rgba(var(--accent-rgb), 0.14);
   overflow: hidden;
 }
 .rc-bar-fill {
   display: block;
   height: 100%;
   border-radius: var(--r-pill);
-  background: #3a3a42;
+  background: var(--accent);
   transition: width 0.9s var(--ease-out);
 }
 .rc-remaining {
-  margin-top: 9px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 12.5px;
   color: var(--text-mute);
 }
 .rc-remaining .mono {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+/* Verrouille : on retire de l'eclat, jamais de la lisibilite. Passer
+   l'opacite globale a 0,72 rendait le texte gris sur gris. */
+.rc.is-locked {
+  opacity: 1;
+  background-color: var(--bg-2);
+}
+.rc.is-locked .rc-title {
   color: var(--text-dim);
-  font-weight: 600;
 }
 
 /* ============================================================
