@@ -15,8 +15,8 @@
 // scan, il doit etre lisible a la milliseconde ou on perd la personne.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, REWARDS, HISTORY, STORY_BASE_POINTS, POINTS_PER_100_VIEWS } from "../lib/mock.js";
-import { loadPublicClub, loadPublicRewards } from "../lib/game.js";
+import { CLUB, REWARDS, STORY_BASE_POINTS, POINTS_PER_100_VIEWS } from "../lib/mock.js";
+import { loadPublicClub, loadPublicRewards, loadClubProof } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
@@ -40,10 +40,11 @@ export function Landing(_params, ctx) {
   const tag = h("span", {}, `Tague @${CLUB.igHandle}`);
   const ville = h("span", {}, CLUB.city);
 
-  // Preuve chiffree tiree de l'historique reel, jamais inventee.
-  const derniere = HISTORY[0] || null;
+  // Preuve chiffree : vide tant qu'on n'a pas de VRAI chiffre.
+  // L'ancienne version affichait "8 400 vues" en dur, identique pour tous les
+  // clubs et tous les visiteurs. Une preuve inventee ne vaut pas mieux que
+  // la promesse floue qu'on vient de retirer — mieux vaut ne rien montrer.
   const proofSlot = h("div", { class: "lp-proof-slot" });
-  if (derniere) proofSlot.append(preuve(derniere, demo[0]));
 
   const el = h("div", { class: "lp" }, [
     // Lueur rouge unique, en haut a gauche. Une seule couleur sur l'ecran.
@@ -99,6 +100,14 @@ export function Landing(_params, ctx) {
       ville.textContent = club.city || CLUB.city;
       if (club.ig_handle) tag.textContent = `Tague @${club.ig_handle}`;
 
+      // Preuve reelle du club, en parallele du catalogue.
+      loadClubProof(club.id).then((p) => {
+        // Sous 3 contenus, le chiffre est trop maigre pour convaincre et
+        // designerait presque quelqu'un. On n'affiche rien.
+        if (!p || !p.views_total || p.contents < 3) return;
+        proofSlot.replaceChildren(preuve(p, club.name));
+      });
+
       const vraies = await loadPublicRewards(club.id);
       // Une liste vide est une reponse valide (le club n'a rien publie) :
       // on garde alors la demo, montrer une vitrine vide serait pire.
@@ -106,9 +115,6 @@ export function Landing(_params, ctx) {
 
       rail.replaceChildren(...vraies.map(carte));
       compte.textContent = `${vraies.length} dispo${vraies.length > 1 ? "s" : ""}`;
-      // Sans la classe reveal : le bloc est deja a l'ecran, le rejouer
-      // ferait clignoter la page une seconde apres son ouverture.
-      if (derniere) proofSlot.replaceChildren(preuve(derniere, vraies[0], false));
     })
     .catch(() => {});
 
@@ -128,15 +134,18 @@ export function Landing(_params, ctx) {
     ]);
   }
 
-  function preuve(ev, premiere, anime = true) {
-    const soirees = premiere ? Math.ceil(premiere.cost_points / ev.points) : 0;
-    return h("section", { class: `lp-proof${anime ? " reveal" : ""}`, style: { "--d": "300ms" } }, [
-      h("span", { class: "lp-proof-num mono" }, nf.format(ev.views)),
-      h("p", { class: "lp-proof-txt" }, [
-        "vues sur la story de la dernière soirée — ",
-        h("strong", {}, `${ev.points} pts`),
-        soirees > 1 ? `. Ta première récompense en ${soirees} soirées.` : ".",
-      ]),
+  // Preuve reelle du club sur 30 jours. Deux chiffres seulement : le volume
+  // (« ça tourne ici ») et le meilleur gain (« voilà ce que ça peut donner »).
+  function preuve(p, nomClub) {
+    const texte = [
+      `vues générées par ${p.clubbeurs} clubbeur${p.clubbeurs > 1 ? "s" : ""} du ${nomClub} ce mois-ci.`,
+    ];
+    if (p.best_points) {
+      texte.push(" La meilleure soirée a rapporté ", h("strong", {}, `${nf.format(p.best_points)} pts`), ".");
+    }
+    return h("section", { class: "lp-proof" }, [
+      h("span", { class: "lp-proof-num mono" }, nf.format(p.views_total)),
+      h("p", { class: "lp-proof-txt" }, texte),
     ]);
   }
 

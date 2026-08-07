@@ -212,7 +212,11 @@ export function Dashboard(_params, ctx) {
           // awarded_points) et celle de demonstration (date, points).
           const quand = e.mentioned_at ? capitale(dateFmt.format(new Date(e.mentioned_at))) : e.date;
           const pts = e.awarded_points ?? e.points;
-          const detail = e.views != null ? `${nf.format(e.views)} vues` : libelleType(e.kind);
+          // Depuis la migration 0012 les vues sont stockees : on affiche le
+          // chiffre qui a servi au calcul plutot que le seul type de contenu.
+          const detail = e.views
+            ? `${libelleType(e.kind)} · ${nf.format(e.views)} vues`
+            : libelleType(e.kind);
           return h("li", { class: "db-event" }, [
             h("span", { class: "db-event-icn", "aria-hidden": "true" }, icon(iconeType(e.kind), 17)),
             h("span", { class: "db-event-main" }, [

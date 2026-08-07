@@ -43,6 +43,24 @@ export async function loadPublicClub(slug = CLUB.slug) {
   }
 }
 
+// Preuve chiffree publique d'un club : vues cumulees, nombre de clubbeurs
+// et meilleure soiree du mois. Agregats seulement, aucune ligne nominative
+// (fonction SECURITY DEFINER, migration 0013).
+export async function loadClubProof(clubUuid, jours = 30) {
+  if (!isConfigured || !clubUuid) return null;
+  try {
+    const { data, error } = await supabase.rpc("get_club_proof", {
+      p_club: clubUuid,
+      p_days: jours,
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return row || null;
+  } catch {
+    return null;
+  }
+}
+
 // Recompenses actives d'un club, de la moins chere a la plus chere.
 // On ecarte celles hors de leur fenetre de validite et celles en rupture :
 // afficher une recompense qu'on ne peut pas prendre est une promesse creuse.
@@ -225,7 +243,7 @@ export async function loadMyHistory(limite = 20) {
   if (!uid) return null;
   const { data, error } = await supabase
     .from("story_events")
-    .select("id, mentioned_at, awarded_points, kind")
+    .select("id, mentioned_at, awarded_points, kind, views")
     .eq("user_id", uid)
     .order("mentioned_at", { ascending: false })
     .limit(limite);
