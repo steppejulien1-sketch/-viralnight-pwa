@@ -591,3 +591,157 @@ select.ow-input { cursor: pointer; }
 .ow-review-msg.err {
   color: var(--accent);
 }
+
+/* ============================================================
+   Section QR code
+   ============================================================ */
+.ow-qr-wrap {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ow-qr-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* L'affiche telle qu'elle sera collee au bar. */
+.ow-qr-card {
+  padding: 26px 22px 22px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+/* Cadre BLANC obligatoire : la plupart des lecteurs echouent sur un QR
+   clair pose sur fond sombre. */
+.ow-qr-frame {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border-radius: var(--r-card);
+  background: #ffffff;
+}
+.ow-qr-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 280px;
+}
+.ow-qr-club {
+  margin: 18px 0 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.ow-qr-baseline {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+.ow-qr-side h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.ow-qr-steps {
+  margin: 0 0 22px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 14.5px;
+  color: var(--text-dim);
+}
+.ow-qr-steps strong {
+  color: var(--text);
+  font-weight: 650;
+}
+.ow-qr-row {
+  display: flex;
+  gap: 8px;
+}
+.ow-qr-link {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.ow-qr-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.ow-qr-msg {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-mute);
+  min-height: 18px;
+}
+.ow-qr-msg.err {
+  color: var(--accent);
+}
+.ow-qr-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 20px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-mute);
+}
+.ow-qr-note svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--accent);
+}
+
+/* A l'impression, seule l'affiche sort — pas la sidebar ni les boutons. */
+@media print {
+  .ow-side,
+  .ow-head,
+  .ow-qr-side {
+    display: none !important;
+  }
+  .ow-qr-wrap {
+    grid-template-columns: 1fr;
+  }
+  .ow-qr-card {
+    border: none;
+    background: #fff;
+    color: #000;
+  }
+  .ow-qr-club,
+  .ow-qr-baseline {
+    color: #000;
+  }
+}
+
+/* Adresse du QR (Paramètres) */
+.ow-slug-preview {
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--r-card);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-dim);
+  word-break: break-all;
+}
+.ow-slug-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-mute);
+}
+.ow-slug-warn svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}

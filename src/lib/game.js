@@ -3,15 +3,11 @@
 
 import { supabase, isConfigured } from "./supabase.js";
 import { ensureSession } from "./session.js";
-import { CLUB } from "./mock.js";
+import { currentClub, currentClubId } from "./club.js";
 
-let _clubId = null;
-
+// Le club vient du QR scanne (lib/club.js), plus d'un slug ecrit en dur.
 export async function clubId() {
-  if (_clubId) return _clubId;
-  const { data } = await supabase.from("clubs").select("id").eq("slug", CLUB.slug).maybeSingle();
-  _clubId = data?.id || null;
-  return _clubId;
+  return currentClubId();
 }
 
 export async function myId() {
@@ -29,18 +25,10 @@ export async function myId() {
 // demonstration. C'est le premier ecran apres le scan du QR, il ne peut
 // pas se permettre d'afficher une erreur ou un ecran vide.
 
-export async function loadPublicClub(slug = CLUB.slug) {
-  if (!isConfigured) return null;
-  try {
-    const { data } = await supabase
-      .from("clubs")
-      .select("id, name, city, ig_handle")
-      .eq("slug", slug)
-      .maybeSingle();
-    return data || null;
-  } catch {
-    return null;
-  }
+// Le club identifie par le QR. Retourne null si aucun QR n'a ete scanne :
+// les ecrans doivent alors demander un scan, pas inventer un club.
+export async function loadPublicClub() {
+  return currentClub();
 }
 
 // Preuve chiffree publique d'un club : vues cumulees, nombre de clubbeurs

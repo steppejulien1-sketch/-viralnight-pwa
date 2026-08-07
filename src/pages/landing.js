@@ -15,8 +15,9 @@
 // scan, il doit etre lisible a la milliseconde ou on perd la personne.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, REWARDS, STORY_BASE_POINTS, POINTS_PER_100_VIEWS } from "../lib/mock.js";
-import { loadPublicClub, loadPublicRewards, loadClubProof } from "../lib/game.js";
+import { REWARDS, STORY_BASE_POINTS, POINTS_PER_100_VIEWS } from "../lib/mock.js";
+import { loadPublicRewards, loadClubProof } from "../lib/game.js";
+import { currentClub, slugDemande } from "../lib/club.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
@@ -36,9 +37,12 @@ export function Landing(_params, ctx) {
   const compte = h("span", { class: "lp-shelf-count mono" }, `${demo.length} dispos`);
   // Un seul noeud texte pour toute la phrase : deux noeuds cote a cote
   // laissaient un double espace avant le nom du club.
-  const nomClub = h("span", {}, `Tu es au ${CLUB.name}`);
-  const tag = h("span", {}, `Tague @${CLUB.igHandle}`);
-  const ville = h("span", {}, CLUB.city);
+  // Vides au depart : on n'affiche AUCUN nom de club tant que le QR n'a pas
+  // repondu. Ecrire "Mirage" en attendant, c'est afficher le nom d'un
+  // etablissement qui n'existe pas.
+  const nomClub = h("span", {}, "Bienvenue");
+  const tag = h("span", {}, "Tague ton club");
+  const ville = h("span", {}, "");
 
   // Preuve chiffree : vide tant qu'on n'a pas de VRAI chiffre.
   // L'ancienne version affichait "8 400 vues" en dur, identique pour tous les
@@ -85,19 +89,22 @@ export function Landing(_params, ctx) {
         "Commencer",
         icon("arrowRight", 19),
       ]),
-      h("p", { class: "lp-reassure" }, [ville, " · gratuit · aucune app à installer"]),
+      h("p", { class: "lp-reassure" }, [ville, "gratuit · aucune app à installer"]),
     ]),
   ]);
 
-  // --- Bascule sur les vraies donnees du club ---------------------------
-  // En "au mieux" : si le club est introuvable ou la requete echoue, on
-  // garde ce qui est deja affiche plutot que de vider l'ecran.
-  loadPublicClub()
+  // --- Identification du club a partir du QR ----------------------------
+  currentClub()
     .then(async (club) => {
-      if (!club) return;
+      // Aucun QR scanne, ou QR inconnu : on ne devine pas. L'ecran demande
+      // le scan plutot que d'afficher un club au hasard.
+      if (!club) {
+        el.replaceChildren(sansClub(Boolean(slugDemande())));
+        return;
+      }
 
       nomClub.textContent = `Tu es au ${club.name}`;
-      ville.textContent = club.city || CLUB.city;
+      ville.textContent = club.city ? `${club.city} · ` : "";
       if (club.ig_handle) tag.textContent = `Tague @${club.ig_handle}`;
 
       // Preuve reelle du club, en parallele du catalogue.
@@ -146,6 +153,28 @@ export function Landing(_params, ctx) {
     return h("section", { class: "lp-proof" }, [
       h("span", { class: "lp-proof-num mono" }, nf.format(p.views_total)),
       h("p", { class: "lp-proof-txt" }, texte),
+    ]);
+  }
+
+  // Ecran affiche quand on ouvre l'app sans avoir scanne de QR (lien
+  // partage, favori, retour sur l'adresse nue). On explique le geste
+  // manquant au lieu d'afficher un club invente.
+  function sansClub(qrInconnu) {
+    return h("div", { class: "lp-noclub" }, [
+      h("span", { class: "lp-noclub-ico", "aria-hidden": "true" }, icon("scan", 30)),
+      h(
+        "h1",
+        { class: "lp-noclub-title" },
+        qrInconnu ? "Ce QR ne correspond à aucun club" : "Scanne le QR de ton club"
+      ),
+      h(
+        "p",
+        { class: "lp-noclub-sub" },
+        qrInconnu
+          ? "Il a peut-être été remplacé. Demande le QR à jour au bar."
+          : "Il est affiché au bar ou à l'entrée. C'est lui qui ouvre la soirée du bon établissement."
+      ),
+      h("p", { class: "lp-noclub-note" }, "ViralNight · rien à installer"),
     ]);
   }
 

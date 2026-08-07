@@ -5,7 +5,7 @@
 //  - Realtime : toute modif côté dashboard owner apparaît sans refresh
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB } from "../lib/mock.js";
+import { currentClub } from "../lib/club.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { impact } from "../lib/haptics.js";
@@ -47,8 +47,13 @@ export function Rewards(_params, ctx) {
     await ensureSession();
 
     // Club Mirage + rewards actifs + mon profil.
-    const { data: club } = await supabase.from("clubs").select("id, name").eq("slug", CLUB.slug).maybeSingle();
+    // Le club vient du QR scanne, plus d'un slug fige.
+    const club = await currentClub();
     clubId = club?.id;
+    if (!clubId) {
+      swap(errorView("Scanne le QR de ton club pour voir sa boutique."));
+      return;
+    }
     const { data: user } = await supabase.from("users").select("points_balance, current_level").maybeSingle();
     if (user) me = user;
     await loadRewards();

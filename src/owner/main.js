@@ -10,6 +10,7 @@ import { ChallengesAdmin } from "./sections/challenges.js";
 import { SettingsAdmin } from "./sections/settings.js";
 import { StatsAdmin } from "./sections/stats.js";
 import { ReviewAdmin } from "./sections/review.js";
+import { QrAdmin } from "./sections/qr.js";
 
 const mount = document.getElementById("owner");
 
@@ -19,7 +20,8 @@ const SECTIONS = [
   { id: "review", label: "À valider", icon: "check", render: ReviewAdmin },
   { id: "rewards", label: "Boutique", icon: "gift", render: RewardsAdmin },
   { id: "challenges", label: "Défis", icon: "sparkles", render: ChallengesAdmin },
-  { id: "stats", label: "Statistiques", icon: "scan", render: StatsAdmin },
+  { id: "qr", label: "QR code", icon: "scan", render: QrAdmin },
+  { id: "stats", label: "Statistiques", icon: "trophy", render: StatsAdmin },
   { id: "settings", label: "Paramètres", icon: "check", render: SettingsAdmin },
 ];
 
