@@ -1,17 +1,24 @@
 // Ecran — Poster un contenu (story, Reel ou TikTok).
 // Trois temps :
-//   1) howto   : choix du format + 3 etapes visuelles
-//   2) waiting : attente de la confirmation webhook (stub ~4,5 s)
-//   3) reward  : gain de points anime (compteur + haptic)
+//   1) howto  : choix du format + 3 etapes visuelles
+//   2) preuve : capture OBLIGATOIRE + nombre de vues
+//   3) envoye : accuse de reception, en attente de validation du club
 //
-// En prod, l'etape "waiting" ecoutera le webhook de la plateforme.
-// Le bareme depend du format : voir credit_story (migration 0005).
+// ⚠️ CE QUI A CHANGE, ET POURQUOI.
+// L'ecran attendait 4,5 secondes (une fausse detection) puis creditait les
+// points tout seul. Trois problemes :
+//   - on pouvait gagner des points SANS avoir rien publie ;
+//   - la capture etait facultative, alors que c'est elle qui porte le nombre
+//     de vues, donc le montant du gain ;
+//   - le club payait des recompenses sur des chiffres jamais regardes.
+// Desormais le clubbeur DEPOSE une preuve, et c'est le club qui valide.
+// Le verrou est en base (migration 0014) : credit_story n'est plus
+// appelable depuis le navigateur, submit_story refuse un depot sans capture.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY, STORY_BASE_POINTS } from "../lib/mock.js";
-import { countUp } from "../lib/animations.js";
+import { CLUB } from "../lib/mock.js";
 import { tap, success } from "../lib/haptics.js";
-import { creditStory, untilLabel } from "../lib/game.js";
+import { submitStory } from "../lib/game.js";
 
 // Les trois formats acceptes. Le bareme affiche ici doit rester aligne sur
 // celui de la fonction SQL credit_story (migration 0005) : c'est elle qui
@@ -68,14 +75,14 @@ export function PostStory(_params, ctx) {
         t: `Poste ${kind.id === "story" ? "une story" : kind.id === "reel" ? "un Reel" : "un TikTok"}`,
         d: `${kind.step} @${CLUB.igHandle}.`,
       },
-      { n: "3", t: "Reviens ici", d: "On détecte ton contenu et on crédite tes points." },
+      { n: "3", t: "Reviens avec ta capture", d: "Elle montre tes vues : c'est elle qui fixe ton gain." },
     ];
 
     function go() {
       tap();
       const lien = kind.id === "story" ? "" : linkInput.value.trim();
       window.open(kind.url, "_blank", "noopener");
-      renderWaiting(lien);
+      renderProof(lien);
     }
 
     // Lien du contenu. Une story Instagram n'a PAS d'URL publique : on ne
@@ -179,122 +186,162 @@ export function PostStory(_params, ctx) {
           ]),
           h("p", { class: "ob-note" }, [
             icon("check", 13),
-            "Détection automatique. Rien à copier-coller.",
+            "Le club valide ta capture, puis tes points tombent.",
           ]),
         ]),
       ])
     );
   }
 
-  /* ---------- 2. Attente de confirmation ---------- */
-  function renderWaiting(lien) {
-    swap(
-      h("div", { class: "ps-inner ps-waiting" }, [
-        h("div", { class: "ps-radar", "aria-hidden": "true" }, [
-          h("span", { class: "ps-radar-ring" }),
-          h("span", { class: "ps-radar-ring" }),
-          h("span", { class: "ps-radar-core" }, icon(kind.ico, 26)),
-        ]),
-        h("h2", { class: "ps-wait-title" }, `On cherche ton ${kind.label.toLowerCase()}…`),
-        h("p", { class: "ps-wait-sub" }, [
-          "Dès que tu tagues ",
-          h("strong", {}, `@${CLUB.igHandle}`),
-          ", tes points tombent ici.",
-        ]),
-        h("button", { class: "ps-wait-cancel", onClick: () => ctx.back("dashboard") }, "Plus tard"),
-      ])
-    );
+  /* ---------- 2. La preuve : capture OBLIGATOIRE + vues ---------- */
+  // C'est le coeur du changement. Sans capture, pas de depot : le bouton
+  // reste desactive et la base refuse de toute facon (proof_required).
+  function renderProof(lien) {
+    const fileInput = h("input", {
+      class: "ps-file",
+      type: "file",
+      accept: "image/*",
+      // capture="environment" ouvre l'appareil photo sur mobile ; on garde
+      // aussi la galerie, la capture d'ecran y est deja.
+      "aria-label": "Capture de tes vues",
+    });
+    const apercu = h("div", { class: "ps-shot" }, [
+      h("span", { class: "ps-shot-ico", "aria-hidden": "true" }, icon("scan", 22)),
+      h("span", { class: "ps-shot-txt" }, "Ajouter la capture"),
+    ]);
 
-    // Stub webhook : confirmation apres ~4,5 s.
-    setTimeout(() => renderReward(lien), 4500);
-  }
-
-  /* ---------- 3. Gain de points ---------- */
-  // Le credit se fait EN BASE via credit_story (transaction : story_events +
-  // solde + classement). Avant, cette fonction se contentait d'incrementer
-  // USER.points en memoire : les points disparaissaient au rafraichissement,
-  // alors que la boutique, elle, debitait de vrais points.
-  //
-  // Repli : si Supabase n'est pas configure ou refuse, on retombe sur le
-  // comportement local pour que la demo hors ligne reste jouable.
-  async function renderReward(lien) {
-    const before = USER.points;
-
-    let gain = STORY_BASE_POINTS;
-    let after = before + gain;
-
-    // Depuis la migration 0011, le gain part en attente : le solde
-    // DEPENSABLE ne bouge pas tout de suite. On affiche donc le solde
-    // renvoye par la base tel quel, sans y ajouter le gain.
-    let unlock = null;
-    const res = await creditStory(0, kind.id, lien || "");
-    if (res && !res.error && typeof res.awarded === "number") {
-      gain = res.awarded;
-      after = res.balance;
-      unlock = res.unlocksAt || null;
-      USER.totalEarned = res.lifetime;
-    } else {
-      USER.totalEarned += gain;
-    }
-
-    USER.points = after;
-    HISTORY.unshift({
-      date: "À l'instant",
-      views: 0,
-      points: gain,
+    const vuesInput = h("input", {
+      class: "ob-input",
+      type: "number",
+      inputmode: "numeric",
+      min: "0",
+      placeholder: "Ex. 1 240",
+      "aria-label": "Nombre de vues",
     });
 
-    success(); // haptic
+    const msg = h("p", { class: "ob-msg" });
+    const btn = h("button", { class: "btn btn-primary btn-block", disabled: true }, "Envoyer au club");
 
-    const gainEl = h("span", { class: "rw-gain-num mono" }, "0");
-    const balEl = h("span", { class: "rw-bal-num mono" }, String(before));
+    let fichier = null;
+
+    function verifier() {
+      const v = Number(vuesInput.value.trim());
+      btn.disabled = !(fichier && Number.isFinite(v) && v >= 0 && vuesInput.value.trim() !== "");
+    }
+
+    fileInput.addEventListener("change", () => {
+      fichier = fileInput.files && fileInput.files[0];
+      if (fichier) {
+        apercu.classList.add("is-set");
+        apercu.replaceChildren(
+          h("span", { class: "ps-shot-ico", "aria-hidden": "true" }, icon("check", 22)),
+          h("span", { class: "ps-shot-txt" }, fichier.name)
+        );
+      }
+      verifier();
+    });
+    vuesInput.addEventListener("input", verifier);
+
+    async function envoyer() {
+      tap();
+      btn.disabled = true;
+      btn.textContent = "Envoi…";
+      msg.className = "ob-msg";
+      msg.textContent = "";
+
+      const res = await submitStory({
+        kind: kind.id,
+        views: Number(vuesInput.value.trim()),
+        file: fichier,
+        url: lien || "",
+      });
+
+      if (res?.error) {
+        btn.disabled = false;
+        btn.textContent = "Envoyer au club";
+        msg.className = "ob-msg err";
+        msg.textContent = traduire(res.error);
+        return;
+      }
+      success();
+      renderSent();
+    }
+
+    btn.addEventListener("click", envoyer);
 
     swap(
-      h("div", { class: "ps-inner ps-reward" }, [
-        h("div", { class: "rw-burst", "aria-hidden": "true" }),
-        h("div", { class: "rw-body" }, [
-          h("div", { class: "rw-check pop", style: { "--d": "0ms" } }, icon("check", 34)),
-          h("p", { class: "label rw-label pop", style: { "--d": "120ms" } }, `${kind.label} validé${kind.id === "story" ? "e" : ""}`),
-          h("div", { class: "rw-gain pop", style: { "--d": "200ms" } }, [
-            h("span", { class: "rw-gain-plus" }, "+"),
-            gainEl,
-            h("span", { class: "rw-gain-unit" }, "pts"),
-          ]),
-          h(
-            "p",
-            { class: "rw-mult pop", style: { "--d": "300ms" } },
-            unlock
-              ? [
-                  "Dépensables ",
-                  h("span", { class: "rw-mult-x" }, untilLabel(unlock)),
-                  " — le temps que ton contenu tourne.",
-                ]
-              : [
-                  "Contenu crédité. ",
-                  h("span", { class: "rw-mult-x" }, "Ajoute tes vues"),
-                  " pour un gros bonus.",
-                ]
-          ),
-
-          h("div", { class: "rw-bal card pop", style: { "--d": "400ms" } }, [
-            h("span", { class: "label" }, unlock ? "Solde disponible" : "Nouveau solde"),
-            h("span", { class: "rw-bal-val" }, [balEl, h("span", { class: "rw-bal-unit" }, " pts")]),
-          ]),
+      h("div", { class: "ps-inner" }, [
+        h("header", { class: "ps-head" }, [
+          h("button", { class: "ob-back", "aria-label": "Retour", onClick: () => renderHowto() }, icon("arrowRight", 18)),
+          h("span", { class: "label" }, "Ta preuve"),
         ]),
 
-        h("footer", { class: "ps-foot pop", style: { "--d": "500ms" } }, [
-          h(
-            "button",
-            { class: "btn btn-primary btn-block", onClick: () => ctx.navigate("dashboard") },
-            "Voir mon espace"
-          ),
+        h("div", { class: "ps-body" }, [
+          h("h1", { class: "ps-title reveal", style: { "--d": "0ms" } }, [
+            "Montre tes vues, ",
+            h("em", {}, "on compte"),
+          ]),
+          h("p", { class: "ps-sub reveal", style: { "--d": "60ms" } }, [
+            "Ouvre ",
+            h("strong", {}, kind.app),
+            `, va sur ${kind.id === "story" ? "ta story" : "ta publication"}, et fais une capture de l'écran des vues.`,
+          ]),
+
+          h("label", { class: "ps-shot-wrap reveal", style: { "--d": "120ms" } }, [apercu, fileInput]),
+
+          h("div", { class: "ps-field reveal", style: { "--d": "180ms" } }, [
+            h("span", { class: "label" }, "Combien de vues ?"),
+            vuesInput,
+            h("span", { class: "ps-field-note" }, "Le club vérifie sur ta capture. Un chiffre gonflé fait refuser le contenu."),
+          ]),
+
+          msg,
+        ]),
+
+        h("footer", { class: "ps-foot" }, [
+          btn,
+          h("p", { class: "ob-note" }, [
+            icon("lock", 13),
+            "Ta capture n'est visible que par le club.",
+          ]),
         ]),
       ])
     );
 
-    setTimeout(() => {
-      countUp(gainEl, gain, { dur: 900 });
-      countUp(balEl, after, { dur: 1100 });
-    }, 250);
+    vuesInput.focus();
+  }
+
+  /* ---------- 3. Envoye : en attente de validation ---------- */
+  // Aucun point n'est annonce ici. Promettre un gain avant que le club ait
+  // regarde la preuve, c'est reproduire exactement le probleme d'avant.
+  function renderSent() {
+    swap(
+      h("div", { class: "ps-inner ps-sent" }, [
+        h("div", { class: "ps-body ps-sent-body" }, [
+          h("div", { class: "rw-check pop", style: { "--d": "0ms" } }, icon("check", 34)),
+          h("h2", { class: "ps-wait-title pop", style: { "--d": "120ms" } }, "Envoyé au club"),
+          h("p", { class: "ps-wait-sub pop", style: { "--d": "200ms" } }, [
+            "Le ",
+            h("strong", {}, CLUB.name),
+            " vérifie ta capture et crédite tes points. En général avant la prochaine soirée.",
+          ]),
+          h("p", { class: "ps-sent-note pop", style: { "--d": "280ms" } },
+            "Tu retrouveras ce contenu dans « Tes soirées », marqué en attente."),
+        ]),
+        h("footer", { class: "ps-foot pop", style: { "--d": "360ms" } }, [
+          h("button", { class: "btn btn-primary btn-block", onClick: () => ctx.navigate("dashboard") }, "Voir mon espace"),
+        ]),
+      ])
+    );
+  }
+
+  // Messages d'erreur de submit_story, traduits pour un clubbeur.
+  function traduire(code) {
+    if (/proof_required/.test(code)) return "Ajoute la capture de tes vues.";
+    if (/views_required/.test(code)) return "Indique ton nombre de vues.";
+    if (/already_pending/.test(code)) return "Tu as déjà un contenu en attente de validation.";
+    if (/invalid_kind/.test(code)) return "Format non reconnu.";
+    if (/not_authenticated/.test(code)) return "Reconnecte-toi pour envoyer ton contenu.";
+    return "Envoi impossible pour le moment. Réessaie dans un instant.";
   }
 }

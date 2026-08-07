@@ -9,10 +9,14 @@ import { RewardsAdmin } from "./sections/rewards.js";
 import { ChallengesAdmin } from "./sections/challenges.js";
 import { SettingsAdmin } from "./sections/settings.js";
 import { StatsAdmin } from "./sections/stats.js";
+import { ReviewAdmin } from "./sections/review.js";
 
 const mount = document.getElementById("owner");
 
 const SECTIONS = [
+  // "À valider" en premier : c'est la seule section qui demande une action
+  // du gerant, et rien n'est credite tant qu'il ne l'a pas ouverte.
+  { id: "review", label: "À valider", icon: "check", render: ReviewAdmin },
   { id: "rewards", label: "Boutique", icon: "gift", render: RewardsAdmin },
   { id: "challenges", label: "Défis", icon: "sparkles", render: ChallengesAdmin },
   { id: "stats", label: "Statistiques", icon: "scan", render: StatsAdmin },
@@ -20,7 +24,7 @@ const SECTIONS = [
 ];
 
 let club = null;
-let current = "rewards";
+let current = "review";
 
 start();
 

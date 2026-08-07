@@ -352,3 +352,94 @@
   color: var(--text-mute);
   text-align: left;
 }
+
+/* ============================================================
+   Ecran de preuve (capture obligatoire)
+   ============================================================ */
+.ps-shot-wrap {
+  display: block;
+  margin-top: 22px;
+  cursor: pointer;
+}
+.ps-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+/* Zone de depot : en pointilles tant qu'elle est vide, pleine une fois la
+   capture choisie. L'etat se lit sans avoir a chercher. */
+.ps-shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 96px;
+  padding: 16px;
+  border-radius: var(--r-card);
+  border: 1px dashed var(--text-faint);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+.ps-shot-wrap:hover .ps-shot {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.ps-shot.is-set {
+  border-style: solid;
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.09), var(--surface) 60%);
+  color: var(--text);
+}
+.ps-shot-ico {
+  color: var(--accent);
+  flex: none;
+}
+.ps-shot-txt {
+  /* Un nom de fichier long ne doit pas casser la boite. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.ps-field {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ps-field-note {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-mute);
+}
+
+/* --- Accuse de reception --- */
+.ps-sent-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+.ps-sent-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-mute);
+  max-width: 26em;
+}
+
+/* Meme traitement que sur l'accueil : le mot mis en avant est rouge, pas
+   italique. Sans cette regle il tombait sur l'italique par defaut de <em>. */
+.ps-title em {
+  font-style: normal;
+  color: var(--accent);
+}

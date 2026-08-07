@@ -220,6 +220,59 @@ export async function creditStory(views = 0, kind = "story", url = "") {
   };
 }
 
+// Depose un contenu AVEC sa capture. Ne credite RIEN : la base cree une
+// ligne en attente, c'est le club qui valide (migration 0014).
+//
+// L'ancienne voie (creditStory) permettait de se crediter soi-meme depuis
+// le navigateur ; l'execution de credit_story a ete revoquee pour anon et
+// authenticated. Ne pas la remettre.
+export async function submitStory({ kind, views, file, url = "" }) {
+  if (!isConfigured) return { error: "hors_ligne" };
+  const s = await ensureSession();
+  const uid = s?.user?.id;
+  if (!uid) return { error: "not_authenticated" };
+  if (!file) return { error: "proof_required" };
+
+  const cid = await clubId();
+  if (!cid) return { error: "club_introuvable" };
+
+  // Bucket PRIVE. Le chemin est `{club}/{clubbeur}/{horodatage}` : c'est
+  // LUI qui porte les droits (migration 0015). Le clubbeur relit son
+  // dossier, le gerant lit le dossier de son club — aucune jointure, donc
+  // aucune policy fragile. L'horodatage evite d'ecraser les depots
+  // precedents : ils servent de trace en cas de litige.
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+  const chemin = `${cid}/${uid}/${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from("story-proofs")
+    .upload(chemin, file, { contentType: file.type || "image/jpeg" });
+  if (upErr) return { error: "upload:" + upErr.message };
+
+  const { data, error } = await supabase.rpc("submit_story", {
+    p_club: cid,
+    p_kind: kind,
+    p_views: Math.max(0, Math.round(Number(views) || 0)),
+    p_proof: chemin,
+    p_url: url || null,
+  });
+  if (error) return { error: error.message };
+  return { storyId: data };
+}
+
+// Contenus en attente de validation pour le clubbeur connecte.
+export async function loadMyPending() {
+  if (!isConfigured) return [];
+  const uid = await myId();
+  if (!uid) return [];
+  const { data } = await supabase
+    .from("story_events")
+    .select("id, mentioned_at, kind, views")
+    .eq("user_id", uid)
+    .eq("verified", false)
+    .order("mentioned_at", { ascending: false });
+  return data || [];
+}
+
 // Profil du clubbeur connecte : solde, cumul et nombre d'abonnes.
 // follower_count est ECRIT uniquement par les edge functions de connexion
 // (migration 0009). Ici on ne fait que le lire.
