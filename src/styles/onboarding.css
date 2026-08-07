@@ -511,10 +511,13 @@
   color: var(--text-mute);
 }
 
+/* Vrai paragraphe explicatif, pas une mention basse : il monte d'un cran
+   dans la rampe. C'est lui qui dit que le chiffre saisi ne rapporte
+   aucun point — si personne ne le lit, on cree un malentendu. */
 .ob-declare-note {
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--text-faint);
+  color: var(--text-dim);
 }
 
 /* Le vrai input file est masque : on garde le label comme bouton, plus

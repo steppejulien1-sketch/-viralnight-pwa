@@ -217,6 +217,21 @@ export async function loadMyProfile() {
   return data || null;
 }
 
+// Historique reel du clubbeur : ses soirees, de la plus recente a la plus
+// ancienne. Sert au profil (compteur) et au dashboard (liste).
+export async function loadMyHistory(limite = 20) {
+  if (!isConfigured) return null;
+  const uid = await myId();
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from("story_events")
+    .select("id, mentioned_at, awarded_points, kind")
+    .eq("user_id", uid)
+    .order("mentioned_at", { ascending: false })
+    .limit(limite);
+  return error ? null : data || [];
+}
+
 // Points gagnes mais pas encore depensables, et date du prochain deblocage.
 // Voir migration 0011 : le gain d'une soiree n'est utilisable qu'apres le
 // delai fixe par le club (12 h par defaut), pour qu'il ne soit pas depense

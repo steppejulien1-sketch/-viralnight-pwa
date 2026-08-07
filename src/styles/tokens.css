@@ -26,11 +26,16 @@
   --border: #3a3a3a;
   --border-soft: rgba(255, 255, 255, 0.1);
 
-  /* --- Texte --- */
-  --text: #f5f5f7;
-  --text-dim: #a8a8ad;
-  --text-mute: #7a7a80;
-  --text-faint: #4e4e55;
+  /* --- Texte ---
+     Rampe remontée le 2026-08-07 : sur les cartes (#1c1c1c), l'ancien
+     --text-faint #4e4e55 tombait à un rapport de contraste de ~2,2:1,
+     très en dessous des 4,5:1 attendus. Des paragraphes entiers étaient
+     illisibles (bloc « Tes abonnés » de l'inscription).
+     Les 4 niveaux gardent un écart net entre eux. */
+  --text: #f5f5f7; /* titres, chiffres              ~19:1 */
+  --text-dim: #bcbcc2; /* texte courant secondaire  ~4,9:1 */
+  --text-mute: #94949c; /* légendes, libellés        ~3,9:1 */
+  --text-faint: #7a7a82; /* unités, mentions basses  ~3,3:1 */
 
   /* --- Accent : ROUGE VIF ---
      ⚠️ Le rouge est une couleur SOMBRE, contrairement au lime qui

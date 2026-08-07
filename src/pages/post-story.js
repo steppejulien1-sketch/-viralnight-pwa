@@ -145,7 +145,7 @@ export function PostStory(_params, ctx) {
             ? h(
                 "p",
                 { class: "ps-hint reveal", style: { "--d": "110ms" } },
-                "Une story n'a pas de lien public : on la detecte via la mention."
+                "Une story n'a pas de lien public : on la détecte via la mention."
               )
             : h("div", { class: "ps-link reveal", style: { "--d": "110ms" } }, [
                 h("span", { class: "label" }, "Lien de ta publication"),

@@ -9,12 +9,26 @@
 import { h, icon } from "../lib/dom.js";
 import { CLUB, USER, HISTORY, levelForPoints } from "../lib/mock.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
-import { loadMyProfile, loadPendingPoints, untilLabel } from "../lib/game.js";
+import { loadMyProfile, loadPendingPoints, loadMyHistory, untilLabel } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
 export function Profile(_params, ctx) {
+  // Affiche d'abord les valeurs de demonstration, puis bascule sur la base.
+  // Avant, cet ecran lisait UNIQUEMENT mock.js : il annoncait 480 pts pendant
+  // que la boutique en lisait 180 dans Supabase. Deux chiffres pour un meme
+  // solde, c'est le genre d'incoherence qui fait douter de tout le reste.
   const level = levelForPoints(USER.totalEarned);
+
+  const handleEl = h("p", { class: "pf-handle" }, `@${USER.handle || "toi"}`);
+  const niveauEl = h("p", { class: "pf-tier" }, [
+    h("span", { class: "pf-lvl-star", "aria-hidden": "true" }),
+    level.label,
+  ]);
+  const soldeEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.points));
+  const cumulEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.totalEarned));
+  const soireesEl = h("span", { class: "pf-stat-val mono" }, String(HISTORY.length));
+  const compteRow = h("div", { hidden: true });
 
   // Ligne "Abonnes" : masquee tant qu'on n'a pas le chiffre, plutot que
   // d'afficher un tiret qui laisse croire a une erreur.
@@ -29,8 +43,24 @@ export function Profile(_params, ctx) {
       infoRow("En attente", `${nf.format(p.pending)} pts · ${untilLabel(p.nextUnlock)}`)
     );
   });
+  // Solde, cumul, pseudo et niveau reels.
   loadMyProfile().then((me) => {
-    if (!me || me.follower_count == null) return;
+    if (!me) return;
+
+    if (me.handle) handleEl.textContent = `@${me.handle}`;
+    if (me.points_balance != null) soldeEl.textContent = nf.format(me.points_balance);
+    if (me.lifetime_points != null) {
+      cumulEl.textContent = nf.format(me.lifetime_points);
+      // Le niveau suit le cumul A VIE, pas le solde depensable.
+      const vrai = levelForPoints(me.lifetime_points);
+      niveauEl.replaceChildren(
+        h("span", { class: "pf-lvl-star", "aria-hidden": "true" }),
+        vrai.label
+      );
+    }
+    compteRow.replaceWith(infoRow("Compte", me.handle ? "Connecté" : "—"));
+
+    if (me.follower_count == null) return;
     // Un chiffre saisi a la main est affiche comme tel : il ne doit
     // jamais se faire passer pour une donnee verifiee par le reseau.
     const libelle =
@@ -46,6 +76,11 @@ export function Profile(_params, ctx) {
     abosRow.replaceWith(infoRow(libelle, valeur));
   });
 
+  // Nombre reel de soirees (une story publiee = une soiree).
+  loadMyHistory().then((evts) => {
+    if (evts) soireesEl.textContent = String(evts.length);
+  });
+
   return h("div", { class: "pf-inner" }, [
     h("header", { class: "bn-head" }, [
       h("span", { class: "label" }, "Profil"),
@@ -53,16 +88,13 @@ export function Profile(_params, ctx) {
 
     h("section", { class: "pf-id reveal", style: { "--d": "0ms" } }, [
       h("div", { class: "pf-ava", "aria-hidden": "true" }, icon("instagram", 24)),
-      h("div", {}, [
-        h("p", { class: "pf-handle" }, `@${USER.handle || "toi"}`),
-        h("p", { class: "pf-tier" }, [h("span", { class: "pf-lvl-star", "aria-hidden": "true" }), level.label]),
-      ]),
+      h("div", {}, [handleEl, niveauEl]),
     ]),
 
     h("section", { class: "pf-stats reveal", style: { "--d": "70ms" } }, [
-      stat("Points", nf.format(USER.points)),
-      stat("Gagnés en tout", nf.format(USER.totalEarned)),
-      stat("Soirées", String(HISTORY.length)),
+      stat("Points", soldeEl),
+      stat("Gagnés en tout", cumulEl),
+      stat("Soirées", soireesEl),
     ]),
 
     h("section", { class: "pf-section reveal", style: { "--d": "140ms" } }, [
@@ -70,7 +102,7 @@ export function Profile(_params, ctx) {
       toggleRow("Vibrations", hapticsEnabled(), (on) => setHaptics(on)),
       attenteRow,
       abosRow,
-      infoRow("Compte", USER.connected ? "Connecté" : "—"),
+      compteRow,
       infoRow("Club", `${CLUB.name} · ${CLUB.city}`),
     ]),
 
@@ -79,11 +111,10 @@ export function Profile(_params, ctx) {
     ]),
   ]);
 
-  function stat(label, value) {
-    return h("div", { class: "pf-stat card" }, [
-      h("span", { class: "pf-stat-val mono" }, value),
-      h("span", { class: "pf-stat-label" }, label),
-    ]);
+  // `valeur` est un element vivant, pas une chaine : son contenu est
+  // reecrit quand la reponse de Supabase arrive.
+  function stat(label, valeur) {
+    return h("div", { class: "pf-stat card" }, [valeur, h("span", { class: "pf-stat-label" }, label)]);
   }
   function infoRow(label, value) {
     return h("div", { class: "pf-row" }, [h("span", { class: "pf-row-label" }, label), h("span", { class: "pf-row-val" }, value)]);
