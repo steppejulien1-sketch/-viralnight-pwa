@@ -110,16 +110,18 @@ export async function loadActiveChallenge() {
   return data || null;
 }
 
-// Catalogue de badges + ceux débloqués par le user.
-export async function loadBadges() {
-  if (!isConfigured) return { all: [], unlocked: new Set() };
+// Badges AVEC leur progression (migration 0017).
+//
+// Ils ne sont plus octroyés par un déclencheur — il n'en existait AUCUN,
+// donc rien ne se débloquait jamais — mais dérivés des données à la
+// lecture. La progression vient avec : un cadenas ne dit pas quoi faire
+// pour l'ouvrir, « 5 275 / 10 000 » si.
+export async function loadMyBadges() {
+  if (!isConfigured) return null;
   await ensureSession();
-  const uid = await myId();
-  const [{ data: all }, { data: mine }] = await Promise.all([
-    supabase.from("badges").select("*").order("sort"),
-    supabase.from("user_badges").select("badge_id").eq("user_id", uid),
-  ]);
-  return { all: all || [], unlocked: new Set((mine || []).map((m) => m.badge_id)) };
+  const cid = await clubId();
+  const { data, error } = await supabase.rpc("get_my_badges", { p_club: cid });
+  return error ? null : data || [];
 }
 
 // Classement hebdo du club + ma position.

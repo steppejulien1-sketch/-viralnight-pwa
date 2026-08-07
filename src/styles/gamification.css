@@ -400,59 +400,6 @@
 }
 
 /* ------------------------------------------------------------
-   5. Collection de badges
-   ------------------------------------------------------------ */
-.cl-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.cl-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 8px;
-  padding: 20px 14px 16px;
-  border-radius: var(--r-card);
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.cl-badge-icn {
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-}
-.cl-badge.is-on .cl-badge-icn {
-  background: var(--grad-fresh);
-  color: var(--accent-ink);
-  box-shadow: 0 0 22px -6px var(--accent-glow);
-}
-.cl-badge.is-locked {
-  border-style: dashed;
-  opacity: 0.62;
-}
-.cl-badge.is-locked .cl-badge-icn {
-  background: var(--surface-2);
-  color: var(--text-faint);
-}
-.cl-badge-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.cl-badge.is-locked .cl-badge-name {
-  color: var(--text-mute);
-}
-.cl-badge-desc {
-  font-size: 11px;
-  line-height: 1.35;
-  color: var(--text-mute);
-}
-
-/* ------------------------------------------------------------
    6. Célébration (overlay déblocage)
    ------------------------------------------------------------ */
 .cbr {
@@ -526,4 +473,141 @@
 @keyframes cbr-fall {
   0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
   100% { transform: translateY(105vh) rotate(var(--rot)); opacity: 0; }
+}
+
+/* ------------------------------------------------------------
+   Collection — badges avec progression
+   ------------------------------------------------------------
+   L'ancienne grille alignait des cadenas gris : elle disait qu'on
+   n'avait pas le badge, jamais ce qu'il fallait faire pour l'avoir.
+   Liste verticale desormais, chaque badge portant sa progression.
+   ------------------------------------------------------------ */
+
+/* Avancement global, juste sous le compteur. */
+.cl-overall {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.14);
+  overflow: hidden;
+  margin-top: 14px;
+}
+.cl-overall-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: width 0.9s var(--ease-out);
+}
+.cl-next {
+  margin: 12px 0 20px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.cl-next strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.cl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cl-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 14px 15px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+/* Obtenu : on l'affirme par la couleur, pas en effacant le reste. */
+.cl-badge.is-on {
+  border-color: rgba(var(--accent-rgb), 0.34);
+  background-image: linear-gradient(120deg, rgba(var(--accent-rgb), 0.08), transparent 60%);
+}
+
+.cl-badge-icn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: var(--r-card);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-faint);
+}
+.cl-badge.is-on .cl-badge-icn {
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent);
+}
+
+.cl-badge-main {
+  flex: 1;
+  min-width: 0;
+}
+.cl-badge-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cl-badge-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-dim);
+}
+.cl-badge.is-on .cl-badge-name {
+  color: var(--text);
+}
+.cl-badge-count {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cl-badge-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.cl-badge-desc {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
+.cl-badge-date {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.cl-badge-bar {
+  height: 6px;
+  margin-top: 10px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.cl-badge-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: width 0.9s var(--ease-out);
 }
