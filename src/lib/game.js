@@ -19,6 +19,56 @@ export async function myId() {
   return s?.user?.id || null;
 }
 
+// --- Lecture PUBLIQUE, sans session ------------------------------------
+// L'ecran d'accueil est vu AVANT toute inscription : il ne doit jamais
+// appeler ensureSession(), sinon on declencherait une connexion pour un
+// visiteur qui n'a encore rien demande. La RLS autorise la lecture des
+// clubs et des recompenses actives avec la seule cle anon.
+//
+// Tout echec renvoie null : l'accueil retombe alors sur ses donnees de
+// demonstration. C'est le premier ecran apres le scan du QR, il ne peut
+// pas se permettre d'afficher une erreur ou un ecran vide.
+
+export async function loadPublicClub(slug = CLUB.slug) {
+  if (!isConfigured) return null;
+  try {
+    const { data } = await supabase
+      .from("clubs")
+      .select("id, name, city, ig_handle")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data || null;
+  } catch {
+    return null;
+  }
+}
+
+// Recompenses actives d'un club, de la moins chere a la plus chere.
+// On ecarte celles hors de leur fenetre de validite et celles en rupture :
+// afficher une recompense qu'on ne peut pas prendre est une promesse creuse.
+export async function loadPublicRewards(clubUuid) {
+  if (!isConfigured || !clubUuid) return null;
+  try {
+    const nowISO = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("rewards")
+      .select("id, title, cost_points, category, stock_remaining, valid_from, valid_until")
+      .eq("club_id", clubUuid)
+      .eq("active", true)
+      .order("cost_points");
+    if (error || !data) return null;
+
+    return data.filter(
+      (r) =>
+        (r.stock_remaining === null || r.stock_remaining > 0) &&
+        (!r.valid_from || r.valid_from <= nowISO) &&
+        (!r.valid_until || r.valid_until >= nowISO)
+    );
+  } catch {
+    return null;
+  }
+}
+
 // Streak courant du clubbeur pour ce club.
 export async function loadStreak() {
   if (!isConfigured) return null;
