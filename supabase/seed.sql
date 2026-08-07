@@ -20,7 +20,7 @@ with c as (select id from public.clubs where slug = 'mirage-brussels')
 insert into public.rewards (club_id, title, description, cost_points, sort)
 select c.id, v.title, v.description, v.cost_points, v.sort
 from c, (values
-  ('10€ offerts sur ta conso', 'Valable au bar principal, une fois par soirée.', 300, 1),
+  ('Un cocktail offert', 'À retirer au bar principal, une fois par soirée.', 300, 1),
   ('Coupe-file garanti',       'Entrée prioritaire, sans faire la queue, avant 1h.', 600, 2),
   ('Accès carré VIP',          'Une place dans le carré, pour toi + 1.', 1200, 3),
   ('Table offerte + bouteille','Une table réservée avec une bouteille incluse.', 3000, 4)

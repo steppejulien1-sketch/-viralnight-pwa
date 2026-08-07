@@ -1,5 +1,5 @@
 // Ecran 3 — Dashboard perso (v4, branche sur Supabase).
-// Solde, niveau + STREAK (flamme), defi actif (countdown), prochaine
+// Solde + STREAK (flamme), defi actif (countdown), prochaine
 // recompense, action "Poster ma story", acces Classement + Collection,
 // historique.
 //
@@ -9,7 +9,7 @@
 // demonstration ne servent plus que de repli hors ligne.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY, REWARDS, levelForPoints } from "../lib/mock.js";
+import { CLUB, USER, HISTORY, REWARDS } from "../lib/mock.js";
 import { PointsCounter } from "../components/PointsCounter.js";
 import {
   loadStreak,
@@ -34,12 +34,6 @@ export function Dashboard(_params, ctx) {
   // Compteur monte a 0 : il s'anime vers le vrai solde des sa reception.
   const counter = PointsCounter(0, { animate: false });
 
-  const niveauNom = h("span", { class: "db-level-name" }, [
-    h("span", { class: "db-level-star", "aria-hidden": "true" }),
-    "—",
-  ]);
-  const niveauBarre = h("span", { class: "db-bar-fill db-bar-fill-lvl", style: { width: "0%" } });
-  const niveauReste = h("p", { class: "db-level-next mono" }, "");
   const compteRecomp = h("span", { class: "db-history-count mono" }, "");
   const handleEl = h("span", { class: "db-profile-handle" }, `@${USER.handle || "toi"}`);
   const clubEl = h("span", { class: "db-club" }, [
@@ -60,15 +54,14 @@ export function Dashboard(_params, ctx) {
     h("main", { class: "db-body" }, [
       challengeSlot,
 
+      // Les NIVEAUX ont ete retires : ils ajoutaient une deuxieme monnaie
+      // (le cumul a vie) a cote des points, sans rien debloquer. Le solde
+      // et la prochaine recompense suffisent a dire ou on en est.
+      // Le streak, lui, reste : il pousse a revenir. Il remonte donc a
+      // cote du solde, la ou vivait la carte de niveau.
       h("section", { class: "db-balance reveal", style: { "--d": "0ms" } }, [
-        h("p", { class: "label" }, "Ton solde"),
+        h("div", { class: "db-balance-head" }, [h("p", { class: "label" }, "Ton solde"), streakSlot]),
         counter,
-      ]),
-
-      h("section", { class: "db-level card reveal", style: { "--d": "70ms" } }, [
-        h("div", { class: "db-level-head" }, [niveauNom, streakSlot]),
-        h("div", { class: "db-bar db-bar-lvl", "aria-hidden": "true" }, [niveauBarre]),
-        niveauReste,
       ]),
 
       nextSlot,
@@ -138,14 +131,12 @@ export function Dashboard(_params, ctx) {
     ]);
 
     const solde = me?.points_balance ?? USER.points;
-    const cumul = me?.lifetime_points ?? USER.totalEarned;
     const soirees = evts ?? HISTORY.map((e) => ({ ...e, _demo: true }));
 
     if (me?.handle) handleEl.textContent = `@${me.handle}`;
     if (club?.name) clubEl.replaceChildren(h("span", { class: "db-club-dot", "aria-hidden": "true" }), club.name);
 
     counter.setValue(solde);
-    majNiveau(cumul);
     majHistorique(soirees);
 
     // Catalogue reel pour la prochaine recompense ; repli sur mock.js.
@@ -157,15 +148,6 @@ export function Dashboard(_params, ctx) {
     majProchaine(paliers, solde);
   }
 
-  function majNiveau(cumul) {
-    const lvl = levelForPoints(cumul);
-    const pct = lvl.next ? Math.min(100, Math.round(((cumul - lvl.min) / (lvl.next - lvl.min)) * 100)) : 100;
-    niveauNom.replaceChildren(h("span", { class: "db-level-star", "aria-hidden": "true" }), lvl.label);
-    niveauBarre.style.width = `${pct}%`;
-    niveauReste.textContent = lvl.next
-      ? `${nf.format(lvl.next - cumul)} pts avant le niveau suivant`
-      : "Niveau maximum atteint";
-  }
 
   function majProchaine(paliers, solde) {
     const next = paliers.find((r) => r.cost_points > solde);

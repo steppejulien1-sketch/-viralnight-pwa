@@ -129,14 +129,25 @@ export function Landing(_params, ctx) {
 
   // --- Fabriques ---------------------------------------------------------
 
+  // La premiere (la moins chere) est mise en avant sur toute la largeur :
+  // c'est la porte d'entree, celle qui decide de l'inscription. Les
+  // suivantes tiennent en grille deux colonnes.
+  //
+  // Avant, les quatre etaient dans un carrousel horizontal : deux d'entre
+  // elles restaient hors ecran, et rien ne disait qu'il fallait faire
+  // defiler. On cachait la moitie de l'argument.
   function carte(r, i) {
-    return h("li", { class: `lp-reward${i === 0 ? " is-first" : ""}` }, [
+    const vedette = i === 0;
+    return h("li", { class: `lp-reward${vedette ? " is-first" : ""}` }, [
       h(
         "span",
         { class: "lp-reward-icn", "aria-hidden": "true" },
-        icon(PAR_CATEGORIE[r.category] || PAR_RANG[i] || "gift", 19)
+        icon(PAR_CATEGORIE[r.category] || PAR_RANG[i] || "gift", vedette ? 22 : 18)
       ),
-      h("span", { class: "lp-reward-title" }, r.title),
+      h("span", { class: "lp-reward-txt" }, [
+        vedette ? h("span", { class: "lp-reward-tag" }, "Le plus accessible") : null,
+        h("span", { class: "lp-reward-title" }, r.title),
+      ]),
       h("span", { class: "lp-reward-cost mono" }, [nf.format(r.cost_points), h("small", {}, "pts")]),
     ]);
   }

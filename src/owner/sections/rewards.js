@@ -12,13 +12,6 @@ const CATEGORIES = [
   { v: "vip", l: "VIP" },
   { v: "exclusif", l: "Exclusif" },
 ];
-const LEVELS = [
-  { v: "", l: "Tous les niveaux" },
-  { v: "argent", l: "Argent et +" },
-  { v: "or", l: "Or et +" },
-  { v: "platine", l: "Platine et +" },
-  { v: "legende", l: "Légende" },
-];
 
 export async function RewardsAdmin(mount, club) {
   const head = h("div", { class: "ow-head" }, [
@@ -46,7 +39,7 @@ export async function RewardsAdmin(mount, club) {
     }
     listWrap.replaceChildren(
       h("table", { class: "ow-table" }, [
-        h("thead", {}, h("tr", {}, [th("Récompense"), th("Catégorie"), th("Coût"), th("Stock"), th("Niveau"), th("Actif"), th("")])),
+        h("thead", {}, h("tr", {}, [th("Récompense"), th("Catégorie"), th("Coût"), th("Stock"), th("Actif"), th("")])),
         h("tbody", {}, data.map(row)),
       ])
     );
@@ -74,7 +67,6 @@ export async function RewardsAdmin(mount, club) {
       h("td", {}, h("span", { class: `ow-cat ow-cat-${r.category}` }, catLabel(r.category))),
       h("td", { class: "mono" }, `${nf.format(r.cost_points)} pts`),
       h("td", { class: "mono" }, r.stock_limit == null ? "∞" : `${r.stock_remaining}/${r.stock_limit}`),
-      h("td", {}, r.required_level ? h("span", { class: "ow-lvl-tag" }, r.required_level) : h("span", { class: "ow-muted" }, "—")),
       h("td", {}, toggle),
       h("td", {}, h("button", { class: "ow-icon-btn", "aria-label": "Éditer", onClick: () => openForm(r) }, icon("arrowRight", 16))),
     ]);
@@ -108,7 +100,6 @@ export async function RewardsAdmin(mount, club) {
           h("label", { class: "ow-field" }, [h("span", {}, "Coût (points)"), numInput(f.cost_points, (v) => (f.cost_points = v))]),
           selectField("Catégorie", CATEGORIES, f.category, (v) => (f.category = v)),
         ]),
-        selectField("Niveau requis", LEVELS, f.required_level, (v) => (f.required_level = v)),
         h("label", { class: "ow-check" }, [
           h("input", { type: "checkbox", checked: f.limited, onChange: (e) => { f.limited = e.target.checked; stockRow.style.display = f.limited ? "grid" : "none"; } }),
           "Stock limité",
@@ -136,7 +127,7 @@ export async function RewardsAdmin(mount, club) {
         description: f.description.trim() || null,
         cost_points: Number(f.cost_points),
         category: f.category,
-        required_level: f.required_level || null,
+        required_level: null,
         stock_limit: f.limited ? Number(f.stock_limit) : null,
         stock_remaining: f.limited ? Number(f.stock_limit) : null,
       };

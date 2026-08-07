@@ -1,5 +1,5 @@
 // Ecran — Profil (v2).
-// Compte connecte + niveau + reglages.
+// Compte connecte + statistiques + reglages.
 //
 // Le nombre d'abonnes est AFFICHE mais n'entre dans AUCUN calcul de
 // points : la v2 recompense les VUES REELLES, pas la taille de l'audience.
@@ -7,7 +7,7 @@
 // (migration 0009) -- un clubbeur ne peut pas s'inventer 2 millions d'abonnes.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY, levelForPoints } from "../lib/mock.js";
+import { CLUB, USER, HISTORY } from "../lib/mock.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
 import { loadMyProfile, loadPendingPoints, loadMyHistory, untilLabel } from "../lib/game.js";
 
@@ -18,13 +18,7 @@ export function Profile(_params, ctx) {
   // Avant, cet ecran lisait UNIQUEMENT mock.js : il annoncait 480 pts pendant
   // que la boutique en lisait 180 dans Supabase. Deux chiffres pour un meme
   // solde, c'est le genre d'incoherence qui fait douter de tout le reste.
-  const level = levelForPoints(USER.totalEarned);
-
   const handleEl = h("p", { class: "pf-handle" }, `@${USER.handle || "toi"}`);
-  const niveauEl = h("p", { class: "pf-tier" }, [
-    h("span", { class: "pf-lvl-star", "aria-hidden": "true" }),
-    level.label,
-  ]);
   const soldeEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.points));
   const cumulEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.totalEarned));
   const soireesEl = h("span", { class: "pf-stat-val mono" }, String(HISTORY.length));
@@ -49,15 +43,7 @@ export function Profile(_params, ctx) {
 
     if (me.handle) handleEl.textContent = `@${me.handle}`;
     if (me.points_balance != null) soldeEl.textContent = nf.format(me.points_balance);
-    if (me.lifetime_points != null) {
-      cumulEl.textContent = nf.format(me.lifetime_points);
-      // Le niveau suit le cumul A VIE, pas le solde depensable.
-      const vrai = levelForPoints(me.lifetime_points);
-      niveauEl.replaceChildren(
-        h("span", { class: "pf-lvl-star", "aria-hidden": "true" }),
-        vrai.label
-      );
-    }
+    if (me.lifetime_points != null) cumulEl.textContent = nf.format(me.lifetime_points);
     compteRow.replaceWith(infoRow("Compte", me.handle ? "Connecté" : "—"));
 
     if (me.follower_count == null) return;
@@ -88,7 +74,7 @@ export function Profile(_params, ctx) {
 
     h("section", { class: "pf-id reveal", style: { "--d": "0ms" } }, [
       h("div", { class: "pf-ava", "aria-hidden": "true" }, icon("instagram", 24)),
-      h("div", {}, [handleEl, niveauEl]),
+      h("div", {}, [handleEl]),
     ]),
 
     h("section", { class: "pf-stats reveal", style: { "--d": "70ms" } }, [

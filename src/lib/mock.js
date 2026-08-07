@@ -53,7 +53,7 @@ export const HISTORY = [
 
 // Recompenses du club Mirage.
 export const REWARDS = [
-  { id: "drink", title: "10€ offerts sur ta conso", desc: "Valable au bar principal, une fois par soirée.", cost: 300 },
+  { id: "drink", title: "Un cocktail offert", desc: "À retirer au bar principal, une fois par soirée.", cost: 300 },
   { id: "coupe-file", title: "Coupe-file garanti", desc: "Entrée prioritaire, sans faire la queue, avant 1h.", cost: 600 },
   { id: "vip", title: "Accès carré VIP", desc: "Une place dans le carré, pour toi + 1.", cost: 1200 },
   { id: "table", title: "Table offerte + bouteille", desc: "Une table réservée avec une bouteille incluse.", cost: 3000 },

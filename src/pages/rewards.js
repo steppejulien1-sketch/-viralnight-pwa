@@ -1,6 +1,6 @@
 // Ecran — Boutique (PWA client), branchée sur Supabase.
 //  - grille de rewards filtrable par catégorie, "accessible en premier"
-//  - verrouillage : pas assez de points (barre) OU niveau requis (badge)
+//  - verrouillage : pas assez de points (barre) ou stock epuise
 //  - rédemption : confirmation -> RPC redeem_reward (atomique) -> QR
 //  - Realtime : toute modif côté dashboard owner apparaît sans refresh
 
@@ -20,13 +20,11 @@ const CATS = [
   { v: "vip", l: "VIP" },
   { v: "exclusif", l: "Exclusif" },
 ];
-const LEVEL_SORT = { bronze: 1, argent: 2, or: 3, platine: 4, legende: 5 };
-const LEVEL_LABEL = { bronze: "Bronze", argent: "Argent", or: "Or", platine: "Platine", legende: "Légende" };
 
 export function Rewards(_params, ctx) {
   const root = h("div", { class: "rw-page" });
   let rewards = [];
-  let me = { points_balance: 0, current_level: "bronze" };
+  let me = { points_balance: 0 };
   let clubId = null;
   let filter = "all";
   let channel = null;
@@ -54,7 +52,7 @@ export function Rewards(_params, ctx) {
       swap(errorView("Scanne le QR de ton club pour voir sa boutique."));
       return;
     }
-    const { data: user } = await supabase.from("users").select("points_balance, current_level").maybeSingle();
+    const { data: user } = await supabase.from("users").select("points_balance").maybeSingle();
     if (user) me = user;
     await loadRewards();
 
@@ -77,7 +75,10 @@ export function Rewards(_params, ctx) {
   }
 
   function affordable(r) {
-    const lvlOk = !r.required_level || LEVEL_SORT[me.current_level] >= LEVEL_SORT[r.required_level];
+    // Les NIVEAUX sont desactives : une recompense ne depend plus que des
+    // points et du stock. Une deuxieme condition, invisible et lente a
+    // atteindre, decourageait sans rien apporter.
+    const lvlOk = true;
     const ptsOk = me.points_balance >= r.cost_points;
     const stockOk = r.stock_remaining == null || r.stock_remaining > 0;
     return { lvlOk, ptsOk, stockOk, open: lvlOk && ptsOk && stockOk };
@@ -144,8 +145,6 @@ export function Rewards(_params, ctx) {
 
       a.open
         ? h("button", { class: "btn btn-primary btn-block rc-btn", onClick: () => confirmRedeem(r) }, [icon("gift", 18), "Débloquer"])
-        : !a.lvlOk
-          ? h("div", { class: "rc-locked-lvl" }, [icon("sparkles", 14), `Réservé niveau ${LEVEL_LABEL[r.required_level]}`])
           : !a.stockOk
             ? h("div", { class: "rc-locked-lvl" }, "Stock épuisé")
             : h("div", { class: "rc-locked" }, [
