@@ -39,7 +39,17 @@ async function start() {
 
 /* ---------- Login ---------- */
 function renderLogin() {
-  let email = "owner@mirage.club";
+  // ⚠️ NE JAMAIS pre-remplir d'identifiant ici, ni afficher d'aide de
+  // demonstration sous le formulaire. Cet ecran a longtemps porte la ligne
+  //     "Démo : owner@mirage.club / MirageOwner2026!"
+  // en clair dans le bundle PUBLIC de viralnight-pwa.vercel.app/owner.html.
+  // Un compte gerant donne owns_club(), donc review_story() -- la fonction
+  // qui CREDITE les points -- plus le catalogue, le slug des QR et les
+  // captures privees de tous les clubbeurs.
+  // La meme correction avait ete faite sur session.js (auto-login clubbeur)
+  // sans etre reportee ici. Pour une demo commerciale, passer par une
+  // variable d'environnement de build, jamais par du texte en dur.
+  let email = "";
   let pass = "";
   const msg = h("p", { class: "ow-login-msg" });
 
@@ -64,7 +74,6 @@ function renderLogin() {
         field("Mot de passe", "password", "••••••••", (v) => (pass = v)),
         h("button", { class: "ow-btn ow-btn-primary", type: "submit" }, "Se connecter"),
         msg,
-        h("p", { class: "ow-login-demo" }, "Démo : owner@mirage.club / MirageOwner2026!"),
       ]),
     ])
   );
