@@ -34,12 +34,29 @@ export async function ReviewAdmin(mount, club) {
   const liste = h("div", { class: "ow-review" }, [h("p", { class: "ow-muted" }, "Chargement…")]);
   const compteur = h("span", { class: "ow-badge" }, "");
 
+  // La lecture automatique de capture est une COMMODITE, pas un maillon du
+  // parcours : le gerant lit le chiffre a l'oeil et le saisit, comme avant.
+  // Si le service de vision est indisponible (pas de credits, pas de cle),
+  // on retire les boutons de TOUTES les cartes plutot que d'en laisser un
+  // par contenu qui echouera pareil.
+  let ocrIndispo = false;
+  const avisOcr = h("p", { class: "ow-muted ow-review-ocr-avis", hidden: true });
+
+  function couperOcr(raison) {
+    if (ocrIndispo) return;
+    ocrIndispo = true;
+    liste.querySelectorAll(".ow-review-ocr").forEach((n) => n.remove());
+    avisOcr.textContent = `Lecture automatique des captures ${raison}. Saisis les vues à la main, comme d'habitude.`;
+    avisOcr.hidden = false;
+  }
+
   mount.replaceChildren(
     h("div", { class: "ow-section" }, [
       h("div", { class: "ow-head" }, [
         h("div", {}, [
           h("h1", {}, ["À valider", compteur]),
           h("p", { class: "ow-head-sub" }, "Vérifie la capture, corrige les vues si besoin, puis crédite."),
+          avisOcr,
         ]),
       ]),
       liste,
@@ -155,7 +172,18 @@ export async function ReviewAdmin(mount, club) {
       ocrBtn.disabled = false;
       ocrBtn.textContent = "Relire la capture";
       if (error) {
-        afficherOcr(null, "service indisponible");
+        couperOcr("est indisponible");
+        return;
+      }
+      // Panne de service : inutile de proposer le bouton sur les autres
+      // contenus, ils echoueront de la meme facon.
+      const s = String(data?.erreur || "").toLowerCase();
+      if (s.includes("credit") || s.includes("quota") || s.includes("billing")) {
+        couperOcr("est suspendue (crédits épuisés)");
+        return;
+      }
+      if (s.includes("api key") || s.includes("unauthorized") || s.includes("401")) {
+        couperOcr("n'est pas configurée");
         return;
       }
       afficherOcr(data?.vues ?? null, data?.erreur || null);

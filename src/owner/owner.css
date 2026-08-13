@@ -782,3 +782,6 @@ select.ow-input { cursor: pointer; }
   cursor: pointer;
 }
 .ow-review-ocr-apply:hover { border-color: var(--accent); color: var(--accent); }
+/* Avis affiche quand la lecture automatique est coupee : elle est une
+   commodite, son absence ne doit pas ressembler a une panne du produit. */
+.ow-review-ocr-avis { margin-top: 6px; font-size: 13px; }
