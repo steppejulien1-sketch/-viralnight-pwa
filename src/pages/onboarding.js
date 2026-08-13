@@ -20,18 +20,23 @@
 // depuis son compte.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER } from "../lib/mock.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 import { currentClub } from "../lib/club.js";
-import { loadPublicRewards } from "../lib/game.js";
+import { loadPublicRewards, loadMyProfile } from "../lib/game.js";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
 
 export function Onboarding(_params, ctx) {
   const root = h("div", { class: "ob" });
+
+  // Le club vient du QR scanne, plus de nom en dur : l'ecran annoncait
+  // "Rejoins le Mirage" et le handle @mirage.brussels a tout le monde,
+  // quel que soit l'etablissement scanne.
+  let club = null;
+
   start();
   return root;
 
@@ -40,6 +45,10 @@ export function Onboarding(_params, ctx) {
   }
 
   async function start() {
+    // Resolu AVANT tout rendu : l'ecran affiche le nom du club des sa
+    // premiere image, on ne veut pas afficher un nom puis un autre.
+    club = await currentClub();
+
     // Retour d'un reseau social. La session est deja ouverte par Supabase
     // (l'edge function a renvoye le navigateur sur le lien d'action), il ne
     // reste qu'a lire le resultat.
@@ -48,7 +57,12 @@ export function Onboarding(_params, ctx) {
 
     // Retour de lien magique ou de reseau social : la session existe, on enchaine.
     const s = await ensureSession();
-    if (s?.user) return renderHandle(s.user);
+    if (s?.user) {
+      // Le pseudo deja enregistre vient de la base, plus d'une variable en
+      // memoire : il doit survivre a la fermeture de l'app.
+      const profil = await loadMyProfile();
+      return renderHandle(s.user, profil?.handle || "");
+    }
     renderConnect();
   }
 
@@ -168,7 +182,11 @@ export function Onboarding(_params, ctx) {
           h("div", { class: "ob-ig-badge reveal", style: { "--d": "0ms" }, "aria-hidden": "true" }, [
             icon("sparkles", 34),
           ]),
-          h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Rejoins le Mirage"),
+          h(
+            "h1",
+            { class: "ob-title reveal", style: { "--d": "70ms" } },
+            club ? `Rejoins le ${club.name}` : "Rejoins ton club"
+          ),
           h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
             "Connecte ton réseau, ou reçois un lien par email. ",
             h("strong", {}, "Aucun mot de passe"),
@@ -217,7 +235,7 @@ export function Onboarding(_params, ctx) {
   }
 
   /* ---------- 3. Pseudo Instagram ---------- */
-  function renderHandle(user) {
+  function renderHandle(user, handleExistant = "") {
     const input = h("input", {
       class: "ob-input",
       type: "text",
@@ -226,7 +244,7 @@ export function Onboarding(_params, ctx) {
       spellcheck: "false",
       placeholder: "ton.pseudo",
       "aria-label": "Ton pseudo Instagram",
-      value: USER.handle && USER.handle !== "toi.insta" ? USER.handle : "",
+      value: handleExistant,
     });
     const msg = h("p", { class: "ob-msg" });
     const btn = h("button", { class: "btn btn-primary btn-block" }, "C'est parti");
@@ -276,6 +294,29 @@ export function Onboarding(_params, ctx) {
       btn.textContent = "Enregistrement…";
 
       if (isConfigured) {
+        // La ligne de profil n'existe pas tant qu'on ne la cree pas : aucun
+        // trigger ne la genere a la creation du compte auth. Sans cette
+        // insertion, l'UPDATE plus bas -- et declare_followers, qui fait
+        // aussi un UPDATE -- portent sur 0 ligne SANS lever d'erreur, et le
+        // pseudo est perdu en silence. C'etait le cas depuis l'origine.
+        //
+        // ON CONFLICT DO NOTHING : on ne retouche pas une ligne existante.
+        // C'est aussi ce qu'imposent les droits, le grant UPDATE ne
+        // couvrant pas la colonne id (migration 0018). Les colonnes
+        // inserables se limitent a (id, handle, email) : impossible de se
+        // donner des points en passant par ici.
+        const { error: creaErr } = await supabase.from("users").upsert(
+          { id: user.id, handle, email: user.email || null },
+          { onConflict: "id", ignoreDuplicates: true }
+        );
+        if (creaErr) {
+          btn.disabled = false;
+          btn.textContent = "C'est parti";
+          msg.className = "ob-msg err";
+          msg.textContent = traduire(creaErr.message);
+          return;
+        }
+
         let proofPath = null;
 
         // La capture part dans un bucket PRIVE, dans un dossier nomme par
@@ -318,8 +359,6 @@ export function Onboarding(_params, ctx) {
         }
       }
 
-      USER.handle = handle;
-      USER.connected = true;
       ctx.navigate("dashboard");
     }
 
@@ -334,11 +373,19 @@ export function Onboarding(_params, ctx) {
         h("div", { class: "ob-body ob-connect" }, [
           h("div", { class: "ob-ig-badge reveal", "aria-hidden": "true" }, [icon("instagram", 34)]),
           h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Ton pseudo Instagram"),
-          h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
-            "C'est lui qu'on cherche dans les mentions de ",
-            h("strong", {}, `@${CLUB.igHandle}`),
-            ". Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
-          ]),
+          h(
+            "p",
+            { class: "ob-sub reveal", style: { "--d": "130ms" } },
+            club
+              ? [
+                  "C'est lui qu'on cherche dans les mentions de ",
+                  h("strong", {}, `@${club.ig_handle}`),
+                  ". Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
+                ]
+              : [
+                  "C'est lui qu'on cherche dans les mentions de ton club. Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
+                ]
+          ),
           h("div", { class: "ob-field reveal", style: { "--d": "190ms" } }, [
             h("div", { class: "ob-at" }, [h("span", { class: "ob-at-sign" }, "@"), input]),
           ]),
@@ -411,7 +458,7 @@ export function Onboarding(_params, ctx) {
   function head(onBack) {
     return h("header", { class: "ob-head" }, [
       h("button", { class: "ob-back", "aria-label": "Retour", onClick: onBack }, icon("arrowRight", 18)),
-      h("span", { class: "label" }, `${CLUB.name} · ${CLUB.city}`),
+      h("span", { class: "label" }, club ? `${club.name} · ${club.city}` : "Ton club"),
     ]);
   }
 
