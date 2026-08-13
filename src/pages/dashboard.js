@@ -3,13 +3,16 @@
 // recompense, action "Poster ma story", acces Classement + Collection,
 // historique.
 //
-// DONNEES : tout ce qui est chiffre vient de la base. Avant, cet ecran
-// lisait mock.js et annoncait 480 pts pendant que la boutique en lisait
-// 180 : deux soldes differents dans la meme app. Les valeurs de
-// demonstration ne servent plus que de repli hors ligne.
+// DONNEES : tout ce qui est chiffre vient de la base, SANS repli.
+//
+// Il restait des valeurs de demonstration en repli (480 pts, 2 soirees,
+// un catalogue fictif). Elles etaient pires que rien : un clubbeur dont
+// le profil ne se chargeait pas voyait 480 points -- assez pour croire
+// qu'il pouvait prendre une recompense -- pendant que la boutique lisait
+// son vrai solde. C'est exactement l'incoherence que cet ecran etait
+// cense avoir corrigee. Un solde a zero est vrai ; 480 est faux.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY, REWARDS } from "../lib/mock.js";
 import { PointsCounter } from "../components/PointsCounter.js";
 import {
   loadStreak,
@@ -35,10 +38,12 @@ export function Dashboard(_params, ctx) {
   const counter = PointsCounter(0, { animate: false });
 
   const compteRecomp = h("span", { class: "db-history-count mono" }, "");
-  const handleEl = h("span", { class: "db-profile-handle" }, `@${USER.handle || "toi"}`);
+  const handleEl = h("span", { class: "db-profile-handle" }, "@toi");
+  // Vide au depart : le nom arrive avec le club resolu. Afficher un nom
+  // d'etablissement en attendant reviendrait a en inventer un.
   const clubEl = h("span", { class: "db-club" }, [
     h("span", { class: "db-club-dot", "aria-hidden": "true" }),
-    CLUB.name,
+    "",
   ]);
 
   const el = h("div", { class: "db" }, [
@@ -122,16 +127,16 @@ export function Dashboard(_params, ctx) {
   return el;
 
   async function charger() {
-    // Repli hors ligne : sans Supabase, on affiche la demonstration plutot
-    // qu'un ecran a zero qui ferait croire a un compte vide.
     const [me, evts, club] = await Promise.all([
       loadMyProfile().catch(() => null),
       loadMyHistory().catch(() => null),
       loadPublicClub().catch(() => null),
     ]);
 
-    const solde = me?.points_balance ?? USER.points;
-    const soirees = evts ?? HISTORY.map((e) => ({ ...e, _demo: true }));
+    // Profil illisible : on montre zero, pas un solde de demonstration.
+    // Un compte vide est un etat legitime -- un faux solde ne l'est pas.
+    const solde = me?.points_balance ?? 0;
+    const soirees = evts ?? [];
 
     if (me?.handle) handleEl.textContent = `@${me.handle}`;
     if (club?.name) clubEl.replaceChildren(h("span", { class: "db-club-dot", "aria-hidden": "true" }), club.name);
@@ -139,11 +144,11 @@ export function Dashboard(_params, ctx) {
     counter.setValue(solde);
     majHistorique(soirees);
 
-    // Catalogue reel pour la prochaine recompense ; repli sur mock.js.
+    // Catalogue reel du club. Sans catalogue, la carte "Prochaine
+    // recompense" disparait : annoncer un objectif qui n'existe pas dans
+    // cette boite serait une promesse que le bar ne pourra pas tenir.
     const cat = club ? await loadPublicRewards(club.id).catch(() => null) : null;
-    const paliers = (cat?.length ? cat : REWARDS.map((r) => ({ title: r.title, cost_points: r.cost })))
-      .slice()
-      .sort((a, b) => a.cost_points - b.cost_points);
+    const paliers = (cat || []).slice().sort((a, b) => a.cost_points - b.cost_points);
 
     majProchaine(paliers, solde);
   }
@@ -190,10 +195,11 @@ export function Dashboard(_params, ctx) {
         "ul",
         { class: "db-events" },
         evts.map((e) => {
-          // Deux formes possibles : la ligne Supabase (mentioned_at,
-          // awarded_points) et celle de demonstration (date, points).
-          const quand = e.mentioned_at ? capitale(dateFmt.format(new Date(e.mentioned_at))) : e.date;
-          const pts = e.awarded_points ?? e.points;
+          // Une seule forme desormais : la ligne story_events. Le repli de
+          // demonstration ayant disparu, la double lecture n'a plus lieu
+          // d'etre. mentioned_at et awarded_points sont NOT NULL en base.
+          const quand = capitale(dateFmt.format(new Date(e.mentioned_at)));
+          const pts = e.awarded_points;
           // Depuis la migration 0012 les vues sont stockees : on affiche le
           // chiffre qui a servi au calcul plutot que le seul type de contenu.
           const detail = e.views

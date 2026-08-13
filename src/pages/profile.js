@@ -7,22 +7,37 @@
 // (migration 0009) -- un clubbeur ne peut pas s'inventer 2 millions d'abonnes.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB, USER, HISTORY } from "../lib/mock.js";
+import { currentClub } from "../lib/club.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
 import { loadMyProfile, loadPendingPoints, loadMyHistory, untilLabel } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
 export function Profile(_params, ctx) {
-  // Affiche d'abord les valeurs de demonstration, puis bascule sur la base.
-  // Avant, cet ecran lisait UNIQUEMENT mock.js : il annoncait 480 pts pendant
-  // que la boutique en lisait 180 dans Supabase. Deux chiffres pour un meme
-  // solde, c'est le genre d'incoherence qui fait douter de tout le reste.
-  const handleEl = h("p", { class: "pf-handle" }, `@${USER.handle || "toi"}`);
-  const soldeEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.points));
-  const cumulEl = h("span", { class: "pf-stat-val mono" }, nf.format(USER.totalEarned));
-  const soireesEl = h("span", { class: "pf-stat-val mono" }, String(HISTORY.length));
+  // Les chiffres partent VIDES, pas sur des valeurs de demonstration.
+  // Cet ecran affichait 480 pts / 1 240 cumules / 2 soirees en attendant la
+  // reponse de Supabase : des chiffres faux, mais parfaitement credibles,
+  // qui laissaient croire pendant un instant a un solde qu'on n'a pas. Un
+  // tiret dit "je ne sais pas encore" ; 480 raconte une histoire.
+  const handleEl = h("p", { class: "pf-handle" }, "@toi");
+  const soldeEl = h("span", { class: "pf-stat-val mono" }, "—");
+  const cumulEl = h("span", { class: "pf-stat-val mono" }, "—");
+  const soireesEl = h("span", { class: "pf-stat-val mono" }, "—");
   const compteRow = h("div", { hidden: true });
+
+  // Club : la ligne reste masquee tant qu'il n'est pas resolu. On ne
+  // remplace pas le noeud (le routeur peut ne pas l'avoir encore insere
+  // quand la promesse retombe) : on remplit sa valeur en place.
+  const clubVal = h("span", { class: "pf-row-val" }, "");
+  const clubRow = h("div", { class: "pf-row", hidden: true }, [
+    h("span", { class: "pf-row-label" }, "Club"),
+    clubVal,
+  ]);
+  currentClub().then((c) => {
+    if (!c) return;
+    clubVal.textContent = `${c.name} · ${c.city}`;
+    clubRow.hidden = false;
+  });
 
   // Ligne "Abonnes" : masquee tant qu'on n'a pas le chiffre, plutot que
   // d'afficher un tiret qui laisse croire a une erreur.
@@ -89,7 +104,7 @@ export function Profile(_params, ctx) {
       attenteRow,
       abosRow,
       compteRow,
-      infoRow("Club", `${CLUB.name} · ${CLUB.city}`),
+      clubRow,
     ]),
 
     h("footer", { class: "pf-foot reveal", style: { "--d": "210ms" } }, [

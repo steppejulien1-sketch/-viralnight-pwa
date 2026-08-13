@@ -25,6 +25,9 @@ export function Rewards(_params, ctx) {
   const root = h("div", { class: "rw-page" });
   let rewards = [];
   let me = { points_balance: 0 };
+  // Le club entier, pas seulement son id : le ticket QR affiche son nom et
+  // sa ville. Il referencait `CLUB` (mock) qui n'etait meme pas importe.
+  let club = null;
   let clubId = null;
   let filter = "all";
   let channel = null;
@@ -46,7 +49,7 @@ export function Rewards(_params, ctx) {
 
     // Club Mirage + rewards actifs + mon profil.
     // Le club vient du QR scanne, plus d'un slug fige.
-    const club = await currentClub();
+    club = await currentClub();
     clubId = club?.id;
     if (!clubId) {
       swap(errorView("Scanne le QR de ton club pour voir sa boutique."));
@@ -190,7 +193,13 @@ export function Rewards(_params, ctx) {
       impact();
       celebrate({ title: "Récompense débloquée !", sub: r.title });
       me.points_balance = row.new_balance;
-      renderTicket(r, row.qr_code);
+      // Filet de securite. renderTicket est async : une erreur dedans part
+      // en rejet silencieux, l'ecran ne change pas et le clubbeur se
+      // retrouve debite SANS son code. C'est exactement ce qui se passait
+      // avec la reference a CLUB, qui n'etait pas importe.
+      renderTicket(r, row.qr_code).catch(() => {
+        alert("Ton code à présenter au bar : " + row.qr_code);
+      });
     }
   }
 
@@ -209,7 +218,7 @@ export function Rewards(_params, ctx) {
           h("div", { class: "tk-card card pop", style: { "--d": "230ms" } }, [
             h("div", { class: "tk-qr-wrap" }, [canvas]),
             h("div", { class: "tk-code mono" }, code),
-            h("div", { class: "tk-meta" }, [h("span", {}, `${CLUB.name} · ${CLUB.city}`), h("span", { class: "tk-valid" }, [h("span", { class: "tk-valid-dot" }), "Valable ce soir"])]),
+            h("div", { class: "tk-meta" }, [h("span", {}, club ? `${club.name} · ${club.city}` : ""), h("span", { class: "tk-valid" }, [h("span", { class: "tk-valid-dot" }), "Valable ce soir"])]),
           ]),
         ]),
         h("footer", { class: "ps-foot pop", style: { "--d": "320ms" } }, [h("button", { class: "btn btn-ghost btn-block", onClick: () => ctx.navigate("dashboard") }, "Retour au tableau de bord")]),

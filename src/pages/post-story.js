@@ -16,13 +16,14 @@
 // appelable depuis le navigateur, submit_story refuse un depot sans capture.
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB } from "../lib/mock.js";
+import { BAREME } from "../lib/bareme.js";
+import { currentClub } from "../lib/club.js";
 import { tap, success } from "../lib/haptics.js";
 import { submitStory } from "../lib/game.js";
 
-// Les trois formats acceptes. Le bareme affiche ici doit rester aligne sur
-// celui de la fonction SQL credit_story (migration 0005) : c'est elle qui
-// fait foi, ces valeurs ne servent qu'a l'affichage.
+// Les trois formats acceptes. Les taux ne sont plus recopies ici : ils
+// viennent de lib/bareme.js, qui reflete la fonction SQL story_points()
+// (migration 0014). C'est elle qui fait foi.
 const KINDS = [
   {
     id: "story",
@@ -30,7 +31,7 @@ const KINDS = [
     ico: "instagram",
     app: "Instagram",
     url: "https://instagram.com",
-    per100: 20,
+    per100: BAREME.story.per100,
     why: "Le meilleur taux : une story touche ton cercle proche, c'est ce qui remplit vraiment.",
     step: "Ajoute le sticker mention",
   },
@@ -40,7 +41,7 @@ const KINDS = [
     ico: "reel",
     app: "Instagram",
     url: "https://instagram.com",
-    per100: 7,
+    per100: BAREME.reel.per100,
     why: "Payé au volume : la portée est plus large, mais moins ciblée.",
     step: "Mentionne",
   },
@@ -50,7 +51,7 @@ const KINDS = [
     ico: "tiktok",
     app: "TikTok",
     url: "https://tiktok.com",
-    per100: 7,
+    per100: BAREME.tiktok.per100,
     why: "Payé au volume : la portée est plus large, mais moins ciblée.",
     step: "Mentionne",
   },
@@ -59,7 +60,26 @@ const KINDS = [
 export function PostStory(_params, ctx) {
   const root = h("div", { class: "ps" });
   let kind = KINDS[0];
+
+  // Le club vient du QR scanne (lib/club.js), il n'est plus ecrit en dur.
+  // C'est lui qui porte le handle a taguer : avec la valeur figee de
+  // mock.js, un clubbeur d'un autre etablissement etait invite a taguer
+  // @mirage.brussels, donc son contenu n'arrivait jamais a son club et il
+  // n'etait jamais credite.
+  let club = null;
+  let ecran = "howto";
+
   renderHowto();
+
+  // Rendu immediat puis repeinture : le club est presque toujours deja en
+  // memoire locale, mais sa resolution reste asynchrone. On ne repeint que
+  // si l'utilisateur n'a pas deja avance dans le parcours, sinon on lui
+  // effacerait sa saisie.
+  currentClub().then((c) => {
+    club = c;
+    if (ecran === "howto") renderHowto();
+  });
+
   return root;
 
   function swap(node) {
@@ -68,12 +88,15 @@ export function PostStory(_params, ctx) {
 
   /* ---------- 1. Instructions ---------- */
   function renderHowto() {
+    ecran = "howto";
     const steps = [
       { n: "1", t: `Ouvre ${kind.app}`, d: "On t'y emmène en un tap." },
       {
         n: "2",
         t: `Poste ${kind.id === "story" ? "une story" : kind.id === "reel" ? "un Reel" : "un TikTok"}`,
-        d: `${kind.step} @${CLUB.igHandle}.`,
+        // Sans club resolu on ne cite AUCUN compte : envoyer taguer le
+        // mauvais etablissement coute ses points au clubbeur.
+        d: club ? `${kind.step} @${club.ig_handle}.` : `${kind.step} le compte de ton club.`,
       },
       { n: "3", t: "Reviens avec ta capture", d: "Elle montre tes vues : c'est elle qui fixe ton gain." },
     ];
@@ -134,11 +157,13 @@ export function PostStory(_params, ctx) {
         ]),
 
         h("div", { class: "ps-body" }, [
-          h("h1", { class: "ps-title reveal", style: { "--d": "0ms" } }, [
-            "Tague ",
-            h("span", { class: "ps-club" }, `@${CLUB.igHandle}`),
-            " et gagne tes points",
-          ]),
+          h(
+            "h1",
+            { class: "ps-title reveal", style: { "--d": "0ms" } },
+            club
+              ? ["Tague ", h("span", { class: "ps-club" }, `@${club.ig_handle}`), " et gagne tes points"]
+              : ["Tague ton club et gagne tes points"]
+          ),
 
           picker,
 
@@ -197,6 +222,7 @@ export function PostStory(_params, ctx) {
   // C'est le coeur du changement. Sans capture, pas de depot : le bouton
   // reste desactive et la base refuse de toute facon (proof_required).
   function renderProof(lien) {
+    ecran = "proof";
     const fileInput = h("input", {
       class: "ps-file",
       type: "file",
@@ -315,6 +341,7 @@ export function PostStory(_params, ctx) {
   // Aucun point n'est annonce ici. Promettre un gain avant que le club ait
   // regarde la preuve, c'est reproduire exactement le probleme d'avant.
   function renderSent() {
+    ecran = "sent";
     swap(
       h("div", { class: "ps-inner ps-sent" }, [
         h("div", { class: "ps-body ps-sent-body" }, [
@@ -322,7 +349,7 @@ export function PostStory(_params, ctx) {
           h("h2", { class: "ps-wait-title pop", style: { "--d": "120ms" } }, "Envoyé au club"),
           h("p", { class: "ps-wait-sub pop", style: { "--d": "200ms" } }, [
             "Le ",
-            h("strong", {}, CLUB.name),
+            h("strong", {}, club?.name || "club"),
             " vérifie ta capture et crédite tes points. En général avant la prochaine soirée.",
           ]),
           h("p", { class: "ps-sent-note pop", style: { "--d": "280ms" } },
@@ -342,6 +369,9 @@ export function PostStory(_params, ctx) {
     if (/already_pending/.test(code)) return "Tu as déjà un contenu en attente de validation.";
     if (/invalid_kind/.test(code)) return "Format non reconnu.";
     if (/not_authenticated/.test(code)) return "Reconnecte-toi pour envoyer ton contenu.";
+    // submitStory renvoie ce code quand aucun QR n'a jamais ete scanne :
+    // sans club, le depot n'a nulle part ou aller.
+    if (/club_introuvable/.test(code)) return "Scanne le QR de ton club avant d'envoyer ton contenu.";
     return "Envoi impossible pour le moment. Réessaie dans un instant.";
   }
 }

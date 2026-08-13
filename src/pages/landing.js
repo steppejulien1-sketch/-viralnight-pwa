@@ -9,13 +9,16 @@
 // les recompenses reelles sont visibles des le premier ecran, le bareme
 // est ecrit noir sur blanc, et un chiffre reel montre que c'est atteignable.
 //
-// DONNEES : l'ecran s'affiche IMMEDIATEMENT avec les donnees de
-// demonstration, puis bascule sur Supabase des que la reponse arrive.
-// Jamais d'ecran vide ni de spinner : c'est le premier ecran apres le
-// scan, il doit etre lisible a la milliseconde ou on perd la personne.
+// DONNEES : la structure de l'ecran s'affiche IMMEDIATEMENT, les
+// recompenses arrivent de Supabase. La vitrine partait auparavant sur un
+// catalogue de demonstration (« Un cocktail offert », 300 pts...) garde
+// tel quel si la vraie liste tardait, echouait OU revenait vide. Sur le
+// PREMIER ecran apres le scan, c'est la pire des inventions possibles :
+// on decide de s'inscrire pour une recompense que ce bar ne propose pas.
+// Mieux vaut une etagere nue une fraction de seconde.
 
 import { h, icon } from "../lib/dom.js";
-import { REWARDS, STORY_BASE_POINTS, POINTS_PER_100_VIEWS } from "../lib/mock.js";
+import { BAREME } from "../lib/bareme.js";
 import { loadPublicRewards, loadClubProof } from "../lib/game.js";
 import { currentClub, slugDemande } from "../lib/club.js";
 
@@ -27,14 +30,9 @@ const PAR_CATEGORIE = { boisson: "gift", entree: "sparkles", vip: "trophy", excl
 const PAR_RANG = ["gift", "sparkles", "trophy", "medal"];
 
 export function Landing(_params, ctx) {
-  // Donnees de demonstration, normalisees dans la meme forme que la base
-  // pour que le rendu n'ait qu'un seul chemin.
-  const demo = [...REWARDS]
-    .sort((a, b) => a.cost - b.cost)
-    .map((r) => ({ id: r.id, title: r.title, cost_points: r.cost, category: null }));
-
-  const rail = h("ul", { class: "lp-rail" }, demo.map(carte));
-  const compte = h("span", { class: "lp-shelf-count mono" }, `${demo.length} dispos`);
+  // L'etagere part VIDE et ne se remplit qu'avec le vrai catalogue du club.
+  const rail = h("ul", { class: "lp-rail" });
+  const compte = h("span", { class: "lp-shelf-count mono" }, "");
   // Un seul noeud texte pour toute la phrase : deux noeuds cote a cote
   // laissaient un double espace avant le nom du club.
   // Vides au depart : on n'affiche AUCUN nom de club tant que le QR n'a pas
@@ -77,7 +75,7 @@ export function Landing(_params, ctx) {
 
       h("section", { class: "lp-how reveal", style: { "--d": "240ms" } }, [
         etape("1", "Poste ta story", tag),
-        etape("2", "On compte tes vues", `${STORY_BASE_POINTS} pts d'office, + ${POINTS_PER_100_VIEWS} pts par 100 vues`),
+        etape("2", "On compte tes vues", `${BAREME.story.base} pts d'office, + ${BAREME.story.per100} pts par 100 vues`),
         etape("3", "Tu retires au bar", "Tu montres ton code, c'est réglé"),
       ]),
 
@@ -116,9 +114,12 @@ export function Landing(_params, ctx) {
       });
 
       const vraies = await loadPublicRewards(club.id);
-      // Une liste vide est une reponse valide (le club n'a rien publie) :
-      // on garde alors la demo, montrer une vitrine vide serait pire.
-      if (!vraies || !vraies.length) return;
+      // Liste vide = reponse valide : ce club n'a encore rien publie. On le
+      // dit, au lieu d'afficher le catalogue d'un autre etablissement.
+      if (!vraies || !vraies.length) {
+        rail.replaceChildren(etagereVide());
+        return;
+      }
 
       rail.replaceChildren(...vraies.map(carte));
       compte.textContent = `${vraies.length} dispo${vraies.length > 1 ? "s" : ""}`;
@@ -129,13 +130,15 @@ export function Landing(_params, ctx) {
 
   // --- Fabriques ---------------------------------------------------------
 
-  // La premiere (la moins chere) est mise en avant sur toute la largeur :
-  // c'est la porte d'entree, celle qui decide de l'inscription. Les
-  // suivantes tiennent en grille deux colonnes.
+  // Une ligne par palier, de la moins chere a la plus chere : les prix
+  // s'empilent dans une seule colonne, la progression se lit d'un coup.
+  // La premiere est la porte d'entree (celle qui decide de l'inscription)
+  // et porte l'aplat rouge.
   //
-  // Avant, les quatre etaient dans un carrousel horizontal : deux d'entre
-  // elles restaient hors ecran, et rien ne disait qu'il fallait faire
-  // defiler. On cachait la moitie de l'argument.
+  // Deux dispositions ont ete essayees avant : un carrousel horizontal
+  // (deux recompenses hors ecran, rien pour signaler le defilement) puis
+  // une grille deux colonnes (carte orpheline des que le nombre est
+  // impair, prix alignes sur rien).
   function carte(r, i) {
     const vedette = i === 0;
     return h("li", { class: `lp-reward${vedette ? " is-first" : ""}` }, [
@@ -149,6 +152,17 @@ export function Landing(_params, ctx) {
         h("span", { class: "lp-reward-title" }, r.title),
       ]),
       h("span", { class: "lp-reward-cost mono" }, [nf.format(r.cost_points), h("small", {}, "pts")]),
+    ]);
+  }
+
+  // Etagere sans catalogue. Reprend la classe des vraies lignes pour
+  // garder la meme forme, sans annoncer une seule recompense inventee.
+  function etagereVide() {
+    return h("li", { class: "lp-reward" }, [
+      h("span", { class: "lp-reward-icn", "aria-hidden": "true" }, icon("gift", 18)),
+      h("span", { class: "lp-reward-txt" }, [
+        h("span", { class: "lp-reward-title" }, "Les récompenses de ce club arrivent bientôt."),
+      ]),
     ]);
   }
 

@@ -159,65 +159,64 @@
   color: var(--text-faint);
 }
 
-/* Grille : les quatre recompenses tiennent a l'ecran d'un seul coup.
-   Le carrousel horizontal qui les precedait en cachait deux, sans rien
-   pour signaler qu'il fallait faire defiler — la moitie de l'argument
-   restait invisible. */
+/* Echelle verticale : ce sont des PALIERS, pas des vignettes
+   interchangeables. En grille deux colonnes, un nombre impair de
+   recompenses laissait une carte orpheline seule a gauche, et les
+   trois prix flottaient chacun a une abscisse differente — on lisait
+   un damier, pas une progression.
+   En lignes pleine largeur, l'oeil descend 300 -> 600 -> 1200 -> 3000
+   dans une seule colonne de chiffres, et le bloc tient sur MOINS de
+   hauteur qu'avant (4 lignes de 62px contre deux rangees de 118px). */
 .lp-rail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0 var(--pad-x);
 }
 .lp-reward {
-  /* Empilees : sur deux colonnes, une disposition en ligne ecrasait le
-     titre entre l'icone et le prix — "Coupe-file..." au lieu de
-     "Coupe-file garanti". Le nom de la recompense est ce qu'on vend,
-     il ne doit jamais etre tronque. */
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  min-height: 118px;
-  padding: 13px 14px;
+  align-items: center;
+  gap: 13px;
+  min-height: 62px;
+  padding: 11px 14px;
   border-radius: var(--r-card);
-  background: var(--surface-2);
+  /* --surface (#1c1c1c) et non --surface-2 (#2e2e2e) : ces cartes sont
+     posees a plat sur le fond, pas empilees. Le gris clair les faisait
+     dominer l'ecran et volait au rouge son contraste. */
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 
-/* La moins chere occupe toute la largeur : c'est la porte d'entree,
-   celle qui decide de l'inscription. */
+/* La moins chere est la porte d'entree, celle qui decide de
+   l'inscription. Elle ne se signale plus par une bordure teintee a 45%
+   d'opacite — imperceptible sur du noir — mais par un aplat rouge
+   plein. C'est le seul bloc colore de la vitrine : il n'y a aucune
+   ambiguite sur ou regarder en premier. */
 .lp-reward.is-first {
-  /* La vedette garde la disposition en ligne : sur toute la largeur,
-     le titre a la place qu'il faut. */
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  gap: 13px;
-  min-height: 74px;
-  padding: 14px 16px;
-  border-color: rgba(var(--accent-rgb), 0.45);
-  background-color: var(--surface-2);
-  background-image: linear-gradient(120deg, rgba(var(--accent-rgb), 0.13), transparent 62%);
+  min-height: 78px;
+  padding: 13px 16px;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 14px 30px -18px var(--accent-glow);
 }
 
 .lp-reward-icn {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   flex: none;
   border-radius: var(--r-card);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-mute);
 }
 .lp-reward.is-first .lp-reward-icn {
-  width: 44px;
-  height: 44px;
-  background: rgba(var(--accent-rgb), 0.15);
-  color: var(--accent);
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--accent-ink);
 }
 
 .lp-reward-txt {
@@ -225,7 +224,6 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  width: 100%;
   flex: 1;
 }
 .lp-reward-tag {
@@ -233,42 +231,49 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  /* Sur l'aplat rouge, l'accent lui-meme serait invisible. */
+  color: rgba(255, 255, 255, 0.75);
 }
 .lp-reward-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 650;
-  line-height: 1.3;
+  line-height: 1.25;
   letter-spacing: -0.01em;
+  color: var(--text);
 }
 .lp-reward.is-first .lp-reward-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  -webkit-line-clamp: 1;
+  color: var(--accent-ink);
 }
 
+/* Colonne de chiffres : cadree a droite, chasse fixe. C'est cet
+   alignement qui fait lire la montee des paliers d'un seul coup
+   d'oeil ; sans lui, quatre nombres poses au hasard. */
 .lp-reward-cost {
   flex: none;
-  margin-top: auto;
-  font-size: 15px;
+  margin-left: auto;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-dim);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
   white-space: nowrap;
 }
 .lp-reward.is-first .lp-reward-cost {
-  margin-top: 0;
-  margin-left: auto;
-  font-size: 22px;
-  color: var(--accent);
+  font-size: 25px;
+  color: var(--accent-ink);
 }
 .lp-reward-cost small {
-  margin-left: 3px;
+  margin-left: 4px;
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
+}
+.lp-reward.is-first .lp-reward-cost small {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* --- Les 3 etapes --- */

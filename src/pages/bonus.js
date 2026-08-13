@@ -4,13 +4,24 @@
 // En prod : upload Supabase Storage + OCR du nombre de vues (Edge Function).
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB } from "../lib/mock.js";
+import { currentClub } from "../lib/club.js";
 import { tap, success } from "../lib/haptics.js";
 
 export function Bonus(_params, ctx) {
   const root = h("div", { class: "bn-page" });
   let file = null;
+
+  // Nom du club affiche dans l'en-tete : il vient du QR scanne.
+  let club = null;
+  let ecran = "pick";
+
   renderPick();
+  // On ne repeint que si l'utilisateur n'a pas deja choisi sa capture,
+  // sinon on lui effacerait sa selection.
+  currentClub().then((c) => {
+    club = c;
+    if (ecran === "pick") renderPick();
+  });
   return root;
 
   function swap(node) {
@@ -19,6 +30,7 @@ export function Bonus(_params, ctx) {
 
   /* ---------- Choix / drop du fichier ---------- */
   function renderPick() {
+    ecran = "pick";
     const input = h("input", {
       type: "file",
       accept: "image/*",
@@ -74,6 +86,7 @@ export function Bonus(_params, ctx) {
 
   /* ---------- Preview + envoi ---------- */
   function renderPreview() {
+    ecran = "preview";
     const url = URL.createObjectURL(file);
 
     swap(
@@ -102,6 +115,7 @@ export function Bonus(_params, ctx) {
 
   /* ---------- Statut "en cours de verification" ---------- */
   function renderSent() {
+    ecran = "sent";
     success();
     swap(
       h("div", { class: "bn-inner bn-sent" }, [
@@ -137,7 +151,7 @@ export function Bonus(_params, ctx) {
         { class: "ob-back", "aria-label": "Retour", onClick: () => ctx.back("dashboard") },
         icon("arrowRight", 18)
       ),
-      h("span", { class: "label" }, `Bonus vues · ${CLUB.name}`),
+      h("span", { class: "label" }, club ? `Bonus vues · ${club.name}` : "Bonus vues"),
     ]);
   }
 }

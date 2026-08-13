@@ -1,3 +1,22 @@
+// ⚠️ PLUS AUCUN ECRAN DE PRODUCTION N'IMPORTE CE FICHIER.
+//
+// Il servait de repli derriere les vraies requetes. En pratique il
+// AFFICHAIT DES CHIFFRES FAUX mais credibles : 480 pts de solde, 2
+// soirees, un catalogue de recompenses inexistantes, et le club "Mirage"
+// quel que soit le QR scanne. Un clubbeur pouvait lire 480 points sur son
+// tableau de bord pendant que la boutique lisait son vrai solde.
+//
+// Le bareme qui vivait ici (STORY_BASE_POINTS / POINTS_PER_100_VIEWS)
+// n'etait pas une donnee de demonstration mais une constante produit : il
+// est parti dans `lib/bareme.js`, qui reflete la fonction SQL
+// story_points(). Ne pas le redupliquer ici.
+//
+// Le fichier n'est conserve que pour du bricolage local hors ligne. RIEN
+// dans src/pages ni src/owner ne doit le reimporter : si un ecran manque
+// de donnees, la reponse est un etat vide honnete, pas un chiffre invente.
+// Il peut etre supprime sans rien casser.
+//
+// ---------------------------------------------------------------------
 // Donnees de demonstration realistes — le temps de cabler Supabase.
 //
 // MODELE v2 : plus de palier base sur les abonnes (impossible a verifier,

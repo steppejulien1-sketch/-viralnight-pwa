@@ -3,15 +3,25 @@
 // hors du top 10). Reset chaque lundi (week_start_date).
 
 import { h, icon } from "../lib/dom.js";
-import { CLUB } from "../lib/mock.js";
+import { currentClub } from "../lib/club.js";
 import { loadLeaderboard } from "../lib/game.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 
 export function Leaderboard(_params, ctx) {
   const root = h("div", { class: "lb-page" });
+
+  // Le nom du club vient du QR scanne, plus de mock.js : ce classement est
+  // celui d'UN club, l'annoncer sous le nom d'un autre n'a aucun sens.
+  let club = null;
+
   render(null);
-  loadLeaderboard().then((d) => render(d));
+  // Les deux chargements partent ensemble : le nom du club ne doit pas
+  // retarder l'affichage du classement, qui est le contenu de l'ecran.
+  Promise.all([currentClub(), loadLeaderboard()]).then(([c, d]) => {
+    club = c;
+    render(d);
+  });
   return root;
 
   function render(data) {
@@ -34,7 +44,13 @@ export function Leaderboard(_params, ctx) {
         head,
         h("div", { class: "lb-title-wrap reveal", style: { "--d": "0ms" } }, [
           h("h1", { class: "lb-title" }, "Cette semaine"),
-          h("p", { class: "lb-sub" }, `Les clubbeurs les plus actifs au ${CLUB.name}. Remise à zéro lundi.`),
+          h(
+            "p",
+            { class: "lb-sub" },
+            club
+              ? `Les clubbeurs les plus actifs au ${club.name}. Remise à zéro lundi.`
+              : "Les clubbeurs les plus actifs cette semaine. Remise à zéro lundi."
+          ),
         ]),
 
         // Podium (top 3).
