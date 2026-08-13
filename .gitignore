@@ -7,3 +7,6 @@ dist
 *.log
 .vercel
 .vite
+
+# Residus du CLI Supabase (cache local de la ref projet)
+supabase/.temp/

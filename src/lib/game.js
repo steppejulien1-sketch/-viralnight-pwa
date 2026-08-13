@@ -246,6 +246,31 @@ export async function submitStory({ kind, views, file, url = "" }) {
     p_url: url || null,
   });
   if (error) return { error: error.message };
+
+  // Remontee vers le dashboard du gerant (site B2B).
+  //
+  // Elle partait avant depuis creditStory(), devenue INJOIGNABLE : la
+  // migration 0014 a revoque l'execution de credit_story pour anon et
+  // authenticated. Plus rien n'appelait donc le pont, et il serait reste
+  // inerte meme une fois b2b_public_code renseigne.
+  //
+  // C'est bien le clubbeur qui appelle, pas le gerant : push-submission
+  // verifie que l'appelant est l'AUTEUR de la story (story.user_id === uid).
+  // Depuis l'ecran de validation, le gerant prendrait un not_your_story.
+  //
+  // Au mieux, volontairement : si la remontee echoue, le depot reste
+  // valable cote PWA et l'erreur est tracee dans story_events.push_error.
+  // Le B2B insere en 'pending' et n'attribue aucun point avant sa propre
+  // validation par le staff -- les deux economies restent separees.
+  //
+  // Seuls Reels et TikToks peuvent traverser : la route B2B valide le
+  // domaine du lien, et une story Instagram n'a pas d'URL publique.
+  if (url && data) {
+    supabase.functions
+      .invoke("push-submission", { body: { story_id: data } })
+      .catch(() => {});
+  }
+
   return { storyId: data };
 }
 
