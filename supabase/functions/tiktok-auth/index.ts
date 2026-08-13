@@ -144,35 +144,54 @@ Deno.serve(async (req) => {
     // Adresse technique stable : cle de compte, jamais montree.
     const email = `tt_${openId}@tiktok.viralnight.local`;
 
-    // Echoue si le compte existe deja : c'est le cas nominal d'une
-    // reconnexion, on l'ignore volontairement.
-    await db.auth.admin.createUser({
+    // Compte d'authentification. L'echec sur doublon est le cas nominal
+    // d'une reconnexion : on retrouve alors l'identifiant autrement.
+    const { data: cree } = await db.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: { tiktok_open_id: openId, tiktok_username: username },
     });
 
-    // Le pseudo vient de TikTok, jamais du client : c'est tout l'interet
-    // de passer par ici.
-    const { data: userRow } = await db
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-    if (userRow?.id) {
-      // follower_count : affichage seul. Le client ne peut pas l'ecrire
-      // (grant limite a handle/email depuis la migration 0004).
-      const followers = Number(u.follower_count);
-      await db
-        .from("users")
-        .update({
-          handle: username,
-          follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
-          follower_source: "tiktok",
-          follower_updated_at: new Date().toISOString(),
-        })
-        .eq("id", userRow.id);
+    let uid = cree?.user?.id ?? null;
+    if (!uid) {
+      // Reconnexion : le profil existe deja et porte l'identifiant.
+      const { data: connu } = await db.from("users").select("id").eq("email", email).maybeSingle();
+      uid = connu?.id ?? null;
     }
+    if (!uid) {
+      // Compte auth cree sans profil (connexion anterieure a ce correctif).
+      const { data: liste } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      uid = liste?.users?.find((x) => x.email === email)?.id ?? null;
+    }
+    if (!uid) return back("?social_error=session_failed");
+
+    // ⚠️ RIEN NE CREE public.users : il n'existe aucun trigger sur
+    // auth.users. La version precedente faisait un simple UPDATE, qui
+    // portait sur 0 LIGNE a la premiere connexion -- le pseudo et le
+    // nombre d'abonnes n'etaient donc JAMAIS enregistres, et tout
+    // l'interet de passer par TikTok etait perdu. Meme cause que le bug
+    // d'inscription corrige par la migration 0018.
+    //
+    // upsert sur l'id : les colonnes non citees (points_balance,
+    // lifetime_points) ne sont pas touchees. Cette fonction s'execute en
+    // service_role, elle n'est donc pas soumise aux grants par colonne --
+    // raison de plus pour n'ecrire que ce qui vient reellement de TikTok.
+    const followers = Number(u.follower_count);
+    const { error: profilErr } = await db.from("users").upsert(
+      {
+        id: uid,
+        email,
+        // Le pseudo vient de TikTok, jamais du client : c'est tout
+        // l'interet de passer par ici. Il ecrase une saisie manuelle
+        // precedente, volontairement -- le reseau fait foi.
+        handle: username,
+        follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
+        follower_source: "tiktok",
+        follower_updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+    if (profilErr) console.error("profil tiktok", profilErr);
 
     // On ne conserve PAS l'access_token : on a ce qu'il fallait.
     // action_link ouvre la session cote Supabase puis renvoie sur la PWA.
