@@ -745,3 +745,40 @@ select.ow-input { cursor: pointer; }
   margin-top: 2px;
   color: var(--accent);
 }
+
+/* Lecture assistee de la capture (OCR) — bandeau sous les vues.
+   L'OCR ne fait que PROPOSER : le bouton "appliquer" recopie le chiffre
+   dans le champ, il ne valide rien. */
+.ow-review-ocr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.ow-review-ocr-btn { padding: 6px 12px; font-size: 13px; }
+.ow-review-ocr-val {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+/* Un ecart entre le declare et le lu est la seule chose qui merite l'oeil
+   du gerant : c'est le seul etat colore. */
+.ow-review-ocr-gap { color: var(--accent); font-weight: 600; }
+.ow-review-ocr-ok { color: var(--text-mute); }
+.ow-review-ocr-apply {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.ow-review-ocr-apply:hover { border-color: var(--accent); color: var(--accent); }

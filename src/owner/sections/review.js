@@ -87,6 +87,63 @@ export async function ReviewAdmin(mount, club) {
     const valider = h("button", { class: "ow-btn ow-btn-primary" }, "Valider et créditer");
     const refuser = h("button", { class: "ow-btn" }, "Refuser");
 
+    // --- Lecture assistee de la capture -------------------------------
+    // L'OCR ne decide RIEN : il propose un chiffre, le gerant tranche.
+    // Il ecrit dans une colonne separee (ocr_views) et n'ecrase jamais la
+    // declaration du clubbeur.
+    const ocrTexte = h("span", { class: "ow-review-ocr-val" }, "");
+    const ocrBtn = h("button", { class: "ow-btn ow-review-ocr-btn" }, "Lire la capture");
+    const ocrBloc = h("div", { class: "ow-review-ocr" }, [ocrBtn, ocrTexte]);
+
+    function afficherOcr(lu, err) {
+      if (lu == null) {
+        ocrTexte.className = "ow-review-ocr-val ow-muted";
+        ocrTexte.textContent = err ? `Lecture impossible — ${err}` : "";
+        return;
+      }
+      const declare = Number(r.declared_views) || 0;
+      const ecart = lu - declare;
+      const appliquer = h(
+        "button",
+        {
+          class: "ow-review-ocr-apply",
+          onClick: () => {
+            vues.value = String(lu);
+            // Sans cet evenement, l'estimation de points resterait sur
+            // l'ancienne valeur : elle ecoute "input".
+            vues.dispatchEvent(new Event("input"));
+          },
+        },
+        "appliquer"
+      );
+      ocrTexte.className = "ow-review-ocr-val" + (ecart !== 0 ? " is-diff" : "");
+      ocrTexte.replaceChildren(
+        h("span", { class: "mono" }, `Lu sur l'image : ${nf.format(lu)}`),
+        ecart !== 0
+          ? h("span", { class: "ow-review-ocr-gap" }, `${ecart > 0 ? "+" : ""}${nf.format(ecart)} vs déclaré`)
+          : h("span", { class: "ow-review-ocr-ok" }, "conforme"),
+        appliquer
+      );
+    }
+
+    // Resultat d'une lecture precedente, s'il y en a eu une.
+    if (r.ocr_views != null || r.ocr_error) afficherOcr(r.ocr_views ?? null, r.ocr_error || null);
+
+    ocrBtn.addEventListener("click", async () => {
+      ocrBtn.disabled = true;
+      ocrBtn.textContent = "Lecture…";
+      const { data, error } = await supabase.functions.invoke("ocr-screenshot", {
+        body: { story_id: r.story_id },
+      });
+      ocrBtn.disabled = false;
+      ocrBtn.textContent = "Relire la capture";
+      if (error) {
+        afficherOcr(null, "service indisponible");
+        return;
+      }
+      afficherOcr(data?.vues ?? null, data?.erreur || null);
+    });
+
     // La capture vit dans un bucket prive : on genere une URL signee,
     // valable une heure. Pas de lien permanent qui traine.
     const visuel = h("div", { class: "ow-review-shot" }, [h("span", { class: "ow-muted" }, "Chargement de la capture…")]);
@@ -147,6 +204,8 @@ export async function ReviewAdmin(mount, club) {
           h("label", { class: "ow-review-field" }, [h("span", {}, "Vues constatées"), vues]),
           h("div", { class: "ow-review-gain" }, [h("span", { class: "ow-muted" }, "Crédit"), estim]),
         ]),
+
+        ocrBloc,
 
         h("div", { class: "ow-review-actions" }, [valider, refuser]),
         msg,
