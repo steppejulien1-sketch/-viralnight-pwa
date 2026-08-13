@@ -95,10 +95,27 @@ export async function ReviewAdmin(mount, club) {
     const ocrBtn = h("button", { class: "ow-btn ow-review-ocr-btn" }, "Lire la capture");
     const ocrBloc = h("div", { class: "ow-review-ocr" }, [ocrBtn, ocrTexte]);
 
+    // Les erreurs du service de vision arrivent en anglais et en jargon
+    // ("You have no credits remaining..."). Un gerant de club n'a pas a
+    // lire ca : on traduit ce qui revient souvent, et on garde un repli
+    // court pour le reste.
+    function traduireOcr(err) {
+      const s = String(err || "").toLowerCase();
+      if (s.includes("credit") || s.includes("quota") || s.includes("billing"))
+        return "service de lecture indisponible (crédits épuisés)";
+      if (s.includes("rate limit") || s.includes("429"))
+        return "trop de lectures d'un coup, réessaie dans un instant";
+      if (s.includes("api key") || s.includes("unauthorized") || s.includes("401"))
+        return "service de lecture mal configuré";
+      if (s.includes("aucun nombre")) return "aucun nombre de vues trouvé sur la capture";
+      if (s.includes("indisponible")) return err;
+      return "lecture impossible pour le moment";
+    }
+
     function afficherOcr(lu, err) {
       if (lu == null) {
         ocrTexte.className = "ow-review-ocr-val ow-muted";
-        ocrTexte.textContent = err ? `Lecture impossible — ${err}` : "";
+        ocrTexte.textContent = err ? traduireOcr(err) : "";
         return;
       }
       const declare = Number(r.declared_views) || 0;
