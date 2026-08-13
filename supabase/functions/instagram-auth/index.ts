@@ -134,29 +134,49 @@ Deno.serve(async (req) => {
 
     const email = `ig_${igId}@instagram.viralnight.local`;
 
-    await db.auth.admin.createUser({
+    const { data: cree } = await db.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: { instagram_id: igId, instagram_username: username },
     });
 
-    const { data: userRow } = await db
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-    if (userRow?.id) {
-      const followers = Number(me?.followers_count);
-      await db
-        .from("users")
-        .update({
-          handle: username,
-          follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
-          follower_source: "instagram",
-          follower_updated_at: new Date().toISOString(),
-        })
-        .eq("id", userRow.id);
+    let uid = cree?.user?.id ?? null;
+    if (!uid) {
+      // Reconnexion : le profil existe deja et porte l'identifiant.
+      const { data: connu } = await db.from("users").select("id").eq("email", email).maybeSingle();
+      uid = connu?.id ?? null;
     }
+    if (!uid) {
+      // Compte auth cree sans profil (connexion anterieure a ce correctif).
+      const { data: liste } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      uid = liste?.users?.find((x) => x.email === email)?.id ?? null;
+    }
+    if (!uid) return back("?social_error=session_failed");
+
+    // ⚠️ RIEN NE CREE public.users : aucun trigger sur auth.users. La
+    // version precedente faisait un UPDATE, qui portait sur 0 LIGNE a la
+    // premiere connexion -- le pseudo verifie par Instagram et le nombre
+    // d'abonnes n'etaient donc JAMAIS enregistres. Meme cause que le bug
+    // d'inscription corrige par la migration 0018, et que celui de
+    // tiktok-auth.
+    //
+    // upsert sur l'id : points_balance et lifetime_points ne sont pas
+    // cites, donc pas touches.
+    const followers = Number(me?.followers_count);
+    const { error: profilErr } = await db.from("users").upsert(
+      {
+        id: uid,
+        email,
+        // Le pseudo vient d'Instagram, jamais du client : c'est tout
+        // l'interet de passer par ici.
+        handle: username,
+        follower_count: Number.isFinite(followers) && followers >= 0 ? followers : null,
+        follower_source: "instagram",
+        follower_updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+    if (profilErr) console.error("profil instagram", profilErr);
 
     const { data: link, error: linkErr } = await db.auth.admin.generateLink({
       type: "magiclink",
