@@ -16,7 +16,7 @@ const CATEGORIES = [
 export async function RewardsAdmin(mount, club) {
   const head = h("div", { class: "ow-head" }, [
     h("div", {}, [h("h1", {}, "Boutique de points"), h("p", { class: "ow-head-sub" }, "Ce que tes clubbeurs peuvent débloquer.")]),
-    h("button", { class: "ow-btn ow-btn-primary", onClick: () => openForm(null) }, [icon("gift", 17), "Nouveau reward"]),
+    h("button", { class: "ow-btn ow-btn-primary", onClick: () => openForm(null) }, [icon("gift", 17), "Nouvelle récompense"]),
   ]);
   const listWrap = h("div", { class: "ow-rewards" }, [h("p", { class: "ow-muted" }, "Chargement…")]);
   mount.replaceChildren(h("div", { class: "ow-section" }, [head, listWrap]));
@@ -34,7 +34,7 @@ export async function RewardsAdmin(mount, club) {
       return;
     }
     if (!data.length) {
-      listWrap.replaceChildren(h("p", { class: "ow-muted" }, "Aucun reward. Crée le premier avec « Nouveau reward »."));
+      listWrap.replaceChildren(h("p", { class: "ow-muted" }, "Aucune récompense. Crée la première avec « Nouvelle récompense »."));
       return;
     }
     listWrap.replaceChildren(
@@ -91,7 +91,7 @@ export async function RewardsAdmin(mount, club) {
     const panel = h("div", { class: "ow-drawer-backdrop", onClick: (e) => e.target === panel && close() }, [
       h("form", { class: "ow-drawer", onSubmit: save }, [
         h("div", { class: "ow-drawer-head" }, [
-          h("h2", {}, existing ? "Modifier le reward" : "Nouveau reward"),
+          h("h2", {}, existing ? "Modifier le reward" : "Nouvelle récompense"),
           h("button", { type: "button", class: "ow-icon-btn", "aria-label": "Fermer", onClick: close }, icon("arrowRight", 18)),
         ]),
         textField("Titre", f.title, (v) => (f.title = v), "10€ offerts sur ta conso"),

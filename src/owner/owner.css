@@ -48,8 +48,13 @@ body {
 .ow-btn:active { transform: scale(0.98); }
 .ow-btn-primary { background: var(--vn-red); color: var(--vn-red-on); box-shadow: 0 8px 24px -10px var(--vn-red-glow); }
 .ow-btn-primary:hover { filter: brightness(1.05); }
-.ow-btn-danger { background: transparent; color: #ff7a9c; border: 1px solid rgba(255, 61, 139, 0.35); }
-.ow-btn-danger:hover { background: var(--vn-red-tint); }
+/* ⚠️ Le bouton destructif n'est NI rose NI rouge. Le rose etait une
+   seconde teinte ; et le rouge est la couleur de marque du produit —
+   s'en servir pour dire « attention » le rendrait ambigu partout
+   ailleurs. Il est neutre, et c'est son LIBELLE qui porte l'avertissement.
+   Il ne s'allume qu'au survol, au moment ou on le vise vraiment. */
+.ow-btn-danger { background: transparent; color: var(--vn-txt-2); border: 1px solid var(--vn-line); }
+.ow-btn-danger:hover { background: var(--vn-red-tint); border-color: var(--vn-red-edge); color: var(--vn-red-ink); }
 
 /* ============================================================
    Login
@@ -121,11 +126,22 @@ select.ow-input { cursor: pointer; }
 .ow-table strong { display: block; font-size: 14.5px; font-weight: 600; }
 .ow-td-sub { display: block; margin-top: 2px; font-size: 12px; color: var(--vn-txt-3); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.ow-cat { display: inline-block; padding: 4px 10px; border-radius: var(--vn-radius-card); font-size: 12px; font-weight: 600; }
-.ow-cat-boisson { background: rgba(53, 224, 232, 0.12); color: var(--vn-txt-2); }
-.ow-cat-entree { background: var(--vn-red-tint); color: var(--vn-red); }
-.ow-cat-vip { background: var(--vn-red-tint); color: #ff9ac4; }
-.ow-cat-exclusif { background: rgba(255, 138, 61, 0.14); color: #ffb37a; }
+/* ⚠️ UNE SEULE FORME POUR TOUTES LES CATEGORIES.
+   Chacune avait sa couleur : cyan pour « boisson », rouge pour
+   « entree », rose pour « VIP », orange pour « exclusif ». Quatre
+   teintes — dont une VERTE-bleutee, la famille explicitement
+   rejetee — dans un produit qui en revendique une seule. Et elles
+   ne codaient rien d'utile : le libelle est deja ecrit dedans.
+   Contour neutre, comme dans la boutique cote clubbeur. */
+.ow-cat {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--vn-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vn-txt-3);
+  border: 1px solid var(--vn-line);
+}
 .ow-lvl-tag { display: inline-block; padding: 3px 9px; border-radius: 6px; background: var(--vn-surf-3); font-size: 12px; font-weight: 600; text-transform: capitalize; }
 
 .ow-icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 6px; color: var(--vn-txt-3); transition: background 0.15s, color 0.15s; }
