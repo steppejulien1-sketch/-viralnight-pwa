@@ -81,9 +81,12 @@ export async function StatsAdmin(mount, club) {
   async function charger() {
     corps.replaceChildren(h("p", { class: "ow-muted" }, "Chargement…"));
 
-    const [stats, activite] = await Promise.all([
+    const [stats, activite, audience] = await Promise.all([
       supabase.rpc("get_club_stats", { p_club: club.id, p_days: jours }),
       supabase.rpc("get_club_activity", { p_club: club.id, p_days: Math.min(jours, 90) }),
+      // Audience cumulee (migration 0023). Volontairement NON bloquante :
+      // si elle echoue, le reste de l'ecran s'affiche quand meme.
+      supabase.rpc("get_club_audience", { p_club: club.id, p_days: jours }),
     ]);
 
     if (stats.error) {
@@ -93,6 +96,7 @@ export async function StatsAdmin(mount, club) {
 
     const s = (Array.isArray(stats.data) ? stats.data[0] : stats.data) || {};
     const jourslist = activite.data || [];
+    const aud = (Array.isArray(audience?.data) ? audience.data[0] : audience?.data) || null;
 
     if (!Number(s.contents_total)) {
       corps.replaceChildren(
@@ -105,8 +109,8 @@ export async function StatsAdmin(mount, club) {
     }
 
     corps.replaceChildren(
-      // 1. La portee : le chiffre pour lequel le club paye.
-      heroPortee(s),
+      // 1. Ce qui a ete publie, et l'audience derriere ceux qui publient.
+      heroPortee(s, aud),
       // 2. Le detail de ce qui a ete publie.
       tuiles(s),
       // 3. L'evolution jour par jour. Une seule mesure par graphique :
@@ -118,10 +122,10 @@ export async function StatsAdmin(mount, club) {
     );
   }
 
-  function heroPortee(s) {
+  function heroPortee(s, aud) {
     const contenus = Number(s.contents_total || 0);
     const clubbeurs = Number(s.active_clubbeurs || 0);
-    return h("section", { class: "ow-hero" }, [
+    const bloc = h("section", { class: "ow-hero" }, [
       h("p", { class: "ow-hero-label" }, `Contenus publiés sur ${jours} jours`),
       h("p", { class: "ow-hero-num mono" }, nf.format(contenus)),
       h("p", { class: "ow-hero-sub" }, [
@@ -130,6 +134,46 @@ export async function StatsAdmin(mount, club) {
         contenus && clubbeurs
           ? `, soit ${(contenus / clubbeurs).toFixed(1).replace(".", ",")} par personne.`
           : ".",
+      ]),
+    ]);
+    return h("div", { class: "ow-hero-row" }, [bloc, heroAudience(aud)]);
+  }
+
+  // --- Audience cumulée (migration 0023) ---------------------------------
+  //
+  // Le total d'abonnés des gens qui publient. C'est ce qui se rapproche le
+  // plus d'un ordre de grandeur d'audience depuis que les vues ne sont plus
+  // comptées — mais ce N'EST PAS une portée, et l'écran doit le dire :
+  //  · les audiences se recoupent, une addition surestime toujours ;
+  //  · le chiffre est DÉCLARÉ à l'inscription, pas vérifié ;
+  //  · il est partiel, d'où la couverture affichée juste en dessous.
+  // ⚠️ Sans la couverture, « 3 400 abonnés » pourrait venir d'une personne
+  // sur trente et se lire comme le total du club. Ne pas la retirer.
+  function heroAudience(aud) {
+    const total = Number(aud?.followers_total || 0);
+    const avec = Number(aud?.with_followers || 0);
+    const gens = Number(aud?.contributors || 0);
+
+    if (!aud || !gens) return null;
+
+    if (!avec) {
+      // État vide honnête plutôt qu'un « 0 » qui se lirait comme une
+      // audience nulle. Personne n'a renseigné, ce n'est pas pareil.
+      return h("section", { class: "ow-hero is-empty" }, [
+        h("p", { class: "ow-hero-label" }, "Audience cumulée"),
+        h("p", { class: "ow-hero-num mono is-void" }, "—"),
+        h("p", { class: "ow-hero-sub" }, `Aucun de tes ${nf.format(gens)} clubbeurs n'a renseigné ses abonnés.`),
+      ]);
+    }
+
+    const verifie = Number(aud.followers_verified || 0);
+    return h("section", { class: "ow-hero" }, [
+      h("p", { class: "ow-hero-label" }, "Audience cumulée"),
+      h("p", { class: "ow-hero-num mono" }, nf.format(total)),
+      h("p", { class: "ow-hero-sub" }, [
+        `abonnés déclarés par ${nf.format(avec)} clubbeur${avec > 1 ? "s" : ""} sur ${nf.format(gens)}`,
+        verifie ? ` · ${nf.format(verifie)} vérifiés par le réseau` : "",
+        ". Les audiences se recoupent : c'est un ordre de grandeur, pas une portée.",
       ]),
     ]);
   }

@@ -249,11 +249,32 @@ select.ow-input { cursor: pointer; }
 }
 
 /* --- Le chiffre-titre : la portee, ce que le club achete --- */
+/* Deux blocs de tete cote a cote : ce qui a ete publie, et l'audience
+   derriere ceux qui publient. En dessous de 900px ils s'empilent — a deux
+   colonnes etroites, le grand nombre se retrouve coupe. */
+.ow-hero-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .ow-hero-row {
+    grid-template-columns: 1fr;
+  }
+}
 .ow-hero {
   padding: 24px 26px;
   border-radius: var(--vn-radius-card);
   background: var(--vn-surf-2);
   border: 1px solid var(--vn-line);
+}
+/* Audience non renseignee : le bloc reste, en retrait. Le faire
+   disparaitre laisserait croire que la donnee n'existe pas. */
+.ow-hero.is-empty {
+  background: var(--vn-surf);
+}
+.ow-hero-num.is-void {
+  color: var(--vn-txt-3);
 }
 .ow-hero-label {
   margin: 0;

@@ -81,6 +81,11 @@ export function Field(o = {}) {
 
   el.input = input;
   el.getValue = () => input.value.trim();
+  // Pre-remplissage : sert a proposer la valeur actuelle plutot qu'un
+  // champ vide quand on MODIFIE une donnee deja saisie (profil > abonnes).
+  el.setValue = (v) => {
+    input.value = v == null ? "" : String(v);
+  };
   el.focus = () => input.focus();
 
   el.setError = (msg) => {

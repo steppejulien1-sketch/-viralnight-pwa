@@ -296,9 +296,48 @@ export async function loadMyPending() {
   return data || [];
 }
 
+// Declare (ou met a jour) ses abonnes, avec une capture facultative.
+//
+// ⚠️ POURQUOI CETTE FONCTION EXISTE. La declaration n'etait possible QU'A
+// L'INSCRIPTION, dans onboarding.js. Un clubbeur qui passait l'etape — elle
+// est facultative — ne pouvait plus jamais renseigner son audience, et les
+// 8 comptes deja inscrits non plus. Le total d'abonnes du club
+// (`get_club_audience`, migration 0023) serait donc reste vide a vie.
+//
+// ⚠️ Le montant des points n'est PAS concerne : les abonnes sont une
+// donnee d'affichage, jamais un multiplicateur. `declare_followers` force
+// `follower_source = 'declared'` cote base — un chiffre saisi a la main ne
+// peut pas se faire passer pour un chiffre verifie par le reseau.
+export async function declareFollowers({ handle, count, file = null }) {
+  if (!isConfigured) return { error: "hors_ligne" };
+  const uid = await myId();
+  if (!uid) return { error: "not_authenticated" };
+
+  let proof = null;
+  if (file) {
+    // Bucket PRIVE, un dossier par personne (meme regle que l'inscription).
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+    const chemin = `${uid}/profil.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("follower-proofs")
+      .upload(chemin, file, { upsert: true, contentType: file.type || "image/jpeg" });
+    // Une capture qui ne part pas ne doit pas bloquer la declaration :
+    // elle est facultative, et le chiffre reste marque « declare ».
+    if (!upErr) proof = chemin;
+  }
+
+  const { data, error } = await supabase.rpc("declare_followers", {
+    p_handle: handle,
+    p_count: Math.max(0, Math.round(Number(count) || 0)),
+    p_proof: proof,
+  });
+  if (error) return { error: error.message };
+  return { profil: Array.isArray(data) ? data[0] : data };
+}
+
 // Profil du clubbeur connecte : solde, cumul et nombre d'abonnes.
 // follower_count est ECRIT uniquement par les edge functions de connexion
-// (migration 0009). Ici on ne fait que le lire.
+// (migration 0009) ou par `declare_followers`. Ici on ne fait que le lire.
 export async function loadMyProfile() {
   if (!isConfigured) return null;
   const uid = await myId();
