@@ -224,46 +224,30 @@ export async function creditStory(views = 0, kind = "story", url = "") {
 // L'ancienne voie (creditStory) permettait de se crediter soi-meme depuis
 // le navigateur ; l'execution de credit_story a ete revoquee pour anon et
 // authenticated. Ne pas la remettre.
-export async function submitStory({ kind, views, file, url = "" }) {
+// ⚠️ PLUS DE CAPTURE DU TOUT (migrations 0026 puis 0028). Le parametre
+// `file` a disparu : plus aucun ecran n'en fournit, et le garder aurait
+// laisse croire qu'une capture reste possible.
+// Ce qui verifie un contenu, desormais :
+//   TikTok → le compte connecte (`tiktok-views` retrouve la video chez
+//            son auteur et en tire les vues reelles) ;
+//   Reel   → le lien public, que le gerant ouvre ;
+//   Story  → la mention recue sur l'Instagram du club.
+// ⚠️ Le LIEN est donc obligatoire pour reel et tiktok, cote base
+// (`url_required`) comme a l'ecran.
+export async function submitStory({ kind, views, url = "" }) {
   if (!isConfigured) return { error: "hors_ligne" };
   const s = await ensureSession();
   const uid = s?.user?.id;
   if (!uid) return { error: "not_authenticated" };
-  // ⚠️ LA CAPTURE N'EST PLUS EXIGEE POUR UNE STORY (migration 0026) : sa
-  // verification passe par les mentions recues sur l'Instagram du club.
-  // Ce garde-fou local rejetait le depot AVANT tout appel reseau : l'ecran
-  // affichait « Ajoute la capture » alors qu'il n'en demandait plus, et
-  // rien ne partait. La base reste seule juge (elle exige toujours la
-  // capture pour un reel ou un TikTok).
-  if (!file && kind !== "story") return { error: "proof_required" };
 
   const cid = await clubId();
   if (!cid) return { error: "club_introuvable" };
-
-  // Bucket PRIVE. Le chemin est `{club}/{clubbeur}/{horodatage}` : c'est
-  // LUI qui porte les droits (migration 0015). Le clubbeur relit son
-  // dossier, le gerant lit le dossier de son club — aucune jointure, donc
-  // aucune policy fragile. L'horodatage evite d'ecraser les depots
-  // precedents : ils servent de trace en cas de litige.
-  // ⚠️ Pas de fichier = pas d'upload. `file.name` sur un null jetterait,
-  // et l'erreur partirait en rejet silencieux (le clic sur « envoyer »
-  // n'attend pas cette promesse) : le bouton resterait a tourner sans que
-  // rien n'explique pourquoi.
-  let chemin = null;
-  if (file) {
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
-    chemin = `${cid}/${uid}/${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("story-proofs")
-      .upload(chemin, file, { contentType: file.type || "image/jpeg" });
-    if (upErr) return { error: "upload:" + upErr.message };
-  }
 
   const { data, error } = await supabase.rpc("submit_story", {
     p_club: cid,
     p_kind: kind,
     p_views: Math.max(0, Math.round(Number(views) || 0)),
-    p_proof: chemin,
+    p_proof: null,
     p_url: url || null,
   });
   if (error) return { error: error.message };

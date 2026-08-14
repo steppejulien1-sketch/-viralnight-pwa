@@ -19,15 +19,18 @@
 // Toutes les phrases viennent de `phraseBareme()` — ne jamais reecrire un
 // montant en dur ici.
 //
+// ⚠️ PLUS AUCUNE CAPTURE D'ECRAN (migrations 0026 puis 0028). Le second
+// ecran n'est plus « ta preuve » mais une CONFIRMATION. Ce qui verifie :
+// le compte TikTok connecte (l'API retrouve la video chez son auteur), le
+// lien public pour un Reel, la mention recue par le club pour une story.
+//
 // CE QUI CHANGE A L'ECRAN :
 //  - le gain est annonce franchement, avant de partir poster ;
-//  - la capture passe sur Picker : elle MONTRE l'image, au lieu d'afficher
-//    un nom de fichier qu'on ne peut pas verifier ;
 //  - le bouton garde son libelle pendant l'envoi ;
 //  - fin des emprunts a onboarding.css et rewards.css.
 
 import { h, icon } from "../lib/dom.js";
-import { Button, Chips, Field, Picker, Points } from "../ui/index.js";
+import { Button, Chips, Field, Points } from "../ui/index.js";
 import { Screen, Title, Sub, Note } from "../patterns/Screen.js";
 import { BAREME, phraseBareme } from "../lib/bareme.js";
 import { currentClub } from "../lib/club.js";
@@ -170,8 +173,14 @@ export function PostStory(_params, ctx) {
           },
           {
             n: "3",
-            t: "Reviens avec ta capture",
-            d: "Elle prouve que ta publication existe. Le club la regarde, puis tes points tombent.",
+            t: "Reviens nous le dire",
+            // ⚠️ L'etape 3 demandait une capture d'ecran (0028 l'a
+            // supprimee). Laisser cette consigne aurait envoye les gens
+            // chercher une image que l'ecran suivant ne demande plus.
+            d:
+              kind.id === "story"
+                ? "Le club voit ta mention arriver sur son compte, puis tes points tombent."
+                : "Le club ouvre ton lien et vérifie la mention, puis tes points tombent.",
           },
         ].map((s) => etape(s))
       )
@@ -183,13 +192,24 @@ export function PostStory(_params, ctx) {
         ico: icon(kind.ico, 20),
         block: true,
         onClick: () => {
-          tap();
           const url = kind.id === "story" ? "" : lien.getValue();
+          // ⚠️ LE LIEN EST LA SEULE PIECE d'un reel ou d'un TikTok depuis
+          // la 0028 (plus aucune capture). Il n'etait valide NULLE PART :
+          // ni ici, ni en base. Sans ce controle, le contenu arrivait chez
+          // le gerant sans aucun moyen de le verifier — et la base le
+          // refuserait maintenant (`url_required`), mais tout a la fin du
+          // parcours, ce qui est le pire moment pour l'apprendre.
+          if (kind.id !== "story" && !/^https?:\/\/\S+$/i.test(url)) {
+            lien.setError(`Colle le lien de ta publication ${kind.app}.`);
+            lien.focus?.();
+            return;
+          }
+          tap();
           window.open(kind.url, "_blank", "noopener");
           renderProof(url);
         },
       }),
-      Note("Le club valide ta capture, puis tes points tombent.")
+      Note("Le club vérifie, puis tes points tombent.")
     );
 
     swap(el);
@@ -197,40 +217,33 @@ export function PostStory(_params, ctx) {
 
   /* ================= 2. La preuve ================= */
   //
-  // ⚠️ POUR UNE STORY, IL N'Y A PLUS DE CAPTURE (migration 0026).
-  // Julien : « ça sert à rien, on vérifiera que ça existe grâce à l'Insta
-  // du club ». C'est plus solide : une capture se fabrique et se recycle,
-  // alors que la mention arrive chez le club lui-même — une source que le
-  // clubbeur ne contrôle pas.
-  // Reel et TikTok gardent la capture : leur verification passe par le
-  // lien public, mais on ne change qu'une chose a la fois.
+  // ⚠️ PLUS AUCUNE CAPTURE, QUEL QUE SOIT LE FORMAT (0026 puis 0028).
+  // Julien : « retire la capture pour les reels et les TikToks, ça
+  // marchera mieux si les gens se connectent avec une clé API TikTok, et
+  // pour Instagram on regardera la mention ».
+  //
+  // Ce qui vérifie quoi, désormais :
+  //   TikTok → le compte connecté. `tiktok-views` retrouve la vidéo DANS
+  //            les siennes : elle existe ET elle est à lui, et on en tire
+  //            les vues réelles (0025) ;
+  //   Reel   → le lien public, que le gérant ouvre ;
+  //   Story  → la mention reçue sur l'Instagram du club.
+  //
+  // Cet écran n'est donc plus une preuve à fournir : c'est une
+  // CONFIRMATION, « j'ai posté ».
 
   function renderProof(url) {
     ecran = "proof";
-    const sansCapture = kind.id === "story";
 
-    const el = Screen({ label: sansCapture ? "Dernière étape" : "Ta preuve", onBack: () => renderHowto() });
+    const el = Screen({ label: "Dernière étape", onBack: () => renderHowto() });
 
     const msg = h("p", { class: "vn-field__err", role: "alert", hidden: true });
 
     const btn = Button({
-      label: sansCapture ? "J'ai posté, envoyer au club" : "Envoyer au club",
+      label: "J'ai posté, envoyer au club",
       block: true,
-      // Sans capture a fournir, il n'y a plus rien a attendre : le bouton
-      // est actif d'emblee.
-      disabled: !sansCapture,
       onClick: () => envoyer(),
     });
-
-    const capture = sansCapture
-      ? null
-      : Picker({
-          title: "Ajouter la capture",
-          sub: "obligatoire",
-          onPick: () => {
-            btn.disabled = false;
-          },
-        });
 
     async function envoyer() {
       tap();
@@ -239,7 +252,6 @@ export function PostStory(_params, ctx) {
 
       const res = await submitStory({
         kind: kind.id,
-        file: capture ? capture.getFile() : null,
         url: url || "",
       });
 
@@ -250,17 +262,14 @@ export function PostStory(_params, ctx) {
         return;
       }
 
-      capture?.destroy();
       success();
       renderSent();
     }
 
     el.body.append(
-      sansCapture
-        ? Title(["Préviens le club, ", h("em", {}, "et c'est plié")])
-        : Title(["Montre ta publication, ", h("em", {}, "et c'est plié")]),
+      Title(["Préviens le club, ", h("em", {}, "et c'est plié")]),
       Sub(
-        sansCapture
+        kind.id === "story"
           ? [
               "Rien à envoyer : ta mention arrive directement sur ",
               h("strong", {}, club?.ig_handle ? `@${club.ig_handle}` : "le compte du club"),
@@ -269,32 +278,27 @@ export function PostStory(_params, ctx) {
               ".",
             ]
           : [
-              "Ouvre ",
-              h("strong", {}, kind.app),
-              ", va sur ta publication, et fais une capture d'écran. ",
+              "Rien à envoyer : le club ouvre ton lien et vérifie la mention. ",
               h("strong", {}, phraseBareme(kind.id)),
               ".",
             ]
       ),
-      // ⚠️ `append(null)` ecrit la chaine « null » dans la page — le DOM
-      // convertit tout ce qui n'est pas un Node en texte. Un tableau vide
-      // ne laisse rien.
-      ...(capture ? [capture] : []),
       h(
         "p",
         { class: "ps-hint" },
-        sansCapture
-          ? "Si la mention n'y est pas, le club ne pourra pas te créditer."
-          : "Le club vérifie que la mention y est. C'est tout ce qu'on regarde."
+        "Si la mention n'y est pas, le club ne pourra pas te créditer."
       ),
       msg
     );
 
     el.foot.append(
       btn,
-      sansCapture
-        ? Note("Le club vérifie dans ses mentions Instagram.", "lock")
-        : Note("Ta capture n'est visible que par le club.", "lock")
+      Note(
+        kind.id === "story"
+          ? "Le club vérifie dans ses mentions Instagram."
+          : "Le club vérifie ta publication depuis ton lien.",
+        "lock"
+      )
     );
     swap(el);
   }
@@ -317,7 +321,7 @@ export function PostStory(_params, ctx) {
           h("strong", {}, club?.name || "club"),
           kind.id === "story"
             ? " vérifie la mention dans ses stories et crédite tes points. En général avant la prochaine soirée."
-            : " vérifie ta capture et crédite tes points. En général avant la prochaine soirée.",
+            : " ouvre ton lien, vérifie la mention et crédite tes points. En général avant la prochaine soirée.",
         ]),
         h(
           "p",
@@ -354,16 +358,17 @@ export function PostStory(_params, ctx) {
   }
 
   // Messages d'erreur de submit_story, traduits pour un clubbeur.
-  // ⚠️ `views_required` a disparu : la migration 0020 ne peut plus le lever.
+  // ⚠️ `views_required` a disparu (0020) et `proof_required` aussi (0028).
+  // `url_required` les remplace : c'est le lien qui porte la preuve d'un
+  // reel ou d'un TikTok.
   function traduire(code) {
-    if (/proof_required/.test(code)) return "Ajoute la capture de ta publication.";
+    if (/url_required/.test(code)) return "Colle le lien de ta publication.";
     if (/already_pending/.test(code)) return "Tu as déjà un contenu en attente de validation.";
     if (/invalid_kind/.test(code)) return "Format non reconnu.";
     if (/not_authenticated/.test(code)) return "Reconnecte-toi pour envoyer ton contenu.";
     // submitStory renvoie ce code quand aucun QR n'a jamais ete scanne :
     // sans club, le depot n'a nulle part ou aller.
     if (/club_introuvable/.test(code)) return "Scanne le QR de ton club avant d'envoyer ton contenu.";
-    if (/^upload:/.test(code)) return "L'envoi de la capture a échoué. Réessaie.";
     return "Envoi impossible pour le moment. Réessaie dans un instant.";
   }
 }

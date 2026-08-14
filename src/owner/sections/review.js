@@ -181,7 +181,14 @@ export async function ReviewAdmin(mount, club) {
     // declaration du clubbeur.
     const ocrTexte = h("span", { class: "ow-review-ocr-val" }, "");
     const ocrBtn = h("button", { class: "ow-btn ow-review-ocr-btn" }, "Lire la capture");
-    const ocrBloc = h("div", { class: "ow-review-ocr" }, [ocrBtn, ocrTexte]);
+    // ⚠️ SANS CAPTURE, IL N'Y A RIEN A LIRE (0028). Le bouton « Lire la
+    // capture » n'apparait que si une image existe — c'est-a-dire pour les
+    // depots faits avant ce changement, ou par un client pas encore
+    // recharge. Le laisser sur tous les contenus proposerait une action
+    // qui echouerait a coup sur.
+    const ocrBloc = r.proof_path
+      ? h("div", { class: "ow-review-ocr" }, [ocrBtn, ocrTexte])
+      : null;
 
     // Les erreurs du service de vision arrivent en anglais et en jargon
     // ("You have no credits remaining..."). Un gerant de club n'a pas a
@@ -270,16 +277,26 @@ export async function ReviewAdmin(mount, club) {
     // l'aurait pousse a refuser des contenus valables.
     // On lui dit OU regarder : la mention arrive sur le compte du club.
     if (!r.proof_path) {
+      // ⚠️ PLUS AUCUN CONTENU N'ARRIVE AVEC UNE CAPTURE (0028). Le bloc
+      // dit OU verifier, et ce n'est pas le meme endroit selon le format —
+      // une consigne generique enverrait le gerant chercher au mauvais
+      // endroit une fois sur deux.
+      const surTikTok = r.views_source === "tiktok_api" && r.verified_views != null;
       visuel.classList.add("is-nocapture");
       visuel.replaceChildren(
-        h("span", { class: "ow-review-shot__ico", "aria-hidden": "true" }, icon("instagram", 22)),
-        h("p", { class: "ow-review-shot__t" }, "Pas de capture"),
+        h("span", { class: "ow-review-shot__ico", "aria-hidden": "true" },
+          icon(r.kind === "tiktok" ? "tiktok" : "instagram", 22)),
+        h("p", { class: "ow-review-shot__t" }, surTikTok ? "Vérifié par TikTok" : "Pas de capture"),
         h(
           "p",
           { class: "ow-review-shot__d" },
-          club?.ig_handle
-            ? `Vérifie la mention dans les stories reçues sur @${club.ig_handle}.`
-            : "Vérifie la mention dans les stories reçues sur le compte du club."
+          surTikTok
+            ? "La vidéo a été retrouvée sur le compte TikTok du clubbeur : elle existe et elle est bien à lui."
+            : r.kind === "story"
+              ? club?.ig_handle
+                ? `Vérifie la mention dans les stories reçues sur @${club.ig_handle}.`
+                : "Vérifie la mention dans les stories reçues sur le compte du club."
+              : "Ouvre le lien ci-contre et vérifie que la mention y est."
         )
       );
     } else
@@ -363,7 +380,9 @@ export async function ReviewAdmin(mount, club) {
               icon("arrowRight", 14),
               "Ouvrir la publication",
             ])
-          : h("p", { class: "ow-review-nolink" }, "Story : pas de lien public, la capture fait foi."),
+          // ⚠️ Disait « la capture fait foi » : plus vrai depuis la 0026,
+          // et le gerant aurait cherche une image qui n'arrive plus.
+          : h("p", { class: "ow-review-nolink" }, "Story : pas de lien public, la mention reçue fait foi."),
 
         h("div", { class: "ow-review-row" }, [
           // ⚠️ Les deux champs ont la MEME structure (libelle / champ /
