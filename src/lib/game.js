@@ -36,11 +36,12 @@ export async function loadPublicClub() {
 //
 // ⚠️ La fonction renvoie encore `views_total`, `best_views` et
 // `best_points` : ces trois champs ne sont PLUS AFFICHES depuis le passage
-// au forfait, et il ne faut pas les remettre sans y penser. Les vues sont
-// DECLAREES par le clubbeur et, depuis le forfait, plus rien ne pousse a
-// les verifier — les publier comme preuve du club serait publier une
-// declaration non controlee. Voir le commentaire de `preuve()` dans
-// `pages/landing.js`.
+// au forfait, et il ne faut pas les remettre sans y penser. `post-story.js`
+// n'envoie plus aucun nombre de vues, donc `views_total` est FIGE, et le
+// peu qui l'alimente encore (saisie du gerant a la validation) n'est
+// verifie par personne. Voir le commentaire de `preuve()` dans
+// `pages/landing.js`, et celui en tete de `owner/sections/stats.js` — le
+// meme piege y a fige tout le tableau de bord du gerant.
 export async function loadClubProof(clubUuid, jours = 30) {
   if (!isConfigured || !clubUuid) return null;
   try {

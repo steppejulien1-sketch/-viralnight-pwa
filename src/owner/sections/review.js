@@ -104,11 +104,17 @@ export async function ReviewAdmin(mount, club) {
   }
 
   function carte(r) {
+    // ⚠️ CHAMP VIDE, PAS « 0 ». Le clubbeur ne declare plus ses vues
+    // depuis le passage au forfait : `declared_views` vaut 0 pour tout
+    // depot reel. Afficher « 0 » se lirait « cette story n'a fait aucune
+    // vue », ce qui est faux — personne n'a rien mesure. Le gerant lit le
+    // chiffre sur la capture affichee a cote, s'il le veut.
     const vues = h("input", {
       class: "ow-input ow-review-views",
       type: "number",
       min: "0",
-      value: String(r.declared_views ?? 0),
+      placeholder: "non renseigné",
+      value: r.declared_views ? String(r.declared_views) : "",
       "aria-label": "Vues constatées",
     });
     // ⚠️ Le montant ne se DEDUIT plus des vues (0020) mais il se SAISIT

@@ -319,6 +319,19 @@ select.ow-input { cursor: pointer; }
   color: var(--vn-txt-3);
 }
 
+/* Mention sous les tuiles : une donnee de second rang (les vues saisies a
+   la main). Volontairement PAS une 5e tuile — la grille en pose 4 par
+   rangee et la cinquieme partait seule a la ligne. */
+.ow-stats-aside {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--vn-txt-3);
+}
+.ow-stats-aside strong {
+  color: var(--vn-txt-2);
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Graphique --- */
 .ow-chart {
   padding: 20px 22px 16px;

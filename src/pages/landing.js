@@ -180,17 +180,18 @@ export function Landing(_params, ctx) {
   //
   // ⚠️ ELLE COMPTE DES CONTENUS, PLUS DES VUES (migration 0020).
   //
-  // ⚠️ CORRECTION D'UN COMMENTAIRE FAUX ecrit ici le 2026-08-14 : il
-  // affirmait que le total de vues avait « cesse de grandir » au passage
-  // au forfait. C'est INEXACT, verifie en base — `submit_story` enregistre
-  // toujours le chiffre saisi par le clubbeur, et `review_story` le
-  // conserve. Les vues continuent donc de s'accumuler.
+  // ⚠️ LE TOTAL DE VUES NE GRANDIT PLUS, et il faut savoir pourquoi
+  // exactement. Ce n'est PAS la base qui a cesse de l'enregistrer :
+  // `submit_story` accepte toujours un `p_views` et `review_story` le
+  // conserve. C'est le FRONT qui n'en envoie plus — `post-story.js` a
+  // retire le champ « combien de vues ? » au passage au forfait, donc tout
+  // depot reel enregistre 0. Seul le gerant peut encore en saisir une, a
+  // la validation.
   //
-  // La vraie raison de ne pas les afficher est autre, et elle tient : ce
-  // chiffre est DECLARE par le clubbeur, et depuis le forfait plus rien
-  // ne pousse personne a le verifier — il ne vaut plus un point. En faire
-  // la preuve publique du club reviendrait a publier une declaration que
-  // personne ne controle. Un nombre de contenus, lui, est constate.
+  // Deux raisons de ne pas afficher ce total, et les deux tiennent :
+  // il est fige, ET le peu qui l'alimente est DECLARE, plus verifie par
+  // personne depuis qu'il ne vaut plus un point. Un nombre de contenus,
+  // lui, est constate et continue de grandir.
   //
   // Le meilleur gain a saute pour une raison qui, elle, a bougé : au
   // forfait pur il valait 100 pts comme tous les autres. Depuis la 0022 le

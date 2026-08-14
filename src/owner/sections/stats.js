@@ -1,8 +1,21 @@
 // Section Statistiques (owner) — ce que le club a reellement gagne.
 //
-// Le gerant achete de la visibilite. Sa question tient en une phrase :
-// "combien de vues mes clients m'ont rapporte, et combien ca m'a coute ?"
-// L'ecran repond dans cet ordre : portee d'abord, cout ensuite.
+// L'ecran repond dans l'ordre : ce qui a ete publie d'abord, ce que ca a
+// coute ensuite.
+//
+// ⚠️ IL ETAIT ENTIEREMENT BATI SUR LES VUES, ET IL SE SERAIT FIGE.
+// Chiffre-titre « vues generees », ratio « pts pour 1 000 vues », courbe
+// « vues par jour » : les trois reposaient sur `views_total`. Or depuis le
+// passage au forfait (0020), `post-story.js` **n'envoie plus aucun nombre
+// de vues** — chaque nouveau depot enregistre 0. Le gerant aurait donc vu
+// son chiffre principal rester immobile pendant que ses clients publient,
+// et sa moyenne « vues par contenu » s'effondrer vers zero.
+// 👉 La colonne vertebrale de l'ecran est maintenant le **nombre de
+// contenus**, la seule mesure qui grandit vraiment. Les vues ne
+// s'affichent QUE si quelqu'un en a saisi (le gerant peut en renseigner a
+// la validation), et elles sont annoncees comme telles.
+// ⚠️ Ne pas remettre les vues en chiffre-titre sans avoir d'abord remis
+// une saisie fiable cote clubbeur.
 //
 // Deux fonctions SQL SECURITY DEFINER font les agregats cote base
 // (migrations 0006 puis 0012) : get_club_stats et get_club_activity.
@@ -106,30 +119,33 @@ export async function StatsAdmin(mount, club) {
   }
 
   function heroPortee(s) {
-    const vues = Number(s.views_total || 0);
     const contenus = Number(s.contents_total || 0);
-    const parContenu = contenus ? Math.round(vues / contenus) : 0;
+    const clubbeurs = Number(s.active_clubbeurs || 0);
     return h("section", { class: "ow-hero" }, [
-      h("p", { class: "ow-hero-label" }, `Vues générées sur ${jours} jours`),
-      h("p", { class: "ow-hero-num mono" }, nf.format(vues)),
+      h("p", { class: "ow-hero-label" }, `Contenus publiés sur ${jours} jours`),
+      h("p", { class: "ow-hero-num mono" }, nf.format(contenus)),
       h("p", { class: "ow-hero-sub" }, [
-        `${nf.format(contenus)} contenu${contenus > 1 ? "s" : ""} publié${contenus > 1 ? "s" : ""}, `,
-        h("strong", {}, `${nf.format(parContenu)} vues`),
-        " en moyenne par contenu.",
+        "par ",
+        h("strong", {}, `${nf.format(clubbeurs)} clubbeur${clubbeurs > 1 ? "s" : ""}`),
+        contenus && clubbeurs
+          ? `, soit ${(contenus / clubbeurs).toFixed(1).replace(".", ",")} par personne.`
+          : ".",
       ]),
     ]);
   }
 
   function tuiles(s) {
     const pts = Number(s.points_awarded || 0);
+    const contenus = Number(s.contents_total || 0);
     const vues = Number(s.views_total || 0);
-    // Combien de points il faut distribuer pour 1 000 vues : c'est le seul
-    // ratio comparable a un cout pub, et celui que le gerant reconnait.
-    const pour1000 = vues ? Math.round((pts / vues) * 1000) : 0;
+    // Le cout par contenu remplace le « pts pour 1 000 vues » : au forfait
+    // c'est LUI le prix reel d'une publication, et il reste juste meme
+    // quand le gerant ajuste des montants a la main (0022).
+    const parContenu = contenus ? Math.round(pts / contenus) : 0;
 
-    return h("section", { class: "ow-tiles" }, [
+    const cartes = [
       tuile("Clubbeurs actifs", nf.format(s.active_clubbeurs || 0), "Ont publié au moins une fois"),
-      tuile("Points distribués", nf.format(pts), `${nf.format(pour1000)} pts pour 1 000 vues`),
+      tuile("Points distribués", nf.format(pts), `${nf.format(parContenu)} pts par contenu en moyenne`),
       tuile("Récompenses retirées", nf.format(s.rewards_redeemed || 0), "Échangées au bar"),
       tuile(
         "Points en circulation",
@@ -137,6 +153,23 @@ export async function StatsAdmin(mount, club) {
         "Distribués, pas encore dépensés",
         true
       ),
+    ];
+
+    // ⚠️ Les vues ne sont PAS une 5e tuile. La grille en compte 4 par
+    // rangee : une cinquieme partait seule a la ligne (la meme « carte
+    // orpheline » que sur l'accueil). Et elle n'a pas ce rang — c'est une
+    // donnee saisie a la main, incomplete, qu'on mentionne sans la mettre
+    // au meme niveau que les points distribues.
+    // Elle n'apparait QUE si quelqu'un en a saisi : « 0 vue » se lirait
+    // comme un echec du club alors que ca ne dit que l'absence de saisie.
+    return h("div", {}, [
+      h("section", { class: "ow-tiles" }, cartes),
+      vues > 0
+        ? h("p", { class: "ow-stats-aside" }, [
+            h("strong", {}, `${nf.format(vues)} vues`),
+            " renseignées à la validation sur la période — déclaratif, non vérifié.",
+          ])
+        : null,
     ]);
   }
 
@@ -148,23 +181,30 @@ export async function StatsAdmin(mount, club) {
     ]);
   }
 
-  // --- Graphique : vues par jour -----------------------------------------
+  // --- Graphique : contenus par jour -------------------------------------
   // Aire + ligne, une seule serie (donc pas de legende : le titre la nomme).
   // Survol : repere vertical + infobulle, comme attendu d'un graphique HTML.
+  //
+  // ⚠️ Il tracait les VUES par jour. Depuis que plus personne ne les
+  // declare, la courbe serait restee plate a zero pour tous les jours
+  // recents — un graphique qui affirme que rien ne se passe alors que les
+  // clubbeurs publient. On trace ce qui bouge.
+  // ⚠️ UNE SEULE mesure par graphique : ne pas superposer contenus et
+  // points sur deux axes, les echelles n'ont rien a voir.
   function graphique(jourslist) {
     const W = 720;
     const H = 200;
     const PAD_B = 26; // place pour les dates
     const PAD_T = 12;
 
-    const vues = jourslist.map((d) => Number(d.views || 0));
-    const max = Math.max(1, ...vues);
+    const serie = jourslist.map((d) => Number(d.contents || 0));
+    const max = Math.max(1, ...serie);
     const n = jourslist.length;
 
     const x = (i) => (n <= 1 ? W / 2 : (i / (n - 1)) * W);
     const y = (v) => PAD_T + (1 - v / max) * (H - PAD_T - PAD_B);
 
-    const points = vues.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+    const points = serie.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
     const ligne = `M${points.join("L")}`;
     const aire = `${ligne}L${x(n - 1).toFixed(1)},${H - PAD_B}L${x(0).toFixed(1)},${H - PAD_B}Z`;
 
@@ -184,7 +224,7 @@ export async function StatsAdmin(mount, club) {
     const zone = h("div", { class: "ow-chart-zone" });
     zone.innerHTML =
       `<svg class="ow-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"` +
-      ` aria-label="Vues par jour sur ${jours} jours. Maximum ${nf.format(max)} vues.">` +
+      ` aria-label="Contenus publiés par jour sur ${jours} jours. Maximum ${nf.format(max)} par jour.">` +
       `<defs><linearGradient id="owFill" x1="0" y1="0" x2="0" y2="1">` +
       `<stop offset="0%" stop-color="var(--accent)" stop-opacity=".28"/>` +
       `<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>` +
@@ -212,15 +252,16 @@ export async function StatsAdmin(mount, club) {
       curseur.setAttribute("x2", x(i));
       curseur.setAttribute("opacity", "1");
       marqueur.setAttribute("cx", x(i));
-      marqueur.setAttribute("cy", y(Number(d.views || 0)));
+      marqueur.setAttribute("cy", y(Number(d.contents || 0)));
       marqueur.setAttribute("opacity", "1");
 
+      const c = Number(d.contents || 0);
       bulle.hidden = false;
       bulle.style.left = `${px}%`;
       bulle.replaceChildren(
         h("span", { class: "ow-tip-day" }, jourLong.format(new Date(d.day))),
-        h("span", { class: "ow-tip-val mono" }, `${nf.format(d.views || 0)} vues`),
-        h("span", { class: "ow-tip-sub" }, `${nf.format(d.contents || 0)} contenu${Number(d.contents) > 1 ? "s" : ""} · ${nf.format(d.points || 0)} pts`)
+        h("span", { class: "ow-tip-val mono" }, `${nf.format(c)} contenu${c > 1 ? "s" : ""}`),
+        h("span", { class: "ow-tip-sub" }, `${nf.format(d.points || 0)} pts distribués`)
       );
     });
     zone.addEventListener("pointerleave", () => {
@@ -231,7 +272,7 @@ export async function StatsAdmin(mount, club) {
 
     return h("section", { class: "ow-chart" }, [
       h("div", { class: "ow-chart-head" }, [
-        h("h2", {}, "Vues par jour"),
+        h("h2", {}, "Contenus par jour"),
         h("span", { class: "ow-muted" }, `pic à ${nf.format(max)}`),
       ]),
       zone,
