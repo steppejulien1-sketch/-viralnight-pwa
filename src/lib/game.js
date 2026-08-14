@@ -279,6 +279,24 @@ export async function submitStory({ kind, views, file, url = "" }) {
       .catch(() => {});
   }
 
+  // Lecture des VUES REELLES pour les TikToks (migration 0025). Le montant
+  // en depend : 60 pts + 7 pts / 100 vues mesurees par TikTok.
+  //
+  // ⚠️ « Au mieux », exactement comme le pont B2B : si l'app TikTok n'est
+  // pas configuree, si le compte n'est pas connecte ou si la video n'est
+  // pas trouvee, le depot reste valable et la validation retombe sur le
+  // forfait de 60 pts. Le clubbeur n'est jamais bloque par une lecture
+  // qui echoue — c'est le repli choisi par Julien.
+  //
+  // ⚠️ La lecture part du CLUBBEUR : c'est son jeton TikTok, et
+  // `tiktok-views` verifie qu'il est l'auteur. Le gerant, lui, n'a aucun
+  // moyen de lire les vues d'un compte qui n'est pas le sien.
+  if (kind === "tiktok" && url && data) {
+    supabase.functions
+      .invoke("tiktok-views", { body: { story_id: data } })
+      .catch(() => {});
+  }
+
   return { storyId: data };
 }
 

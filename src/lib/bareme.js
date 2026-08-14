@@ -31,7 +31,13 @@
 export const BAREME = {
   story: { base: 100, per100: 0 },
   reel: { base: 60, per100: 0 },
-  tiktok: { base: 60, per100: 0 },
+  // ⚠️ TIKTOK EST REPASSE AUX VUES (migration 0025, decision de Julien).
+  // Il est le SEUL, et pour une raison de fond : son API rend le
+  // `view_count` mesure par TikTok. Une story Instagram n'a pas d'URL
+  // publique, un Reel n'expose pas ses vues — la, le chiffre serait
+  // declaratif, donc gonflable. Ne pas remettre `per100` sur les autres
+  // formats sans source verifiable.
+  tiktok: { base: 60, per100: 7 },
 };
 
 /**
@@ -42,21 +48,17 @@ export const BAREME = {
 export const BONUS_MAX = 2000;
 
 /**
- * Le bareme est-il au FORFAIT (un montant fixe par contenu) ou indexe
- * sur les vues ?
+ * L'ACCUEIL est-il au forfait ? Il ne parle que de STORIES — c'est le
+ * geste du clubbeur au club, et de loin le format le plus depose.
  *
- * ⚠️ POURQUOI CETTE BASCULE EXISTE. Julien a tranche le passage au
- * forfait (« on ne se base plus sur les vues pour le contenu »), mais
- * la migration SQL n'est PAS ecrite ni appliquee : `story_points()`
- * calcule encore un bonus aux vues. Tant que c'est le cas, les ecrans
- * doivent continuer d'annoncer le bareme aux vues — annoncer le
- * forfait avant que la base le fasse, ce serait promettre un montant
- * que le club ne versera pas.
- *
- * Le jour ou la migration part, il suffit de mettre `per100: 0`
- * ci-dessus : toutes les phrases de l'app suivent toutes seules.
+ * ⚠️ CE N'EST PLUS « tous les formats » (`Object.values(...).every`).
+ * Depuis la 0025, TikTok est aux vues et les autres au forfait : la
+ * regle globale basculait donc l'accueil sur « on compte tes vues »,
+ * alors qu'une story reste payee 100 pts quoi qu'il arrive. Promettre
+ * un comptage de vues a quelqu'un qui vient poster une story serait
+ * faux.
  */
-export const AU_FORFAIT = Object.values(BAREME).every((b) => !b.per100);
+export const AU_FORFAIT = !BAREME.story.per100;
 
 /**
  * La phrase qui annonce le gain, pour un type de contenu.
@@ -65,7 +67,10 @@ export const AU_FORFAIT = Object.values(BAREME).every((b) => !b.per100);
 export function phraseBareme(kind = "story") {
   const b = BAREME[kind] || BAREME.story;
   if (!b.per100) return `${b.base} pts par ${libelle(kind)}`;
-  return `${b.base} pts d'office, + ${b.per100} pts par 100 vues`;
+  // ⚠️ « vues comptées par TikTok », pas « tes vues » : c'est la mesure de
+  // la plateforme qui paie, pas un chiffre qu'on saisit. La nuance evite
+  // qu'un clubbeur annonce 50 000 vues et s'estime lese.
+  return `${b.base} pts d'office, + ${b.per100} pts par 100 vues comptées par ${libelle(kind)}`;
 }
 
 /** Ce qu'on promet en une ligne, sous le titre de l'accueil. */

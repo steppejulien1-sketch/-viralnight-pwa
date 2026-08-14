@@ -31,14 +31,16 @@ const dtf = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-// Le forfait du type : ce qui est PROMIS au clubbeur sur l'ecran de
-// depot, donc la valeur proposee par defaut au gerant.
+// Le montant PROPOSE par defaut au gerant.
 //
-// ⚠️ Le bareme etait RECOPIE ICI en dur — une quatrieme copie, apres
-// mock.js, post-story.js et la fonction SQL. Il lit maintenant
-// lib/bareme.js, pour qu'il ne puisse plus diverger.
-function forfait(kind) {
-  return (BAREME[kind] || BAREME.story).base;
+// ⚠️ Il vient maintenant de la BASE (`suggested_points`, calcule par
+// `get_pending_stories` depuis la 0025), pas d'un calcul local. Depuis que
+// TikTok est paye aux vues reelles, le refaire ici imposerait de recopier
+// le bareme ET de connaitre les vues mesurees — deux occasions de
+// diverger. `lib/bareme.js` ne sert plus qu'a ANNONCER le bareme.
+function propose(r) {
+  const n = Number(r.suggested_points);
+  return Number.isFinite(n) ? n : (BAREME[r.kind] || BAREME.story).base;
 }
 
 // Borne de saisie cote base (constante `c_max` de la migration 0022).
@@ -121,7 +123,7 @@ export async function ReviewAdmin(mount, club) {
     // (0022). Pas d'ecouteur reliant les deux champs : le nombre de vues
     // ne doit plus jamais piloter le credit, sinon on reintroduit le seul
     // chiffre du produit qu'un clubbeur pouvait gonfler.
-    const socle = forfait(r.kind);
+    const socle = propose(r);
     const points = h("input", {
       class: "ow-input ow-review-points mono",
       type: "number",
@@ -145,9 +147,21 @@ export async function ReviewAdmin(mount, club) {
           points.dispatchEvent(new Event("input"));
         },
       },
-      `revenir au forfait (${nf.format(socle)})`
+      `revenir à ${nf.format(socle)}`
     );
-    const rappel = h("span", { class: "ow-review-forfait" }, `forfait ${nf.format(socle)} pts`);
+    // ⚠️ Le mot « forfait » ne convient plus a tous les contenus : un
+    // TikTok dont les vues ont ete mesurees vaut 60 + 7 pts / 100 vues
+    // (0025). On DIT d'ou vient le montant propose — sinon le gerant voit
+    // 410 pts sans comprendre pourquoi, et se met a corriger a la main un
+    // chiffre pourtant juste.
+    const mesure = r.views_source === "tiktok_api" && r.verified_views != null;
+    const rappel = h(
+      "span",
+      { class: "ow-review-forfait" },
+      mesure
+        ? `${nf.format(socle)} pts · ${nf.format(r.verified_views)} vues comptées par TikTok`
+        : `forfait ${nf.format(socle)} pts`
+    );
 
     points.addEventListener("input", () => {
       const v = Number(points.value);

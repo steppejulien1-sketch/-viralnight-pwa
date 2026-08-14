@@ -35,9 +35,16 @@ const APP_ORIGIN = (Deno.env.get("APP_ORIGIN") ?? "").replace(/\/$/, "");
 
 // user.info.basic identifie la personne ; user.info.stats ajoute le
 // nombre d'abonnes, AFFICHE sur le profil et utilise dans AUCUN calcul de
-// points (voir migration 0009). On ne demande rien de plus : chaque scope
-// supplementaire doit etre justifie a la revue d'app TikTok.
-const SCOPE = "user.info.basic,user.info.stats";
+// points (voir migration 0009).
+//
+// ⚠️ video.list AJOUTE LE 2026-08-14 (migration 0025) : c'est LUI qui donne
+// le `view_count` d'une video, mesure par TikTok. C'est la seule raison
+// pour laquelle un TikTok peut etre paye aux vues alors que les autres
+// formats sont au forfait — ailleurs, le chiffre serait declaratif.
+// Chaque scope doit etre justifie a la revue d'app TikTok : celui-ci l'est
+// par « verifier la portee reelle d'une video que l'utilisateur nous
+// soumet lui-meme pour etre recompense ».
+const SCOPE = "user.info.basic,user.info.stats,video.list";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -193,7 +200,36 @@ Deno.serve(async (req) => {
     );
     if (profilErr) console.error("profil tiktok", profilErr);
 
-    // On ne conserve PAS l'access_token : on a ce qu'il fallait.
+    // ⚠️ ON CONSERVE MAINTENANT LE JETON (migration 0025). Avant, on le
+    // jetait ici meme : « on a ce qu'il fallait ». C'etait vrai tant qu'on
+    // ne voulait que le pseudo et les abonnes, lus une fois pour toutes.
+    // Les VUES d'une video publiee plus tard obligent a rappeler l'API au
+    // nom du clubbeur, donc a garder de quoi le faire.
+    //
+    // ⚠️ `social_tokens` est verrouillee : RLS active SANS AUCUNE POLICY,
+    // droits retires a anon et authenticated. Un access_token TikTok
+    // lisible depuis le navigateur donnerait a n'importe qui la main sur
+    // le compte TikTok du clubbeur.
+    const { error: tokErr } = await db.from("social_tokens").upsert(
+      {
+        user_id: uid,
+        provider: "tiktok",
+        open_id: openId || null,
+        access_token: tok.access_token,
+        refresh_token: tok.refresh_token ?? null,
+        scope: tok.scope ?? SCOPE,
+        // `expires_in` est en secondes (24 h chez TikTok).
+        expires_at: tok.expires_in
+          ? new Date(Date.now() + Number(tok.expires_in) * 1000).toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,provider" }
+    );
+    // Un jeton non conserve n'empeche PAS la connexion : le clubbeur entre
+    // dans l'app, seules ses vues ne pourront pas etre relues.
+    if (tokErr) console.error("social_tokens tiktok", tokErr);
+
     // action_link ouvre la session cote Supabase puis renvoie sur la PWA.
     const { data: link, error: linkErr } = await db.auth.admin.generateLink({
       type: "magiclink",
