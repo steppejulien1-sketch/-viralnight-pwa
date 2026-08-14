@@ -11,13 +11,16 @@
 // « 5 275 / 10 000 » plutot qu'un cadenas : on sait ce qu'il reste a
 // faire.
 //
-// ⚠️ BADGES EN PAUSE. Le passage au bareme forfait a supprime le
-// comptage des vues, donc `views_10k` et `views_50k` ne peuvent plus
-// avancer. Ils ne sont PAS supprimes (ce serait retirer sans accord un
-// objectif que des clubbeurs poursuivaient) mais ils sont attenues,
-// sortis du calcul d'avancement et places en fin de liste. Leur
-// afficher une jauge a 0 annoncerait une progression qui n'arrivera
-// pas.
+// ⚠️ LA SECTION « EN PAUSE » EST UN FILET, PLUS UN CAS REEL.
+// Le passage au forfait avait rendu `views_10k` et `views_50k`
+// indebloquables : plus aucune vue n'est enregistree. Ils ont ete
+// REMPLACES par des cibles atteignables (migration 0021) —
+// `streak_10` et `stories_50` — apres verification qu'ils n'avaient
+// AUCUN detenteur.
+// Le code ci-dessous reste en place : si une metrique morte
+// reapparaissait, il eviterait d'afficher « 0 / 10 000 », c'est-a-dire
+// d'annoncer une progression qui n'arrivera jamais. Aujourd'hui aucun
+// badge ne le declenche.
 //
 // CE QUI CHANGE A L'ECRAN :
 //  - « Chargement… » et « Aucun badge » en texte nu deviennent un

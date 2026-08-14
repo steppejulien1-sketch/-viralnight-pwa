@@ -488,7 +488,11 @@ Entre les deux, le clubbeur touche moins que promis — fenêtre courte, le temp
 d'un déploiement.
 
 ### Ce que la migration ne fait pas, volontairement
-1. **Badges `views_10k` / `views_50k` non supprimés** (accord de Julien requis).
+1. ✅ **Badges de vues REMPLACÉS** — migration `0021_badges_atteignables.sql`,
+   appliquée le 2026-08-14 sur décision de Julien. `views_10k` → `streak_10`
+   (« Dix d'affilée »), `views_50k` → `stories_50` (« Pilier », 50 contenus).
+   ⚠️ Vérifié avant suppression : **zéro détenteur** pour les deux. C'est la
+   condition qui rendait le remplacement anodin.
 2. **`get_club_proof` non touchée en SQL** — mais la landing affiche désormais
    le nombre de **contenus** et non le total de vues, qui a cessé de grandir.
    Le « meilleur gain » a sauté : au forfait, la meilleure soirée vaut 100 pts
@@ -536,7 +540,9 @@ Appliqué via l'API Management Supabase (projet `gcopwgmqjiufemapamek`).
    montant.
 
 ### Reste ouvert
-- Badges `views_10k` / `views_50k` : toujours en pause côté UI, non supprimés.
+- ✅ Badges de vues remplacés (migration 0021). La section « En pause » de
+  `collection.js` reste en place comme filet, mais plus aucun badge ne la
+  déclenche.
 - `get_club_proof` : le total de vues cesse de grandir, la landing l'affiche
   encore pour le passé.
 - ✅ `credit_story` : **rien à faire.** J'avais écrit qu'elle gardait un barème
