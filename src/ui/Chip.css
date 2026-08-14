@@ -1,0 +1,70 @@
+/* ============================================================
+   Chip — filtre et selecteur exclusif
+   ------------------------------------------------------------
+   Sert deux fois : les filtres de categorie de la boutique, et le
+   choix Story / Reel / TikTok du parcours « Poster ».
+
+   ⚠️ L'etat actif ne prend PAS le rouge. Le rouge est deja
+   l'action principale de l'ecran ; un filtre selectionne n'est pas
+   une action, c'est un etat. Il prend donc l'inversion (fond
+   clair, texte sombre), qui est le contraste le plus fort
+   disponible sur un fond noir — et qui ne demande aucune couleur.
+   ============================================================ */
+
+.vn-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  /* Le rail deborde volontairement : on masque la barre de defilement
+     mais on garde l'inertie tactile. */
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+
+  /* ⚠️ PLEINE LARGEUR. Coupe par la marge de l'ecran, le dernier
+     filtre s'arretait net a quelques pixels du bord : ca ressemble a
+     un defaut d'affichage, pas a « ca defile ». En debordant jusqu'au
+     bord, la coupe devient franche et le geste devient evident.
+     Les marges negatives sont compensees par le padding : le premier
+     filtre reste aligne sur le reste du contenu. */
+  margin-inline: calc(var(--vn-pad-x) * -1);
+  padding: 0 var(--vn-pad-x) 2px;
+}
+.vn-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.vn-chip {
+  flex: none;
+  scroll-snap-align: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  /* 44px : sous le pouce mais volontairement plus petit qu'un
+     bouton d'action, pour qu'on ne les confonde pas. */
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--vn-line);
+  background: var(--vn-surf-2);
+  color: var(--vn-txt-2);
+  border-radius: var(--vn-radius-pill);
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-meta);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.18s var(--vn-ease), color 0.18s var(--vn-ease),
+    border-color 0.18s var(--vn-ease), transform var(--vn-dur-tap) var(--vn-ease);
+}
+
+.vn-chip:hover {
+  color: var(--vn-txt);
+  border-color: var(--vn-surf-4);
+}
+.vn-chip:active {
+  transform: scale(0.96);
+}
+
+.vn-chip.is-on {
+  background: var(--vn-txt);
+  border-color: var(--vn-txt);
+  color: var(--vn-ink);
+}

@@ -1,0 +1,76 @@
+/* ============================================================
+   Pastille d'etat
+   ------------------------------------------------------------
+   ⚠️ JAMAIS la couleur seule. Le rouge sur noir se lit mal en
+   biais, et il y a des daltoniens dans un club comme ailleurs :
+   chaque etat porte donc AUSSI un mot, et les etats vivants un
+   point qui bat.
+
+   ⚠️ Le refus n'est PAS rouge. Le rouge est la couleur de marque
+   de l'app — s'en servir pour dire « non » le rendrait ambigu
+   partout ailleurs. Un refus est gris, avec son motif ecrit.
+   ============================================================ */
+
+.vn-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--vn-radius-pill);
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.vn-state__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* En attente de validation par le club — TEINTE. */
+.vn-state--wait {
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+}
+.vn-state--wait .vn-state__dot {
+  animation: vn-pulse 1.6s var(--vn-ease) infinite;
+}
+
+/* Valide, credite — APLAT.
+   C'est le seul endroit ou une pastille prend l'aplat rouge : elle
+   annonce un gain acquis, pas une action a faire. */
+.vn-state--ok {
+  background: var(--vn-red);
+  color: var(--vn-red-on);
+}
+
+/* Refuse — gris, jamais rouge. */
+.vn-state--no {
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-2);
+}
+
+/* « En salle » : le club est ouvert maintenant. */
+.vn-state--live {
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+}
+.vn-state--live .vn-state__dot {
+  animation: vn-pulse 2s var(--vn-ease) infinite;
+}
+
+@keyframes vn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

@@ -1,0 +1,182 @@
+/* ============================================================
+   Collection — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   La coquille, les jauges et les etats vides viennent de ui/ et
+   patterns/. Il ne reste ici que la ligne de badge.
+
+   ⚠️ styles/gamification.css a ete SUPPRIME avec cette migration :
+   c'etait son dernier ecran. Ses regles de celebration (.cbr) sont
+   parties dans patterns/Celebration.css, a cote de leur appelant.
+
+   RAPPEL COULEUR — aucun aplat sur cet ecran. Un badge obtenu prend
+   la TEINTE (c'est un etat acquis, pas une action), la jauge prend
+   l'encre. Plusieurs badges obtenus feraient sinon plusieurs aplats,
+   et la regle « un seul par ecran » sauterait.
+   ============================================================ */
+
+.cl-head-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* Compteur « 2 / 4 ». En encre : c'est le chiffre qu'on vient voir. */
+.cl-count {
+  font-family: var(--vn-face-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--vn-red-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cl-next {
+  font-size: var(--vn-t-meta);
+  line-height: 1.45;
+  color: var(--vn-txt-2);
+}
+.cl-next strong {
+  color: var(--vn-txt);
+  font-weight: 700;
+}
+
+.cl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+/* ---------- Une ligne de badge ----------
+   Elle porte sa propre surface plutot que d'utiliser .vn-card :
+   la carte impose `flex-direction: column` et une ligne de badge est
+   horizontale. Memes jetons, donc meme rendu qu'une carte. */
+.cl-badge {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  box-shadow: var(--vn-lift);
+}
+
+/* Obtenu : contour teinte, pas d'aplat. */
+.cl-badge.is-on {
+  border-color: var(--vn-red-edge);
+}
+
+.cl-badge__ico {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-3);
+}
+
+/* Obtenu : TEINTE, jamais aplat. */
+.cl-badge.is-on .cl-badge__ico {
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+}
+
+.cl-badge__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cl-badge__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cl-badge__name {
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--vn-txt-2);
+}
+.cl-badge.is-on .cl-badge__name {
+  color: var(--vn-txt);
+}
+
+/* Compteur de progression. ⚠️ 12px, plancher de l'app, en taille
+   absolue — pas un ratio em. */
+.cl-badge__count {
+  flex: none;
+  font-family: var(--vn-face-display);
+  font-size: var(--vn-t-label);
+  font-weight: 800;
+  color: var(--vn-txt-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cl-badge__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vn-red-ink);
+  white-space: nowrap;
+}
+
+.cl-badge__desc {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vn-txt-3);
+}
+
+.cl-badge__date {
+  font-size: 12.5px;
+  color: var(--vn-txt-3);
+}
+
+.cl-badge__bar {
+  margin-top: 4px;
+}
+
+/* ---------- Badge en pause ----------
+   Les badges de vues (views_10k, views_50k) ne peuvent plus avancer
+   depuis le passage au bareme forfait : plus aucune vue n'est
+   enregistree. Ils restent affiches — les retirer sans accord
+   ferait disparaitre un objectif que des clubbeurs poursuivaient —
+   mais ils sont attenues, sans jauge et sans compteur : afficher
+   « 0 / 10 000 » annoncerait une progression qui n'arrivera pas. */
+.cl-badge.is-paused {
+  opacity: 0.55;
+}
+.cl-badge__paused {
+  flex: none;
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vn-txt-3);
+  border: 1px solid var(--vn-line);
+  border-radius: var(--vn-radius-pill);
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+/* ⚠️ `display: flex` / `grid` ecrasent le `display: none` de
+   [hidden] — le piege deja rencontre sur la barre d'onglets, sur le
+   bloc club du dashboard et sur le classement. */
+.cl-badge[hidden],
+.cl-list[hidden],
+.cl-head-count[hidden] {
+  display: none;
+}

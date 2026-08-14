@@ -1,0 +1,63 @@
+/* ============================================================
+   Points — le chiffre-roi
+   ------------------------------------------------------------
+   ⚠️ ENCRE, jamais aplat. Le solde domine par sa TAILLE (56px en
+   display), pas par une couleur qui lui serait reservee. C'est ce
+   qui lui permet de cohabiter avec le bouton rouge sans lutter
+   contre lui.
+   ============================================================ */
+
+.vn-pts {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--vn-face-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--vn-red-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* L'unite ne doit pas concurrencer le chiffre : moitie moins
+   grande, en Inter, legerement effacee. */
+/* ⚠️ TAILLE ABSOLUE, PAS UN RATIO em.
+   Le ratio a ete essaye deux fois et il est faux dans les deux sens :
+   a 0,42em le « pts » faisait presque la taille du solde a 56px et
+   les deux se disputaient l'oeil ; a 0,3em il tombait a 5px dans les
+   lignes de classement, donc sous le plancher de 12px et illisible.
+   Chaque taille de chiffre fixe donc la sienne, en px. */
+.vn-pts__unit {
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.65;
+}
+.vn-pts--hero .vn-pts__unit {
+  font-size: 17px;
+}
+.vn-pts--lg .vn-pts__unit {
+  font-size: 14px;
+}
+
+.vn-pts--hero {
+  font-size: var(--vn-t-hero);
+}
+.vn-pts--lg {
+  font-size: 40px;
+}
+.vn-pts--md {
+  font-size: 24px;
+}
+.vn-pts--sm {
+  font-size: 17px;
+}
+
+/* Hors de portee : le prix d'une recompense qu'on ne peut pas
+   encore prendre. Il reste lisible mais quitte l'encre rouge —
+   sinon tout le catalogue s'allume et plus rien ne ressort. */
+.vn-pts--off {
+  color: var(--vn-txt-3);
+  font-weight: 700;
+}

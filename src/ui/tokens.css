@@ -1,0 +1,145 @@
+/* ============================================================
+   VIRALNIGHT — Socle de design « Neon sur asphalte »
+   ------------------------------------------------------------
+   LA source unique des couleurs, tailles, rayons et courbes.
+   Aucun composant n'ecrit une couleur en dur.
+
+   ⚠️ TOUS les jetons sont prefixes --vn-.
+   L'ancien src/styles/tokens.css definit --red, --red-ink,
+   --r-card... avec d'AUTRES valeurs (--red-ink y vaut #ffffff).
+   Le prefixe evite que les deux systemes se marchent dessus le
+   temps que les ecrans migrent un par un.
+
+   ------------------------------------------------------------
+   UNE SEULE TEINTE VIVE, TROIS MASSES.
+   Le rouge etait deja partout dans l'app, mais toujours en aplat :
+   marque, boutons, streak, defis, badges, jauges, et meme
+   --success. Quand tout est plein, rien ne domine. Ce n'est pas la
+   teinte qui posait probleme, c'est qu'elle n'avait qu'une seule
+   intensite. D'ou trois roles, a ne jamais melanger :
+
+     --vn-red       APLAT  fond plein + texte blanc.
+                           L'action principale. UN SEUL PAR ECRAN.
+     --vn-red-ink   ENCRE  texte rouge sur fond sombre, monte en
+                           clarte. Points, gains, jauges, chiffres.
+                           Ne sert JAMAIS de fond.
+     --vn-red-tint  TEINTE fond a 13 % + contour. Etats, pastilles,
+                           carte qu'on peut debloquer.
+
+   ⚠️ Le LIME #c8ff2f a ete REJETE par Julien le 2026-08-07
+   (« le vert degueulasse »). Pas de vert, nulle part — y compris
+   pour les succes, qui prennent l'aplat rouge.
+   ⚠️ Le fond violet a ete rejete avant : il faisait virer le rouge
+   au brun. Le noir reste neutre, avec une pointe de FROID (bleute),
+   qui elle fait ressortir le rouge au lieu de le salir.
+   ============================================================ */
+
+:root {
+  /* --- Surfaces : de l'asphalte au beton ---
+     Quatre crans nets. L'ancienne rampe avait 3,6 de luminance
+     d'ecart entre le fond et les cartes : sous le seuil de
+     perception, tout s'ecrasait en une nappe. */
+  --vn-ink: #08090c; /* le fond de l'app */
+  --vn-surf-1: #101218; /* section posee sur le fond */
+  --vn-surf-2: #181b23; /* carte */
+  --vn-surf-3: #232732; /* carte empilee, champ de saisie */
+  --vn-surf-4: #2e3341; /* survol, etat presse */
+
+  /* --- Traits ---
+     ⚠️ Rien sous 7 % d'opacite : dans un bar a luminosite basse,
+     un filet a 4 % est purement et simplement invisible. */
+  --vn-line: #2b303c; /* separation franche */
+  --vn-line-soft: rgba(255, 255, 255, 0.07); /* contour de carte */
+
+  /* --- Texte ---
+     Quatre niveaux, tous au-dessus de 4,5:1 sur --vn-surf-2 sauf
+     le dernier, reserve aux mentions non essentielles. */
+  --vn-txt: #f2f4f8; /* titres, chiffres        ~17:1 */
+  --vn-txt-2: #a6adbc; /* texte courant         ~7,8:1 */
+  --vn-txt-3: #7b8393; /* legendes, libelles    ~4,6:1 */
+
+  /* --- Rouge enseigne : les trois masses --- */
+  --vn-red: #ff2f45; /* APLAT — l'action, une seule par ecran */
+  --vn-red-hi: #ff5566; /* survol de l'aplat */
+  --vn-red-press: #e81f34; /* aplat enfonce */
+  --vn-red-on: #ffffff; /* encre POSEE SUR l'aplat rouge.
+                           ⚠️ Le rouge est une couleur SOMBRE :
+                           le texte dessus est BLANC. L'inverser
+                           rendrait tous les boutons illisibles. */
+  --vn-red-ink: #ff6070; /* ENCRE — points, gains, jauges.
+                            Le meme rouge monte en clarte :
+                            5,9:1 sur --vn-surf-2, contre 4,7:1
+                            pour l'aplat. Il brille sans peser,
+                            donc il ne concurrence pas le bouton. */
+  --vn-red-tint: rgba(255, 47, 69, 0.13); /* TEINTE — fond d'etat */
+  --vn-red-edge: rgba(255, 47, 69, 0.36); /* contour d'etat */
+  --vn-red-glow: rgba(255, 47, 69, 0.45); /* halo de l'element actif */
+
+  /* --- Halo froid : decor uniquement ---
+     Le lampadaire dans l'asphalte. Jamais porteur d'information. */
+  --vn-halo: rgba(214, 226, 255, 0.1);
+
+  /* --- Degrade Instagram ---
+     ⚠️ Couleur d'une marque tierce, pas une decoration. Reserve au
+     bouton « Continuer avec Instagram » et a rien d'autre. */
+  --vn-grad-ig: linear-gradient(115deg, #ff3d8b, #ff8a3d);
+  --vn-ig-glow: rgba(255, 61, 139, 0.4);
+
+  /* --- Typographie ---
+     Archivo porte les titres ET les chiffres : le JetBrains Mono
+     disait « tableau de bord de dev », pas « sortie ».
+     Le mono ne survit que la ou il est fonctionnellement juste :
+     le code de retrait qu'on lit a voix haute au barman. */
+  --vn-face-display: "Archivo", "Segoe UI Variable Display", system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --vn-face-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --vn-face-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* --- Echelle typographique : 7 tailles, pas une de plus ---
+     ⚠️ Plancher a 12px, et 12px UNIQUEMENT en capitales espacees.
+     L'ancienne interface descendait a 10,5px sur les onglets :
+     illisible debout dans un bar, a bout de bras, une main prise. */
+  --vn-t-hero: 56px; /* le solde */
+  --vn-t-h1: 34px; /* titre d'ecran */
+  --vn-t-h2: 26px; /* titre de section */
+  --vn-t-h3: 20px; /* titre de carte */
+  --vn-t-body: 16px; /* texte courant — plancher absolu */
+  --vn-t-meta: 14px; /* meta, sous-titres, aides */
+  --vn-t-label: 12px; /* intertitre, onglet (capitales) */
+
+  /* --- Rayons ---
+     De 2px a 18px. L'ancienne valeur venait du site B2B et faisait
+     lire « back-office » sur une app grand public de soiree.
+     C'est le changement qu'on voit avant meme de lire l'ecran. */
+  --vn-radius-card: 18px;
+  --vn-radius-btn: 14px;
+  --vn-radius-field: 14px;
+  --vn-radius-pill: 999px;
+
+  /* --- Relief ---
+     Plus d'ombre noire sur fond noir : elle ne se voyait pas.
+     Le relief est une lueur, posee sur le seul element actif. */
+  --vn-lift: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 40px -28px rgba(0, 0, 0, 0.9);
+  --vn-lift-live: 0 0 0 1px rgba(255, 47, 69, 0.12),
+    0 16px 40px -26px var(--vn-red-glow);
+
+  /* --- Mouvement --- */
+  --vn-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --vn-ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  --vn-dur-screen: 300ms;
+  --vn-dur-tap: 160ms;
+
+  /* --- Gabarit ---
+     ⚠️ 56px de cible tactile minimum partout : le pouce d'une main
+     qui tient aussi un verre n'est pas un curseur de souris. */
+  --vn-tap: 56px;
+  /* Hauteur de la barre d'onglets. Les ecrans s'en servent pour
+     reserver la place sous leur pied : sans ca, le dernier element
+     passe SOUS la barre et devient inatteignable. */
+  --vn-tabbar-h: 62px;
+  --vn-app-max: 440px;
+  --vn-pad-x: 20px;
+  --vn-safe-top: env(safe-area-inset-top, 0px);
+  --vn-safe-bottom: env(safe-area-inset-bottom, 0px);
+}

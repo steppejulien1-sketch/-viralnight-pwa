@@ -1,19 +1,30 @@
-// Ecran 3 — Dashboard perso (v4, branche sur Supabase).
-// Solde + STREAK (flamme), defi actif (countdown), prochaine
-// recompense, action "Poster ma story", acces Classement + Collection,
-// historique.
+// Ecran — Accueil connecte (refonte UI, socle ui/ + patterns/).
+//
+// ⚠️ AUCUN APPEL SUPABASE N'A CHANGE. Les memes fonctions de
+// lib/game.js sont appelees dans le meme ordre : c'est une refonte
+// de l'affichage, pas de la logique.
+//
+// CE QUI CHANGE A L'ECRAN :
+//  - le solde passe en display 56px, pose a meme le fond. Il domine
+//    par sa TAILLE, pas par une couleur qui lui serait reservee ;
+//  - le seul aplat rouge de l'ecran est le bouton « Poster », colle
+//    en bas dans la zone du pouce ;
+//  - un contenu en attente de validation s'affiche « En attente »
+//    au lieu de « +0 » (voir le champ `verified` ajoute a
+//    loadMyHistory) ;
+//  - les tuiles Classement / Collection sont de vrais <button>.
 //
 // DONNEES : tout ce qui est chiffre vient de la base, SANS repli.
-//
-// Il restait des valeurs de demonstration en repli (480 pts, 2 soirees,
-// un catalogue fictif). Elles etaient pires que rien : un clubbeur dont
-// le profil ne se chargeait pas voyait 480 points -- assez pour croire
-// qu'il pouvait prendre une recompense -- pendant que la boutique lisait
-// son vrai solde. C'est exactement l'incoherence que cet ecran etait
-// cense avoir corrigee. Un solde a zero est vrai ; 480 est faux.
+// Il restait des valeurs de demonstration (480 pts, 2 soirees, un
+// catalogue fictif) : un clubbeur dont le profil ne se chargeait pas
+// voyait 480 points -- assez pour croire qu'il pouvait prendre une
+// recompense -- pendant que la boutique lisait son vrai solde.
+// Un solde a zero est vrai ; 480 est faux.
 
 import { h, icon } from "../lib/dom.js";
-import { PointsCounter } from "../components/PointsCounter.js";
+import { Button, Card, CardHead, Empty, Points, Progress, State } from "../ui/index.js";
+import { Screen, Section, Slot, Note } from "../patterns/Screen.js";
+import { Rows, Row, Tile } from "../patterns/Rows.js";
 import {
   loadStreak,
   loadActiveChallenge,
@@ -23,163 +34,197 @@ import {
   loadPublicRewards,
   countdown,
 } from "../lib/game.js";
+import "./dashboard.css";
 
 const nf = new Intl.NumberFormat("fr-FR");
-const dateFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const dateFmt = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
 
 export function Dashboard(_params, ctx) {
-  // Emplacements remplis en async.
-  const challengeSlot = h("div", { class: "db-slot" });
-  const streakSlot = h("span", { class: "db-streak-slot" });
-  const nextSlot = h("div", { class: "db-slot" });
-  const histSlot = h("div", { class: "db-slot" });
+  /* ---------- Barre du haut ---------- */
 
-  // Compteur monte a 0 : il s'anime vers le vrai solde des sa reception.
-  const counter = PointsCounter(0, { animate: false });
-
-  const compteRecomp = h("span", { class: "db-history-count mono" }, "");
-  const handleEl = h("span", { class: "db-profile-handle" }, "@toi");
-  // Vide au depart : le nom arrive avec le club resolu. Afficher un nom
-  // d'etablissement en attendant reviendrait a en inventer un.
-  const clubEl = h("span", { class: "db-club" }, [
-    h("span", { class: "db-club-dot", "aria-hidden": "true" }),
-    "",
+  // Vide au depart : le nom arrive avec le club resolu. Afficher un
+  // nom d'etablissement en attendant reviendrait a en inventer un.
+  // Le bloc entier reste vide tant que le club n'est pas resolu :
+  // afficher la pastille rouge toute seule, sans nom a cote, donne
+  // un point rouge orphelin en haut d'ecran.
+  const clubName = h("span", { class: "db-club__name" }, "");
+  const club = h("span", { class: "db-club", hidden: true }, [
+    h("span", { class: "db-club__dot", "aria-hidden": "true" }),
+    clubName,
   ]);
 
-  const el = h("div", { class: "db" }, [
-    h("header", { class: "db-top" }, [
-      clubEl,
-      h(
-        "button",
-        { class: "db-profile", "aria-label": "Ton profil", onClick: () => ctx.navigate("profile") },
-        [handleEl, h("span", { class: "db-profile-ava", "aria-hidden": "true" }, icon("instagram", 15))]
-      ),
+  const handleEl = h("span", {}, "");
+  const moi = h(
+    "button",
+    {
+      type: "button",
+      class: "db-me",
+      "aria-label": "Ton profil",
+      onClick: () => ctx.navigate("profile"),
+    },
+    [handleEl, h("span", { class: "db-me__ava", "aria-hidden": "true" }, icon("user", 16))]
+  );
+
+  const el = Screen({ headRight: moi });
+  el.head.querySelector(".vn-screen__head-main").append(club);
+
+  /* ---------- Emplacements asynchrones ---------- */
+  const challengeSlot = Slot();
+  const streakSlot = Slot();
+  const nextSlot = Slot();
+  const histSlot = Slot();
+  const compteRecomp = h("span", { class: "vn-label" }, "");
+
+  // Le compteur monte a 0 : il s'anime vers le vrai solde des sa
+  // reception, jamais vers une valeur de demonstration.
+  const solde = Points(0, { size: "hero" });
+
+  el.body.append(
+    challengeSlot,
+
+    // Les NIVEAUX ont ete retires : ils ajoutaient une deuxieme
+    // monnaie (le cumul a vie) a cote des points, sans rien
+    // debloquer. Le solde et la prochaine recompense suffisent a
+    // dire ou on en est. Le streak, lui, reste : il pousse a
+    // revenir, donc il remonte a cote du solde.
+    h("section", { class: "db-balance" }, [
+      h("div", { class: "db-balance__head" }, [
+        h("span", { class: "vn-label" }, "Ton solde"),
+        streakSlot,
+      ]),
+      solde,
     ]),
 
-    h("main", { class: "db-body" }, [
-      challengeSlot,
+    nextSlot,
 
-      // Les NIVEAUX ont ete retires : ils ajoutaient une deuxieme monnaie
-      // (le cumul a vie) a cote des points, sans rien debloquer. Le solde
-      // et la prochaine recompense suffisent a dire ou on en est.
-      // Le streak, lui, reste : il pousse a revenir. Il remonte donc a
-      // cote du solde, la ou vivait la carte de niveau.
-      h("section", { class: "db-balance reveal", style: { "--d": "0ms" } }, [
-        h("div", { class: "db-balance-head" }, [h("p", { class: "label" }, "Ton solde"), streakSlot]),
-        counter,
-      ]),
-
-      nextSlot,
-
-      h("section", { class: "db-action reveal", style: { "--d": "210ms" } }, [
-        h("button", { class: "btn btn-primary btn-block db-post", onClick: () => ctx.navigate("post") }, [
-          icon("instagram", 20),
-          "Poster ma story",
-        ]),
-        h("p", { class: "db-action-hint" }, [icon("sparkles", 13), "Plus ta story fait de vues, plus tu gagnes"]),
-      ]),
-
-      h("section", { class: "db-tiles reveal", style: { "--d": "260ms" } }, [
-        tile("trophy", "Classement", "Ta place cette semaine", () => ctx.navigate("leaderboard")),
-        tile("medal", "Collection", "Tes badges débloqués", () => ctx.navigate("collection")),
-      ]),
-
-      h("section", { class: "db-history reveal", style: { "--d": "320ms" } }, [
-        h("div", { class: "db-history-head" }, [h("span", { class: "label" }, "Tes soirées"), compteRecomp]),
-        histSlot,
-      ]),
+    h("div", { class: "db-tiles" }, [
+      Tile({
+        ico: "trophy",
+        title: "Classement",
+        sub: "Ta place cette semaine",
+        onClick: () => ctx.navigate("leaderboard"),
+      }),
+      Tile({
+        ico: "medal",
+        title: "Collection",
+        sub: "Tes badges",
+        onClick: () => ctx.navigate("collection"),
+      }),
     ]),
-  ]);
 
-  // --- Donnees -----------------------------------------------------------
+    Section("Tes soirées", [histSlot], compteRecomp)
+  );
+
+  /* ---------- Pied : la seule action de l'ecran ---------- */
+  el.foot.append(
+    Button({
+      label: "Poster ma story",
+      ico: icon("instagram", 20),
+      block: true,
+      onClick: () => ctx.navigate("post"),
+    }),
+    Note("Le club valide ta capture, puis tes points tombent.")
+  );
+
+  /* ---------- Donnees ---------- */
   charger();
 
-  // Flamme de streak : masquee tant qu'il n'y a pas de serie en cours.
-  loadStreak().then((s) => {
-    if (!s || !s.current_streak) return;
-    streakSlot.replaceChildren(
-      h("span", { class: "db-streak", title: `Record : ${s.longest_streak}` }, [
-        icon("flame", 14),
-        `${s.current_streak}`,
-        h("span", { class: "db-streak-lbl" }, "soirées"),
-      ])
-    );
-  });
+  // Flamme de streak : masquee tant qu'il n'y a pas de serie.
+  loadStreak()
+    .then((s) => {
+      if (!s || !s.current_streak) return;
+      streakSlot.replaceChildren(
+        h("span", { class: "db-streak", title: `Record : ${s.longest_streak}` }, [
+          icon("flame", 14),
+          `${s.current_streak}`,
+          h("span", { class: "db-streak__lbl" }, "soirées"),
+        ])
+      );
+    })
+    .catch(() => {});
 
-  // Defi du moment : bandeau en haut d'ecran, avec son compte a rebours.
-  loadActiveChallenge().then((c) => {
-    if (!c) return;
-    challengeSlot.replaceChildren(
-      h("button", { class: "db-challenge reveal", onClick: () => ctx.navigate("post") }, [
-        h("div", { class: "db-chal-left" }, [
-          h("span", { class: "db-chal-tag" }, [icon("sparkles", 12), "Défi du moment"]),
-          h("p", { class: "db-chal-title" }, c.title),
-          h("p", { class: "db-chal-desc" }, c.description || ""),
-        ]),
-        h("div", { class: "db-chal-right" }, [
-          h("span", { class: "db-chal-bonus mono" }, `+${nf.format(c.bonus_points)}`),
-          h("span", { class: "db-chal-time mono" }, countdown(c.ends_at)),
-        ]),
-      ])
-    );
-  });
+  // Defi du moment, avec son compte a rebours.
+  loadActiveChallenge()
+    .then((c) => {
+      if (!c) return;
+      challengeSlot.replaceChildren(
+        Card({ live: true, onClick: () => ctx.navigate("post") }, [
+          h("div", { class: "db-chal" }, [
+            h("span", { class: "vn-tile__ico", "aria-hidden": "true" }, icon("sparkles", 20)),
+            h("div", { class: "db-chal__main" }, [
+              h("span", { class: "vn-label" }, "Défi du moment"),
+              h("span", { class: "db-chal__title" }, c.title),
+              c.description ? h("span", { class: "db-chal__desc" }, c.description) : null,
+            ]),
+            h("div", { class: "db-chal__right" }, [
+              Points(c.bonus_points, { size: "sm", sign: true, unit: false }),
+              h("span", { class: "db-chal__time" }, countdown(c.ends_at)),
+            ]),
+          ]),
+        ])
+      );
+    })
+    .catch(() => {});
 
   return el;
 
   async function charger() {
-    const [me, evts, club] = await Promise.all([
+    const [me, evts, clubRow] = await Promise.all([
       loadMyProfile().catch(() => null),
       loadMyHistory().catch(() => null),
       loadPublicClub().catch(() => null),
     ]);
 
-    // Profil illisible : on montre zero, pas un solde de demonstration.
-    // Un compte vide est un etat legitime -- un faux solde ne l'est pas.
-    const solde = me?.points_balance ?? 0;
+    // Profil illisible : on montre zero, pas un solde de
+    // demonstration. Un compte vide est un etat legitime, un faux
+    // solde ne l'est pas.
+    const balance = me?.points_balance ?? 0;
     const soirees = evts ?? [];
 
-    if (me?.handle) handleEl.textContent = `@${me.handle}`;
-    if (club?.name) clubEl.replaceChildren(h("span", { class: "db-club-dot", "aria-hidden": "true" }), club.name);
+    handleEl.textContent = me?.handle ? `@${me.handle}` : "Profil";
+    if (clubRow?.name) {
+      clubName.textContent = clubRow.name;
+      club.hidden = false;
+    }
 
-    counter.setValue(solde);
+    solde.setValue(balance);
     majHistorique(soirees);
 
-    // Catalogue reel du club. Sans catalogue, la carte "Prochaine
-    // recompense" disparait : annoncer un objectif qui n'existe pas dans
-    // cette boite serait une promesse que le bar ne pourra pas tenir.
-    const cat = club ? await loadPublicRewards(club.id).catch(() => null) : null;
+    // Catalogue reel du club. Sans catalogue, la carte « Prochaine
+    // recompense » disparait : annoncer un objectif qui n'existe pas
+    // dans cette boite serait une promesse que le bar ne peut pas
+    // tenir.
+    const cat = clubRow ? await loadPublicRewards(clubRow.id).catch(() => null) : null;
     const paliers = (cat || []).slice().sort((a, b) => a.cost_points - b.cost_points);
-
-    majProchaine(paliers, solde);
+    majProchaine(paliers, balance);
   }
 
-
-  function majProchaine(paliers, solde) {
-    const next = paliers.find((r) => r.cost_points > solde);
-    const atteintes = paliers.filter((r) => r.cost_points <= solde).length;
+  function majProchaine(paliers, balance) {
+    const next = paliers.find((r) => r.cost_points > balance);
+    const atteintes = paliers.filter((r) => r.cost_points <= balance).length;
 
     compteRecomp.textContent = atteintes
-      ? `${atteintes} récompense${atteintes > 1 ? "s" : ""} atteinte${atteintes > 1 ? "s" : ""}`
+      ? `${atteintes} atteinte${atteintes > 1 ? "s" : ""}`
       : "";
 
     if (!next) {
       nextSlot.replaceChildren();
       return;
     }
-    const pct = Math.min(100, Math.round((solde / next.cost_points) * 100));
+
+    const manque = next.cost_points - balance;
     nextSlot.replaceChildren(
-      h("button", { class: "db-next card", onClick: () => ctx.navigate("rewards") }, [
-        h("div", { class: "db-next-head" }, [
-          h("span", { class: "label" }, "Prochaine récompense"),
-          h("span", { class: "db-next-arrow" }, icon("chevron", 16)),
-        ]),
-        h("p", { class: "db-next-title" }, next.title),
-        h("div", { class: "db-bar", "aria-hidden": "true" }, [
-          h("span", { class: "db-bar-fill", style: { width: `${pct}%` } }),
-        ]),
-        h("div", { class: "db-next-foot" }, [
-          h("span", { class: "mono db-next-remain" }, `${nf.format(next.cost_points - solde)} pts`),
-          h("span", {}, " à débloquer"),
+      Card({ live: true, onClick: () => ctx.navigate("rewards") }, [
+        CardHead("Prochaine récompense", true),
+        h("p", { class: "vn-h3" }, next.title),
+        Progress(balance, next.cost_points),
+        h("p", { class: "vn-meta" }, [
+          h("strong", {}, `${nf.format(manque)} pts`),
+          " à débloquer",
         ]),
       ])
     );
@@ -187,46 +232,33 @@ export function Dashboard(_params, ctx) {
 
   function majHistorique(evts) {
     if (!evts.length) {
-      histSlot.replaceChildren(h("p", { class: "db-empty" }, "Ta première story apparaîtra ici."));
+      histSlot.replaceChildren(
+        Empty({
+          ico: "instagram",
+          title: "Ta première story apparaîtra ici",
+          sub: "Poste ce soir, tu la retrouveras juste là.",
+        })
+      );
       return;
     }
+
     histSlot.replaceChildren(
-      h(
-        "ul",
-        { class: "db-events" },
-        evts.map((e) => {
-          // Une seule forme desormais : la ligne story_events. Le repli de
-          // demonstration ayant disparu, la double lecture n'a plus lieu
-          // d'etre. mentioned_at et awarded_points sont NOT NULL en base.
-          const quand = capitale(dateFmt.format(new Date(e.mentioned_at)));
-          const pts = e.awarded_points;
-          // Depuis la migration 0012 les vues sont stockees : on affiche le
-          // chiffre qui a servi au calcul plutot que le seul type de contenu.
-          const detail = e.views
-            ? `${libelleType(e.kind)} · ${nf.format(e.views)} vues`
-            : libelleType(e.kind);
-          return h("li", { class: "db-event" }, [
-            h("span", { class: "db-event-icn", "aria-hidden": "true" }, icon(iconeType(e.kind), 17)),
-            h("span", { class: "db-event-main" }, [
-              h("span", { class: "db-event-date" }, quand),
-              h("span", { class: "db-event-meta" }, detail),
-            ]),
-            h("span", { class: "db-event-pts mono" }, `+${nf.format(pts)}`),
-          ]);
-        })
+      Rows(
+        evts.map((e) =>
+          Row({
+            ico: iconeType(e.kind),
+            title: capitale(dateFmt.format(new Date(e.mentioned_at))),
+            sub: libelleType(e.kind),
+            // Un depot non valide vaut 0 point : afficher « +0 »
+            // laissait croire a un gain nul alors que le club n'a
+            // simplement pas encore regarde la capture.
+            value: e.verified
+              ? Points(e.awarded_points, { size: "sm", sign: true, unit: false })
+              : State("wait"),
+          })
+        )
       )
     );
-  }
-
-  function tile(ic, title, sub, onClick) {
-    return h("button", { class: "db-tile card", onClick }, [
-      h("span", { class: "db-tile-icn", "aria-hidden": "true" }, icon(ic, 20)),
-      h("span", { class: "db-tile-txt" }, [
-        h("span", { class: "db-tile-title" }, title),
-        h("span", { class: "db-tile-sub" }, sub),
-      ]),
-      h("span", { class: "db-tile-arrow", "aria-hidden": "true" }, icon("chevron", 16)),
-    ]);
   }
 
   function iconeType(kind) {

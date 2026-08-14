@@ -1,0 +1,148 @@
+/* ============================================================
+   Poster un contenu — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   ⚠️ DERNIER ÉCRAN MIGRÉ. Avec lui disparaissent les quatre
+   emprunts de classes entre pages qui ont couru tout le chantier :
+   `.ob-input`, `.ob-back`, `.ob-note` et `.ob-msg` etaient pris a
+   la feuille de l'INSCRIPTION, et `.rw-check` a celle de la
+   BOUTIQUE.
+
+   RAPPEL COULEUR — un seul aplat rouge par ecran : le bouton du
+   pied. Le format selectionne prend la TEINTE, pas l'aplat : c'est
+   un etat, pas une action.
+   ============================================================ */
+
+/* ---------- Choix du format ----------
+   Il change le montant, donc il est annonce AVANT le parcours et
+   pas cache dans un reglage. */
+/* ⚠️ Le titre est en capitales, mais PAS le pseudo : un handle
+   s'ecrit en minuscules, et « @MIRAGE.BRUSSELS » ne ressemble plus
+   au compte qu'on demande d'aller taguer. */
+.ps-club {
+  color: var(--vn-red-ink);
+  text-transform: none;
+}
+
+/* ---------- Le gain, annonce franchement ----------
+   Le clubbeur doit savoir ce qu'il touche avant de partir poster.
+   Au forfait, c'est un chiffre unique : autant le montrer. */
+.ps-gain {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-red-tint);
+  border: 1px solid var(--vn-red-edge);
+}
+
+.ps-gain__txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-gain__why {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vn-txt-2);
+}
+
+/* ---------- Les trois etapes ---------- */
+.ps-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+}
+
+.ps-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--vn-line-soft);
+}
+.ps-step:last-child {
+  border-bottom: 0;
+}
+
+.ps-step__n {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--vn-line);
+  font-family: var(--vn-face-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--vn-txt-3);
+}
+
+.ps-step__txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ps-step__t {
+  font-size: 15px;
+  font-weight: 650;
+}
+.ps-step__d {
+  font-size: 13.5px;
+  color: var(--vn-txt-3);
+  line-height: 1.4;
+}
+
+/* ---------- Note sur les stories sans lien ---------- */
+.ps-hint {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+  line-height: 1.45;
+}
+
+/* ---------- Ecran d'envoi confirme ---------- */
+.ps-sent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 13px;
+  padding: 30px 6px;
+}
+
+/* ⚠️ APLAT rouge : c'est un accuse de reception, pas une action.
+   C'est le seul objet plein de l'ecran — le pied porte un bouton
+   `ghost` ici, justement pour ne pas lui faire concurrence. */
+.ps-sent__check {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--vn-red);
+  color: var(--vn-red-on);
+  box-shadow: 0 14px 40px -14px var(--vn-red-glow);
+  margin-bottom: 4px;
+}
+
+.ps-sent__sub {
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-2);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
+.ps-sent__note {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+  line-height: 1.45;
+  max-width: 34ch;
+}

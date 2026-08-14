@@ -1,0 +1,102 @@
+/* ============================================================
+   Carte de recompense
+   ------------------------------------------------------------
+   ⚠️ Il existait DEUX cartes de recompense : le composant
+   components/RewardCard.js (jamais importe nulle part, et sur une
+   forme de donnees perimee — `reward.cost` au lieu de
+   `cost_points`) et une copie ecrite dans rewards.js. Celle-ci est
+   la seule.
+
+   Trois etats, et la couleur ne porte JAMAIS l'information seule :
+     accessible  contour + halo rouges, bouton d'action, prix en encre
+     hors portee jauge + « il te manque X » ecrit en toutes lettres
+     epuise      gris, mention « Stock epuise »
+   ============================================================ */
+
+.vn-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vn-reward__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.vn-reward__info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vn-reward__title {
+  font-size: 16.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.vn-reward__desc {
+  font-size: 13.5px;
+  color: var(--vn-txt-3);
+  line-height: 1.4;
+}
+
+.vn-reward__cost {
+  flex: none;
+  text-align: right;
+}
+
+/* Ligne meta : categorie + stock. Contour neutre — la couleur de
+   categorie ferait une deuxieme teinte dans un produit qui n'en a
+   qu'une. */
+.vn-reward__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vn-reward__cat {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vn-txt-3);
+  border: 1px solid var(--vn-line);
+  border-radius: var(--vn-radius-pill);
+  padding: 3px 9px;
+}
+
+.vn-reward__stock {
+  font-size: 12.5px;
+  color: var(--vn-txt-3);
+}
+
+/* Ce qui manque. ⚠️ La jauge portait la seule information qui fait
+   revenir, et elle etait dessinee en #3a3a42 sur fond sombre :
+   invisible. */
+.vn-reward__gap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.vn-reward__remain {
+  font-size: 13.5px;
+  color: var(--vn-txt-2);
+}
+.vn-reward__remain strong {
+  color: var(--vn-txt);
+  font-weight: 700;
+}
+
+.vn-reward__out {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--vn-txt-3);
+}

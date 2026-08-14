@@ -1,0 +1,273 @@
+/* ============================================================
+   Accueil (vitrine apres scan du QR) — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   C'est le PREMIER ecran, celui qui decide de l'inscription. Il
+   repond a « qu'est-ce que j'y gagne ? » AVANT de demander quoi que
+   ce soit : les vraies recompenses, le bareme, un chiffre reel.
+
+   RAPPEL COULEUR — l'aplat rouge va au bouton « Commencer », et a
+   lui seul. La recompense la plus accessible prend la TEINTE.
+   ⚠️ Elle portait un aplat rouge plein dans la version precedente.
+   Avec le CTA en aplat juste en dessous, ca faisait deux blocs
+   pleins qui se disputaient l'oeil sur l'ecran le plus important
+   du produit.
+   ============================================================ */
+
+/* ---------- Barre de marque ---------- */
+.lp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--vn-face-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.lp-brand__mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--vn-red);
+  box-shadow: 0 0 12px var(--vn-red-glow);
+  flex: none;
+}
+
+/* ---------- Atmosphere ----------
+   Une seule lueur, en haut a gauche. Purement decorative : elle ne
+   porte aucune information et ne capte aucun clic. */
+.lp-glow {
+  position: absolute;
+  top: -170px;
+  left: -130px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vn-red-glow), transparent 68%);
+  filter: blur(30px);
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Accroche ---------- */
+.lp-hook {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-here {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--vn-txt-3);
+}
+.lp-here[hidden] {
+  display: none;
+}
+
+.lp-title {
+  font-family: var(--vn-face-display);
+  font-size: clamp(32px, 9vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+/* Le mot qui porte la promesse. En encre, jamais en aplat. */
+.lp-title em {
+  font-style: normal;
+  color: var(--vn-red-ink);
+}
+
+/* ---------- L'etagere ---------- */
+.lp-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+/* ⚠️ Une LIGNE par palier, pas une grille. Deux dispositions ont ete
+   essayees avant : un carrousel horizontal (deux recompenses hors
+   ecran, rien pour signaler le defilement) puis une grille deux
+   colonnes (carte orpheline des que le nombre est impair). En
+   colonne, les prix s'alignent et la progression se lit d'un coup. */
+.lp-reward {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  min-height: 62px;
+}
+
+/* La porte d'entree : celle qui decide de l'inscription. TEINTE. */
+.lp-reward.is-first {
+  background: var(--vn-red-tint);
+  border-color: var(--vn-red-edge);
+}
+
+.lp-reward__ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-3);
+}
+.lp-reward.is-first .lp-reward__ico {
+  background: rgba(255, 47, 69, 0.2);
+  color: var(--vn-red-ink);
+}
+
+.lp-reward__txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lp-reward__tag {
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vn-red-ink);
+}
+
+.lp-reward__title {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+/* ⚠️ Prix aligne a droite en chiffres tabulaires : c'est ce qui fait
+   la colonne. Sans `tabular-nums`, 300 / 600 / 1 200 flottaient a
+   trois abscisses differentes et la progression ne se lisait pas. */
+.lp-reward__cost {
+  flex: none;
+  margin-left: auto;
+}
+
+/* ---------- Les trois etapes ---------- */
+.lp-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lp-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--vn-line-soft);
+}
+.lp-step:last-child {
+  border-bottom: 0;
+}
+
+.lp-step__n {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--vn-line);
+  font-family: var(--vn-face-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--vn-txt-3);
+}
+
+.lp-step__txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.lp-step__title {
+  font-size: 15px;
+  font-weight: 650;
+}
+.lp-step__detail {
+  font-size: 13.5px;
+  color: var(--vn-txt-3);
+  line-height: 1.4;
+}
+
+/* ---------- Preuve chiffree ----------
+   ⚠️ Vide tant qu'on n'a pas un VRAI chiffre. La version d'origine
+   affichait « 8 400 vues » en dur, identique pour tous les clubs et
+   tous les visiteurs. Une preuve inventee ne vaut pas mieux que la
+   promesse floue qu'on venait de retirer. */
+.lp-proof {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-surf-1);
+}
+.lp-proof__num {
+  font-family: var(--vn-face-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--vn-red-ink);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.lp-proof__txt {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vn-txt-3);
+}
+.lp-proof__txt strong {
+  color: var(--vn-txt-2);
+  font-weight: 650;
+}
+
+/* ---------- Sans club ----------
+   Ouvert sans avoir scanne de QR (lien partage, favori, adresse nue).
+   On explique le geste manquant au lieu d'afficher un club invente. */
+.lp-noclub {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 10px;
+}
+.lp-noclub__ico {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+  margin-bottom: 4px;
+}
+.lp-noclub__sub {
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-2);
+  line-height: 1.5;
+  max-width: 34ch;
+}

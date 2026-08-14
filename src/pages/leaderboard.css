@@ -1,0 +1,204 @@
+/* ============================================================
+   Classement — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   Les listes, les points et la coquille viennent de ui/ et
+   patterns/. Il ne reste ici que le podium et l'identite visuelle
+   d'une place.
+
+   ⚠️ Les anciennes regles .lb-* de styles/gamification.css ont ete
+   RETIREES au moment de cette migration. Elles etaient ecrites en
+   selecteurs partages avec la collection (`.lb-inner, .cl-inner`) :
+   les garder aurait fait s'ecraser les deux systemes.
+
+   RAPPEL COULEUR — un seul aplat par ecran. Ici c'est l'avatar du
+   premier. Ma propre ligne prend la TEINTE (c'est un etat, « c'est
+   toi », pas une action). Le reste est gris.
+   ============================================================ */
+
+/* ---------- Podium ----------
+   2e, 1er, 3e — dans cet ordre visuel. Les hauteurs decalees disent
+   le classement sans qu'on ait besoin de lire les chiffres. */
+.lb-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: end;
+  gap: 8px;
+  padding: 6px 0 4px;
+}
+
+.lb-pod {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 8px 12px;
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  min-width: 0;
+}
+
+/* Le premier monte, les autres descendent. */
+.lb-pod--1 {
+  padding-top: 18px;
+  padding-bottom: 16px;
+}
+.lb-pod--2 {
+  margin-bottom: 10px;
+}
+.lb-pod--3 {
+  margin-bottom: 20px;
+}
+
+.lb-pod__rank {
+  font-family: var(--vn-face-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--vn-txt-3);
+  font-variant-numeric: tabular-nums;
+}
+.lb-pod--1 .lb-pod__rank {
+  color: var(--vn-red-ink);
+}
+
+/* Avatar : les deux premieres lettres du pseudo. Pas de photo —
+   aucune n'existe en base, et un rond vide est pire qu'une initiale. */
+.lb-pod__ava {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--vn-surf-4);
+  color: var(--vn-txt);
+  font-family: var(--vn-face-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+
+/* ⚠️ LE SEUL APLAT DE L'ECRAN. */
+.lb-pod--1 .lb-pod__ava {
+  width: 58px;
+  height: 58px;
+  font-size: 20px;
+  background: var(--vn-red);
+  color: var(--vn-red-on);
+  box-shadow: 0 12px 34px -12px var(--vn-red-glow);
+}
+
+.lb-pod__handle {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--vn-txt-2);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Le podium, c'est moi : teinte, comme dans la liste. */
+.lb-pod.is-me {
+  border-color: var(--vn-red-edge);
+  background: var(--vn-red-tint);
+}
+
+/* ---------- Lignes 4 et + ---------- */
+
+/* Le rang garde une largeur fixe : sans ca, le passage de 9 a 10
+   decale toute la colonne des pseudos. */
+.lb-lead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: none;
+}
+
+.lb-rank {
+  font-family: var(--vn-face-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--vn-txt-3);
+  font-variant-numeric: tabular-nums;
+  min-width: 22px;
+  text-align: right;
+}
+
+.lb-ava {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-2);
+  font-family: var(--vn-face-display);
+  font-size: 13.5px;
+  font-weight: 800;
+  flex: none;
+}
+
+/* Ma ligne dans la liste : TEINTE. */
+.vn-row.is-me {
+  background: var(--vn-red-tint);
+  border-radius: var(--vn-radius-btn);
+  border-bottom-color: transparent;
+  padding-inline: 12px;
+  margin-inline: -12px;
+}
+.vn-row.is-me .lb-rank,
+.vn-row.is-me .vn-row__title {
+  color: var(--vn-txt);
+}
+.vn-row.is-me .lb-ava {
+  background: var(--vn-red-edge);
+  color: var(--vn-txt);
+}
+
+/* Pastille « toi ». ⚠️ 12px, le plancher typographique de l'app. */
+.lb-you {
+  margin-left: 8px;
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vn-red-ink);
+}
+
+/* ---------- Ma position, epinglee hors du top 10 ----------
+   Colle au-dessus de la barre d'onglets : on doit pouvoir defiler
+   le classement sans perdre sa propre place de vue. */
+.lb-pinned {
+  position: sticky;
+  bottom: calc(var(--vn-tabbar-h) + var(--vn-safe-bottom) + 10px);
+  z-index: 5;
+  margin-top: 16px;
+  padding: 4px 12px;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-red-edge);
+  border-radius: var(--vn-radius-card);
+  box-shadow: 0 18px 44px -22px #000;
+}
+
+/* ⚠️ `display: flex` sur .vn-row ecrase le `display: none` de
+   [hidden] — le piege deja rencontre sur la barre d'onglets et sur
+   le bloc club du dashboard. */
+.lb-pinned[hidden],
+.vn-row[hidden],
+.lb-podium[hidden] {
+  display: none;
+}
+
+/* La ligne epinglee ne porte pas de separateur : elle est seule. */
+.lb-pinned .vn-row {
+  border-bottom: 0;
+  background: none;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+/* ---------- Bandeau « pas encore classe » ---------- */
+.lb-none {
+  margin-top: 4px;
+}

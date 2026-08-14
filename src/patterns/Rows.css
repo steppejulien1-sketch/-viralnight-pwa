@@ -1,0 +1,123 @@
+/* ============================================================
+   Lignes de liste
+   ------------------------------------------------------------
+   Trois formes, un seul gabarit : pictogramme | texte | valeur.
+     .vn-row        ligne de contenu (une soiree, un badge)
+     .vn-tile       tuile cliquable (Classement, Collection)
+   ============================================================ */
+
+.vn-rows {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.vn-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--vn-line-soft);
+}
+.vn-row:last-child {
+  border-bottom: 0;
+}
+
+.vn-row__ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-2);
+  flex: none;
+}
+
+.vn-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vn-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  /* Un titre de recompense long ne doit pas pousser la valeur hors
+     de l'ecran : il se coupe, la valeur reste lisible. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vn-row__sub {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+}
+
+.vn-row__val {
+  flex: none;
+  margin-left: auto;
+}
+
+/* ---------- Tuile cliquable ---------- */
+.vn-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 15px;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  transition: transform var(--vn-dur-tap) var(--vn-ease),
+    background 0.2s var(--vn-ease), border-color 0.2s var(--vn-ease);
+}
+.vn-tile:hover {
+  border-color: var(--vn-surf-4);
+}
+.vn-tile:active {
+  transform: scale(0.985);
+  background: var(--vn-surf-3);
+}
+
+/* ⚠️ NEUTRE, pas rouge. Deux tuiles cote a cote avec un pictogramme
+   teinte faisaient deux taches rouges en haut d'ecran, qui volaient
+   la vedette au bouton d'action. Le rouge ne se depense qu'une fois
+   par ecran, et c'est sur l'action. */
+.vn-tile__ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-2);
+  flex: none;
+}
+
+.vn-tile__txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vn-tile__title {
+  font-size: 15.5px;
+  font-weight: 650;
+}
+
+.vn-tile__sub {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+}
+
+.vn-tile__arrow {
+  color: var(--vn-txt-3);
+  flex: none;
+}

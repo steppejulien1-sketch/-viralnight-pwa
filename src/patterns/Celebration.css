@@ -1,0 +1,103 @@
+/* ============================================================
+   Overlay de celebration — LE seul moment festif de l'app
+   ------------------------------------------------------------
+   Extrait de styles/gamification.css au moment de la migration de
+   la collection : ces regles n'avaient rien a y faire (elles
+   servent a la boutique), et elles empechaient de supprimer le
+   fichier. Elles vivent maintenant a cote de leur seul appelant.
+
+   ⚠️ Un seul moment de fete dans tout le produit : le deblocage
+   d'une recompense. Tout le reste du mouvement est fonctionnel.
+   ============================================================ */
+
+.cbr {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 9, 12, 0.62);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.22s var(--vn-ease);
+}
+.cbr.is-in {
+  opacity: 1;
+}
+
+.cbr-card {
+  position: relative;
+  text-align: center;
+  padding: 28px 32px;
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  box-shadow: 0 30px 70px -30px #000;
+  transform: scale(0.9);
+  transition: transform 0.3s var(--vn-ease-spring);
+}
+.cbr.is-in .cbr-card {
+  transform: scale(1);
+}
+
+/* ⚠️ Aplat rouge PLEIN, plus le degrade rouge→orange d'avant :
+   l'orange etait une seconde teinte qui n'existe nulle part
+   ailleurs dans le produit. */
+.cbr-burst {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  background: var(--vn-red);
+  box-shadow: 0 0 34px -4px var(--vn-red-glow);
+  animation: cbr-pulse 0.9s var(--vn-ease-spring) infinite alternate;
+}
+@keyframes cbr-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+.cbr-title {
+  font-family: var(--vn-face-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--vn-txt);
+}
+.cbr-sub {
+  margin-top: 6px;
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-2);
+}
+
+.cbr-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cbr-piece {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: cbr-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.5, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes cbr-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(var(--rot));
+    opacity: 0;
+  }
+}

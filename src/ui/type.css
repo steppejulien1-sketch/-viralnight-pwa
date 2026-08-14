@@ -1,0 +1,72 @@
+/* ============================================================
+   Primitives typographiques
+   ------------------------------------------------------------
+   Uniquement des classes prefixees .vn- : ce fichier peut cohabiter
+   avec l'ancien src/styles/main.css sans rien lui prendre.
+   Le reset global vit dans reset.css, charge separement.
+   ============================================================ */
+
+/* Titres : Archivo, capitales, chasse serree. */
+.vn-h1,
+.vn-h2,
+.vn-h3 {
+  font-family: var(--vn-face-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+.vn-h1 {
+  font-size: var(--vn-t-h1);
+  text-transform: uppercase;
+}
+.vn-h2 {
+  font-size: var(--vn-t-h2);
+}
+.vn-h3 {
+  font-size: var(--vn-t-h3);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* Intertitre. Seul endroit ou l'on descend a 12px, et seulement
+   parce que les capitales espacees restent lisibles a cette taille.
+   L'ancienne interface descendait a 10,5px sur les onglets. */
+.vn-label {
+  font-size: var(--vn-t-label);
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--vn-txt-3);
+}
+
+.vn-meta {
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-2);
+  line-height: 1.45;
+}
+
+.vn-mute {
+  color: var(--vn-txt-3);
+}
+
+/* ⚠️ Le mono ne sert plus qu'au code de retrait qu'on lit a voix
+   haute au barman. Partout ailleurs, les chiffres sont en display. */
+.vn-mono {
+  font-family: var(--vn-face-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+/* Masque a l'oeil, lu par les lecteurs d'ecran. */
+.vn-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

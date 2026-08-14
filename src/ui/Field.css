@@ -1,0 +1,98 @@
+/* ============================================================
+   Champ de saisie
+   ------------------------------------------------------------
+   Libelle + champ + aide + erreur, en un seul bloc. Cinq copies
+   dans l'app aujourd'hui (email, pseudo, abonnes, vues, lien),
+   avec cinq facons d'afficher l'erreur.
+
+   ⚠️ font-size 16px obligatoire sur les <input> : en dessous, iOS
+   Safari ZOOME automatiquement au focus et le clubbeur se retrouve
+   avec la page decalee, une main prise.
+   ============================================================ */
+
+.vn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.vn-field__label {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--vn-txt-2);
+}
+
+.vn-field__input {
+  background: var(--vn-surf-3);
+  border: 1px solid var(--vn-line);
+  border-radius: var(--vn-radius-field);
+  min-height: var(--vn-tap);
+  padding: 0 16px;
+  color: var(--vn-txt);
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-body);
+  width: 100%;
+  transition: border-color 0.18s var(--vn-ease), background 0.18s var(--vn-ease);
+}
+
+.vn-field__input::placeholder {
+  color: var(--vn-txt-3);
+}
+
+.vn-field__input:focus {
+  outline: 2px solid var(--vn-red-ink);
+  outline-offset: 1px;
+  border-color: transparent;
+  background: var(--vn-surf-2);
+}
+
+/* Champ en erreur : le contour ROUGE + le message. Jamais le
+   contour seul — le rouge est la couleur de marque de l'app, il ne
+   suffit pas a dire « probleme » ici. */
+.vn-field--err .vn-field__input {
+  border-color: var(--vn-red);
+}
+
+.vn-field__hint {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+  line-height: 1.4;
+}
+
+.vn-field__err {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vn-red-ink);
+  line-height: 1.4;
+}
+
+/* Champ prefixe (le @ du pseudo Instagram). Le @ vit DANS le
+   cadre : l'ancienne version le posait a cote, et le pseudo se
+   retrouvait desaligne des que le clavier s'ouvrait. */
+.vn-field__wrap {
+  display: flex;
+  align-items: center;
+  background: var(--vn-surf-3);
+  border: 1px solid var(--vn-line);
+  border-radius: var(--vn-radius-field);
+  padding-left: 16px;
+}
+.vn-field__wrap:focus-within {
+  outline: 2px solid var(--vn-red-ink);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.vn-field__wrap .vn-field__input {
+  border: 0;
+  background: none;
+  padding-left: 2px;
+}
+.vn-field__wrap .vn-field__input:focus {
+  outline: none;
+}
+.vn-field__prefix {
+  color: var(--vn-txt-3);
+  font-size: var(--vn-t-body);
+  font-weight: 600;
+  flex: none;
+}

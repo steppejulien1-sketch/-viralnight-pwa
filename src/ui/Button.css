@@ -1,0 +1,125 @@
+/* ============================================================
+   Bouton
+   ------------------------------------------------------------
+   ⚠️ UN SEUL .vn-btn--primary visible par ecran. C'est le seul
+   aplat rouge autorise : c'est lui qui porte l'action. Deux
+   aplats sur le meme ecran, et plus aucun des deux ne domine.
+   ============================================================ */
+
+.vn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  /* 56px : le pouce d'une main qui tient aussi un verre. */
+  min-height: var(--vn-tap);
+  padding: 0 24px;
+  border-radius: var(--vn-radius-btn);
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-body);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  user-select: none;
+  white-space: nowrap;
+  transition: transform var(--vn-dur-tap) var(--vn-ease),
+    background 0.2s var(--vn-ease), border-color 0.2s var(--vn-ease),
+    filter 0.2s var(--vn-ease);
+}
+
+.vn-btn:active {
+  transform: scale(0.975);
+}
+
+.vn-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.vn-btn--block {
+  width: 100%;
+}
+
+/* --- Aplat : l'action principale --- */
+.vn-btn--primary {
+  background: var(--vn-red);
+  color: var(--vn-red-on);
+  box-shadow: 0 10px 34px -12px var(--vn-red-glow);
+}
+.vn-btn--primary:hover:not(:disabled) {
+  background: var(--vn-red-hi);
+}
+.vn-btn--primary:active:not(:disabled) {
+  background: var(--vn-red-press);
+}
+
+/* --- Contour : l'action secondaire --- */
+.vn-btn--ghost {
+  background: transparent;
+  color: var(--vn-txt);
+  border: 1px solid var(--vn-line);
+}
+.vn-btn--ghost:hover:not(:disabled) {
+  background: var(--vn-surf-2);
+  border-color: var(--vn-surf-4);
+}
+
+/* --- Texte nu : la sortie discrete (« Annuler », « Choisir une
+   autre capture »). Cible reduite a 44px : c'est une action qu'on
+   ne veut PAS toucher par erreur. --- */
+.vn-btn--quiet {
+  background: transparent;
+  color: var(--vn-txt-2);
+  min-height: 44px;
+  padding: 0 10px;
+  font-weight: 600;
+}
+.vn-btn--quiet:hover:not(:disabled) {
+  color: var(--vn-txt);
+}
+
+/* --- Reseaux sociaux ---
+   ⚠️ Le degrade Instagram est la couleur d'une marque tierce.
+   Il ne sert QUE sur ce bouton. */
+.vn-btn--ig {
+  background: var(--vn-grad-ig);
+  color: #fff;
+  box-shadow: 0 10px 34px -12px var(--vn-ig-glow);
+}
+.vn-btn--ig:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.vn-btn--tiktok {
+  background: var(--vn-txt);
+  color: var(--vn-ink);
+}
+.vn-btn--tiktok:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+/* Fournisseur pas encore configure : visible mais attenue, plutot
+   qu'une redirection cassee chez l'utilisateur. */
+.vn-btn--soon {
+  opacity: 0.45;
+}
+
+/* --- Chargement ---
+   La largeur ne bouge pas pendant l'envoi : le bouton garde son
+   libelle, on ajoute seulement le rond qui tourne. */
+.vn-btn__spin {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: vn-btn-spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes vn-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

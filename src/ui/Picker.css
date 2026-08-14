@@ -1,0 +1,104 @@
+/* ============================================================
+   Depot de capture
+   ------------------------------------------------------------
+   Trois implementations dans l'app : une zone de drop (bonus),
+   une tuile (post-story) et une ligne « Joindre une capture »
+   (inscription). Trois comportements differents pour le meme
+   geste, dont un — le drag & drop — inutilisable sur telephone.
+   ============================================================ */
+
+.vn-picker {
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+/* Le vrai <input type=file> est masque mais reste dans le <label> :
+   le tap le declenche, et il garde le focus clavier. */
+.vn-picker__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.vn-picker__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  min-height: 132px;
+  padding: 22px 18px;
+  border: 1px dashed var(--vn-line);
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-surf-1);
+  transition: border-color 0.2s var(--vn-ease), background 0.2s var(--vn-ease);
+}
+
+.vn-picker:hover .vn-picker__zone,
+.vn-picker__input:focus-visible + .vn-picker__zone {
+  border-color: var(--vn-surf-4);
+  background: var(--vn-surf-2);
+}
+
+.vn-picker__ico {
+  color: var(--vn-txt-3);
+}
+
+.vn-picker__title {
+  font-weight: 650;
+  font-size: 15.5px;
+}
+
+.vn-picker__sub {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+}
+
+/* Capture choisie : contour et halo rouges (TEINTE), l'apercu
+   remplace la zone vide. On MONTRE l'image — l'ancienne version se
+   contentait d'afficher le nom du fichier, donc on ne pouvait pas
+   verifier qu'on avait pris la bonne capture. */
+.vn-picker--set .vn-picker__zone {
+  border-style: solid;
+  border-color: var(--vn-red-edge);
+  background: var(--vn-surf-2);
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.vn-picker__preview {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+}
+
+.vn-picker__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--vn-txt-2);
+  border-top: 1px solid var(--vn-line-soft);
+}
+
+.vn-picker__bar .vn-picker__check {
+  color: var(--vn-red-ink);
+  flex: none;
+}
+
+.vn-picker__change {
+  margin-left: auto;
+  color: var(--vn-txt-3);
+  text-decoration: underline;
+  flex: none;
+}
