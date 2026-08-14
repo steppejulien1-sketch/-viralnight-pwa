@@ -31,9 +31,16 @@ export async function loadPublicClub() {
   return currentClub();
 }
 
-// Preuve chiffree publique d'un club : vues cumulees, nombre de clubbeurs
-// et meilleure soiree du mois. Agregats seulement, aucune ligne nominative
-// (fonction SECURITY DEFINER, migration 0013).
+// Preuve chiffree publique d'un club. Agregats seulement, aucune ligne
+// nominative (fonction SECURITY DEFINER, migration 0013).
+//
+// ⚠️ La fonction renvoie encore `views_total`, `best_views` et
+// `best_points` : ces trois champs ne sont PLUS AFFICHES depuis le passage
+// au forfait, et il ne faut pas les remettre sans y penser. Les vues sont
+// DECLAREES par le clubbeur et, depuis le forfait, plus rien ne pousse a
+// les verifier — les publier comme preuve du club serait publier une
+// declaration non controlee. Voir le commentaire de `preuve()` dans
+// `pages/landing.js`.
 export async function loadClubProof(clubUuid, jours = 30) {
   if (!isConfigured || !clubUuid) return null;
   try {

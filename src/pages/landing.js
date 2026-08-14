@@ -178,14 +178,24 @@ export function Landing(_params, ctx) {
 
   // Preuve reelle du club sur 30 jours.
   //
-  // ⚠️ ELLE COMPTE DES CONTENUS, PLUS DES VUES (migration 0020). Le total
-  // de vues existe toujours en base, mais il a CESSE DE GRANDIR le jour du
-  // passage au forfait : l'afficher reviendrait a montrer un chiffre fige
-  // qui se presente comme l'activite du mois.
+  // ⚠️ ELLE COMPTE DES CONTENUS, PLUS DES VUES (migration 0020).
   //
-  // Le meilleur gain a saute pour la meme raison : au forfait, la
-  // « meilleure soiree » vaut 100 pts comme toutes les autres. Ca ne
-  // distingue plus rien.
+  // ⚠️ CORRECTION D'UN COMMENTAIRE FAUX ecrit ici le 2026-08-14 : il
+  // affirmait que le total de vues avait « cesse de grandir » au passage
+  // au forfait. C'est INEXACT, verifie en base — `submit_story` enregistre
+  // toujours le chiffre saisi par le clubbeur, et `review_story` le
+  // conserve. Les vues continuent donc de s'accumuler.
+  //
+  // La vraie raison de ne pas les afficher est autre, et elle tient : ce
+  // chiffre est DECLARE par le clubbeur, et depuis le forfait plus rien
+  // ne pousse personne a le verifier — il ne vaut plus un point. En faire
+  // la preuve publique du club reviendrait a publier une declaration que
+  // personne ne controle. Un nombre de contenus, lui, est constate.
+  //
+  // Le meilleur gain a saute pour une raison qui, elle, a bougé : au
+  // forfait pur il valait 100 pts comme tous les autres. Depuis la 0022 le
+  // gerant peut accorder davantage, donc l'ecart redevient possible — a
+  // rouvrir seulement si les montants libres se generalisent.
   function preuve(p, nomClub) {
     return h("section", { class: "lp-proof" }, [
       h("span", { class: "lp-proof__num" }, nf.format(p.contents)),
