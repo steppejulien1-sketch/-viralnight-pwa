@@ -489,12 +489,12 @@ d'un déploiement.
 
 ### Ce que la migration ne fait pas, volontairement
 1. **Badges `views_10k` / `views_50k` non supprimés** (accord de Julien requis).
-2. **`get_club_proof` non touchée** — le total de vues cesse de grandir.
-3. ⚠️ **`credit_story` garde son barème aux vues.** Divergence connue et
-   assumée : elle est révoquée depuis la 0014 et plus aucun client ne
-   l'appelle. La réécrire demande de relire entièrement une fonction
-   `security definer` qui crédite des points — sa propre migration, ses
-   propres tests.
+2. **`get_club_proof` non touchée en SQL** — mais la landing affiche désormais
+   le nombre de **contenus** et non le total de vues, qui a cessé de grandir.
+   Le « meilleur gain » a sauté : au forfait, la meilleure soirée vaut 100 pts
+   comme toutes les autres, ça ne distingue plus rien.
+3. ✅ **`credit_story` : vérifiée, rien à faire.** Contrairement à ce que
+   j'avais écrit, elle appelle déjà `story_points()`.
 4. **Aucune donnée historique recalculée.**
 
 Le fichier se termine par un bloc de requêtes de vérification à lancer après
@@ -539,8 +539,10 @@ Appliqué via l'API Management Supabase (projet `gcopwgmqjiufemapamek`).
 - Badges `views_10k` / `views_50k` : toujours en pause côté UI, non supprimés.
 - `get_club_proof` : le total de vues cesse de grandir, la landing l'affiche
   encore pour le passé.
-- ⚠️ `credit_story` garde son barème aux vues — révoquée, sans appelant, mais
-  divergente. Sa propre migration.
+- ✅ `credit_story` : **rien à faire.** J'avais écrit qu'elle gardait un barème
+  aux vues en dur — **c'était faux**. Sa définition en base (relue le
+  2026-08-14) appelle déjà `story_points()`, donc elle a basculé au forfait
+  avec le reste. Elle reste révoquée et sans appelant.
 - L'OCR (`ocr-screenshot`) n'a plus d'objet : il lit un chiffre qui ne sert
   plus à rien.
 

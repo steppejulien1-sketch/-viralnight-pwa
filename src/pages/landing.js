@@ -125,7 +125,7 @@ export function Landing(_params, ctx) {
         .then((p) => {
           // Sous 3 contenus, le chiffre est trop maigre pour convaincre
           // et designerait presque quelqu'un. On n'affiche rien.
-          if (!p || !p.views_total || p.contents < 3) return;
+          if (!p || !p.contents || p.contents < 3) return;
           proofSlot.replaceChildren(preuve(p, club.name));
         })
         .catch(() => {});
@@ -176,18 +176,22 @@ export function Landing(_params, ctx) {
     ]);
   }
 
-  // Preuve reelle sur 30 jours. Deux chiffres seulement : le volume
-  // (« ca tourne ici ») et le meilleur gain (« voila ce que ca donne »).
+  // Preuve reelle du club sur 30 jours.
+  //
+  // ⚠️ ELLE COMPTE DES CONTENUS, PLUS DES VUES (migration 0020). Le total
+  // de vues existe toujours en base, mais il a CESSE DE GRANDIR le jour du
+  // passage au forfait : l'afficher reviendrait a montrer un chiffre fige
+  // qui se presente comme l'activite du mois.
+  //
+  // Le meilleur gain a saute pour la meme raison : au forfait, la
+  // « meilleure soiree » vaut 100 pts comme toutes les autres. Ca ne
+  // distingue plus rien.
   function preuve(p, nomClub) {
-    const texte = [
-      `vues générées par ${p.clubbeurs} clubbeur${p.clubbeurs > 1 ? "s" : ""} du ${nomClub} ce mois-ci.`,
-    ];
-    if (p.best_points) {
-      texte.push(" La meilleure soirée a rapporté ", h("strong", {}, `${nf.format(p.best_points)} pts`), ".");
-    }
     return h("section", { class: "lp-proof" }, [
-      h("span", { class: "lp-proof__num" }, nf.format(p.views_total)),
-      h("p", { class: "lp-proof__txt" }, texte),
+      h("span", { class: "lp-proof__num" }, nf.format(p.contents)),
+      h("p", { class: "lp-proof__txt" }, [
+        `contenus publiés par ${p.clubbeurs} clubbeur${p.clubbeurs > 1 ? "s" : ""} du ${nomClub} ce mois-ci.`,
+      ]),
     ]);
   }
 
