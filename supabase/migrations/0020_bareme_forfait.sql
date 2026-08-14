@@ -278,15 +278,17 @@ commit;
 --    pour le passe. L'ecran masque deja le bloc sous 3 contenus.
 --    👉 A trancher : la passer sur un compte de contenus, ou la retirer.
 --
--- 3. `credit_story` GARDE SON PROPRE BARÈME AUX VUES.
---    ⚠️ C'est une divergence connue et assumee ici. Elle est REVOQUEE
---    pour anon et authenticated depuis la 0014, et plus aucun client ne
---    l'appelle (`creditStory` dans src/lib/game.js n'est importe nulle
---    part). La reecrire demanderait de relire entierement une fonction
---    security definer qui credite des points — a faire dans sa propre
---    migration, avec ses propres tests, pas en passant.
---    👉 A faire : soit l'aligner sur `story_points()`, soit la supprimer
---       si le webhook reseau ne verra jamais le jour.
+-- 3. `credit_story` — RIEN A FAIRE, VERIFIE APRES COUP.
+--    ⚠️ CORRECTION. Une premiere version de ce commentaire annoncait
+--    qu'elle gardait un bareme aux vues ecrit en dur. C'EST FAUX.
+--    Relecture de sa definition en base le 2026-08-14 : elle appelle
+--    deja `public.story_points(v_kind, p_views)`, elle a donc bascule
+--    au forfait en meme temps que tout le reste.
+--    Elle reste REVOQUEE pour anon et authenticated depuis la 0014, et
+--    aucun client ne l'appelle (`creditStory` dans src/lib/game.js n'est
+--    importe nulle part).
+--    Detail sans consequence : elle ecrit encore `base_points` avec un
+--    `case ... then 100 else 60`, qui vaut exactement le forfait.
 --
 -- 4. AUCUNE DONNÉE HISTORIQUE N'EST RECALCULÉE.
 --    Les gains deja verses restent tels quels. Recalculer retirerait des
