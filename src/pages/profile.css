@@ -132,37 +132,7 @@
   display: none;
 }
 
-/* Ligne qui MENE quelque part (abonnés). C'est un <button> : il faut
-   neutraliser le fond et la bordure du navigateur, sinon la ligne se
-   detache du bloc alors qu'elle doit s'y fondre. */
-.pf-row--act {
-  background: none;
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.pf-row--act:hover .pf-row__val,
-.pf-row--act:focus-visible .pf-row__val {
-  color: var(--vn-red-ink);
-}
-.pf-row__go {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--vn-txt-3);
-}
 
-/* Feuille « Tes abonnés » : le champ et la capture respirent. */
-.pf-abo {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 4px 0 16px;
-  text-align: left;
-}
 
 button.pf-row {
   transition: background 0.18s var(--vn-ease);

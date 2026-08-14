@@ -1,8 +1,10 @@
 // Ecran — Inscription / connexion (refonte UI, socle ui/ + patterns/).
 //
-// ⚠️ AUCUN APPEL SUPABASE N'A CHANGE : meme `signInWithEmail`, meme
-// `startSocialLogin` / `readSocialReturn`, meme creation de la ligne de
-// profil, meme upload de la capture, meme RPC `declare_followers`.
+// ⚠️ L'ecran ne demande plus QUE le pseudo. La saisie du nombre
+// d'abonnes et sa capture de profil ont ete retirees le 2026-08-14
+// (Julien : « que le client puisse lui-meme mettre son nombre d'abos,
+// c'est inutile »). Un chiffre qu'on se donne a soi-meme ne prouve rien.
+// Les abonnes ne peuvent plus venir que d'une connexion reseau.
 //
 // TROIS VOIES, par ordre de facilite :
 //   1. TikTok    — Login Kit, ouvert a TOUS les comptes.
@@ -25,22 +27,19 @@
 // silence. C'etait le cas depuis l'origine (voir migration 0018).
 //
 // CE QUI CHANGE A L'ECRAN :
-//  - chaque champ porte SA propre erreur. Un seul <p class="ob-alert">
-//    etait partage : une erreur sur le nombre d'abonnes s'affichait sous
-//    le champ du pseudo ;
-//  - la capture de profil passe sur Picker, qui MONTRE l'image au lieu
-//    d'ecrire « Aucune capture » puis un nom de fichier ;
+//  - chaque champ porte SA propre erreur, au lieu d'un unique
+//    <p class="ob-alert"> partage par tous ;
 //  - le bouton d'envoi garde son libelle pendant le chargement.
 
 import { h, icon } from "../lib/dom.js";
-import { Button, Field, Picker, Points } from "../ui/index.js";
+import { Button, Field } from "../ui/index.js";
 import { Screen, Title, Sub, Section, Note } from "../patterns/Screen.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 import { currentClub } from "../lib/club.js";
-import { loadPublicRewards, loadMyProfile } from "../lib/game.js";
+import { loadMyProfile } from "../lib/game.js";
 import "./onboarding.css";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
@@ -234,18 +233,14 @@ export function Onboarding(_params, ctx) {
       onEnter: () => enregistrer(),
     });
 
-    const abos = Field({
-      label: "Tes abonnés — facultatif",
-      type: "number",
-      inputmode: "numeric",
-      placeholder: "1 250",
-      hint: "Affiché comme « déclaré ». Ça ne change rien à tes points.",
-    });
-
-    const capture = Picker({
-      title: "Joindre une capture de ton profil",
-      sub: "facultatif",
-    });
+    // ⚠️ LA SAISIE DES ABONNES A ETE RETIREE (Julien, 2026-08-14 : « que
+    // le client puisse lui-meme mettre son nombre d'abos, c'est inutile »).
+    // Un chiffre qu'on se donne a soi-meme ne vaut rien, et il donnait a
+    // l'inscription un air de formulaire. Le nombre d'abonnes ne peut
+    // desormais venir QUE d'une connexion reseau (TikTok/Instagram), qui
+    // l'ecrit avec `follower_source = 'tiktok'/'instagram'`.
+    // 👉 Ne pas remettre de champ de saisie ici : `declare_followers` a
+    // ete revoquee pour `authenticated`, l'appel echouerait.
 
     const btn = Button({ label: "C'est parti", block: true, onClick: () => enregistrer() });
 
@@ -253,16 +248,6 @@ export function Onboarding(_params, ctx) {
       const handle = pseudo.getValue().replace(/^@/, "");
       if (!HANDLE_RE.test(handle)) {
         pseudo.setError("Pseudo invalide : lettres, chiffres, point et underscore.");
-        return;
-      }
-
-      const brut = abos.getValue();
-      const nombre = brut === "" ? null : Number(brut);
-      if (nombre !== null && (!Number.isFinite(nombre) || nombre < 0)) {
-        // ⚠️ L'erreur s'affiche SOUS LE CHAMP CONCERNE. Avant, tous les
-        // champs partageaient un seul message : une erreur sur les
-        // abonnes apparaissait sous le pseudo.
-        abos.setError("Nombre d'abonnés invalide.");
         return;
       }
 
@@ -288,38 +273,9 @@ export function Onboarding(_params, ctx) {
           return;
         }
 
-        let proofPath = null;
-
-        // La capture part dans un bucket PRIVE, dans un dossier nomme
-        // par l'id du clubbeur : personne ne voit celle des autres.
-        const f = capture.getFile();
-        if (f && nombre !== null) {
-          const ext = (f.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
-          const chemin = `${user.id}/profil.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("follower-proofs")
-            .upload(chemin, f, { upsert: true, contentType: f.type || "image/jpeg" });
-          // Une capture qui ne part pas ne doit pas bloquer l'inscription.
-          if (!upErr) proofPath = chemin;
-        }
-
-        let error = null;
-        if (nombre !== null) {
-          // `declare_followers` force follower_source = 'declared' : un
-          // chiffre saisi a la main ne peut pas se faire passer pour un
-          // chiffre verifie par le reseau.
-          const r = await supabase.rpc("declare_followers", {
-            p_handle: handle,
-            p_count: Math.round(nombre),
-            p_proof: proofPath,
-          });
-          error = r.error;
-        } else {
-          // La migration 0004 n'autorise l'ecriture que sur handle et
-          // email : impossible de toucher a son solde en passant par ici.
-          const r = await supabase.from("users").update({ handle }).eq("id", user.id);
-          error = r.error;
-        }
+        // La migration 0004 n'autorise l'ecriture que sur handle et
+        // email : impossible de toucher a son solde en passant par ici.
+        const { error } = await supabase.from("users").update({ handle }).eq("id", user.id);
 
         if (error) {
           btn.setLoading(false);
@@ -328,7 +284,6 @@ export function Onboarding(_params, ctx) {
         }
       }
 
-      capture.destroy();
       ctx.navigate("dashboard");
     }
 
@@ -347,20 +302,12 @@ export function Onboarding(_params, ctx) {
 
       pseudo,
 
-      Section(null, [
-        h("div", { class: "ob-declare" }, [
-          h(
-            "p",
-            { class: "ob-declare__note" },
-            "Si tu ne connectes pas ton réseau, tu peux saisir ton nombre d'abonnés. Il sera affiché comme déclaré et ne donne aucun point."
-          ),
-          abos,
-          capture,
-        ]),
-      ]),
-
-      msg,
-      rappelObjectif()
+      msg
+      // ⚠️ Le bandeau « Ton premier objectif » a ete RETIRE (demande de
+      // Julien, 2026-08-14). Il annoncait la recompense la moins chere du
+      // catalogue pendant l'inscription. Ne pas le remettre sans qu'il le
+      // redemande : la fabrique `rappelObjectif()` et la feuille
+      // `.ob-goal` ont ete supprimees avec lui.
     );
 
     el.foot.append(btn, Note("Tu pourras le changer depuis ton profil."));
@@ -368,32 +315,6 @@ export function Onboarding(_params, ctx) {
   }
 
   /* ---------- Fabriques ---------- */
-
-  // Bandeau « voila ce que tu viens chercher ». Rempli en async : s'il
-  // n'y a pas de catalogue, il reste VIDE plutot que d'annoncer une
-  // recompense inventee.
-  function rappelObjectif() {
-    const slot = h("div", { class: "vn-slot" });
-
-    Promise.resolve(club ? loadPublicRewards(club.id) : null)
-      .then((liste) => {
-        if (!liste || !liste.length) return;
-        const premiere = liste[0];
-        slot.replaceChildren(
-          h("div", { class: "ob-goal" }, [
-            h("span", { class: "ob-goal__ico", "aria-hidden": "true" }, icon("gift", 18)),
-            h("span", { class: "ob-goal__txt" }, [
-              h("span", { class: "vn-label" }, "Ton premier objectif"),
-              h("span", { class: "ob-goal__title" }, premiere.title),
-            ]),
-            Points(premiere.cost_points, { size: "sm" }),
-          ])
-        );
-      })
-      .catch(() => {});
-
-    return slot;
-  }
 
   function assure(txt) {
     return h("li", { class: "ob-assure__item" }, [

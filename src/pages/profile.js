@@ -25,12 +25,12 @@
 //    seul interrupteur de 30 px de haut.
 
 import { h, icon } from "../lib/dom.js";
-import { Button, Field, Picker, Sheet } from "../ui/index.js";
+import { Button } from "../ui/index.js";
 import { Screen, Section } from "../patterns/Screen.js";
 import { currentClub } from "../lib/club.js";
 import { hapticsEnabled, setHaptics, tap } from "../lib/haptics.js";
 import { signOut } from "../lib/session.js";
-import { loadMyProfile, loadPendingPoints, loadMyHistory, untilLabel, declareFollowers } from "../lib/game.js";
+import { loadMyProfile, loadPendingPoints, loadMyHistory, untilLabel } from "../lib/game.js";
 import "./profile.css";
 
 const nf = new Intl.NumberFormat("fr-FR");
@@ -45,10 +45,6 @@ export function Profile(_params, ctx) {
   const handleEl = h("p", { class: "pf-handle" }, "Profil");
   const clubEl = h("p", { class: "pf-club", hidden: true });
 
-  // Profil charge : garde le pseudo et les abonnes sous la main, pour que
-  // la feuille de saisie parte de ce qui est deja enregistre.
-  let moi = null;
-
   const soldeVal = valeur();
   const cumulVal = valeur();
   const soireesVal = valeur();
@@ -57,11 +53,12 @@ export function Profile(_params, ctx) {
   // mettre, plutot qu'affichees avec un tiret qui ressemble a une
   // panne.
   const attenteRow = ligne("En attente", "", { hidden: true, live: true });
-  // ⚠️ TOUJOURS VISIBLE, contrairement aux autres lignes asynchrones : sa
-  // raison d'etre est justement d'etre proposee a qui n'a rien renseigne.
-  // Masquee, elle laissait les 8 comptes deja inscrits sans aucun moyen de
-  // declarer leurs abonnes — la donnee ne pouvait jamais exister.
-  const abosRow = ligne("Abonnés", "Renseigner", { action: ouvrirAbonnes });
+  // ⚠️ LECTURE SEULE, et masquee tant qu'il n'y a rien a montrer. J'avais
+  // ouvert une feuille de saisie ici le 2026-08-14 ; Julien l'a retiree le
+  // jour meme (« que le client puisse lui-meme mettre son nombre d'abos,
+  // c'est inutile »). Cette ligne n'affiche donc plus qu'un chiffre venu
+  // d'une connexion reseau. Ne pas y remettre de saisie.
+  const abosRow = ligne("Abonnés", "", { hidden: true });
   const compteRow = ligne("Compte", "—");
   // Pas de ligne « Club » dans les reglages : le club est deja sous le
   // pseudo, en haut. L'ecrire deux fois sur le meme ecran donne
@@ -152,13 +149,10 @@ export function Profile(_params, ctx) {
   /* ---------- Abonnés ---------- */
 
   // Un chiffre saisi a la main est affiche comme tel : il ne doit jamais
-  // se faire passer pour une donnee verifiee par le reseau.
+  // se faire passer pour une donnee verifiee par le reseau. Il ne peut
+  // plus en arriver de nouveau, mais d'anciens comptes peuvent en porter.
   function afficherAbonnes(me) {
-    if (me?.follower_count == null) {
-      abosRow.setLabel("Abonnés");
-      abosRow.setValue("Renseigner");
-      return;
-    }
+    if (me?.follower_count == null) return; // rien a montrer, ligne masquee
     abosRow.setLabel(
       me.follower_source === "tiktok"
         ? "Abonnés TikTok"
@@ -171,59 +165,6 @@ export function Profile(_params, ctx) {
         ? `${nf.format(me.follower_count)} · déclaré`
         : nf.format(me.follower_count)
     );
-  }
-
-  // Feuille de saisie. ⚠️ Le pseudo part avec : `declare_followers` le
-  // reecrit (c'est sa signature d'origine, cote inscription). L'envoyer
-  // vide effacerait le pseudo — on renvoie donc celui deja connu.
-  function ouvrirAbonnes() {
-    tap();
-    if (!moi?.handle) return; // profil pas encore charge : rien a reecrire
-
-    const champ = Field({
-      label: "Ton nombre d'abonnés",
-      type: "number",
-      inputmode: "numeric",
-      hint: "Affiché sur ton profil. Ça ne change pas tes points.",
-    });
-    if (moi.follower_count != null) champ.setValue?.(String(moi.follower_count));
-
-    const preuve = Picker({ title: "Capture de ton profil", sub: "facultatif" });
-    const btn = Button({
-      label: "Enregistrer",
-      block: true,
-      onClick: async () => {
-        const n = Number(champ.getValue());
-        if (!Number.isFinite(n) || n < 0) {
-          champ.setError("Indique un nombre.");
-          return;
-        }
-        btn.setLoading(true);
-        const r = await declareFollowers({ handle: moi.handle, count: n, file: preuve.getFile() });
-        btn.setLoading(false);
-        if (r.error) {
-          champ.setError(traduireAbo(r.error));
-          return;
-        }
-        moi = { ...moi, ...r.profil };
-        afficherAbonnes(moi);
-        feuille.close();
-      },
-    });
-
-    const feuille = Sheet({
-      title: "Tes abonnés",
-      body: h("div", { class: "pf-abo" }, [champ, preuve]),
-      actions: [btn],
-    });
-  }
-
-  function traduireAbo(code) {
-    const c = String(code || "");
-    if (c.includes("invalid_count")) return "Ce nombre n'est pas plausible.";
-    if (c.includes("invalid_handle")) return "Ton pseudo n'est pas valide.";
-    if (c.includes("not_authenticated")) return "Reconnecte-toi pour enregistrer.";
-    return "Enregistrement impossible pour le moment.";
   }
 
   /* ---------- Fabriques ---------- */
@@ -249,17 +190,10 @@ export function Profile(_params, ctx) {
   // Ligne d'information. `setValue` la revele : une ligne masquee ne
   // prend aucune place, donc l'ecran ne saute pas quand la reponse
   // arrive.
-  function ligne(label, val, { hidden = false, live = false, action = null } = {}) {
+  function ligne(label, val, { hidden = false, live = false } = {}) {
     const lblEl = h("span", { class: "pf-row__lbl" }, label);
     const valEl = h("span", { class: `pf-row__val${live ? " pf-row__val--live" : ""}` }, val);
-    // Une ligne qui MENE quelque part est un bouton, sur toute sa hauteur
-    // (56 px) : meme regle que l'interrupteur juste en dessous.
-    const row = action
-      ? h("button", { class: "pf-row pf-row--act", type: "button", onClick: action }, [
-          lblEl,
-          h("span", { class: "pf-row__go" }, [valEl, icon("arrowRight", 16)]),
-        ])
-      : h("div", { class: "pf-row", hidden: hidden || false }, [lblEl, valEl]);
+    const row = h("div", { class: "pf-row", hidden: hidden || false }, [lblEl, valEl]);
 
     row.setValue = (v) => {
       valEl.textContent = v;

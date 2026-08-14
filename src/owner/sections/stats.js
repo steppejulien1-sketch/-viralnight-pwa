@@ -158,21 +158,27 @@ export async function StatsAdmin(mount, club) {
 
     if (!avec) {
       // État vide honnête plutôt qu'un « 0 » qui se lirait comme une
-      // audience nulle. Personne n'a renseigné, ce n'est pas pareil.
+      // audience nulle. Et il dit CE QUI MANQUE : depuis la 0024 le
+      // chiffre ne peut plus venir que d'une connexion réseau, laquelle
+      // n'est pas encore configurée. Sans cette phrase, le gérant croirait
+      // à une panne.
       return h("section", { class: "ow-hero is-empty" }, [
         h("p", { class: "ow-hero-label" }, "Audience cumulée"),
         h("p", { class: "ow-hero-num mono is-void" }, "—"),
-        h("p", { class: "ow-hero-sub" }, `Aucun de tes ${nf.format(gens)} clubbeurs n'a renseigné ses abonnés.`),
+        h("p", { class: "ow-hero-sub" }, "Se remplira quand tes clubbeurs pourront connecter TikTok ou Instagram. Un chiffre saisi à la main ne compte pas."),
       ]);
     }
 
-    const verifie = Number(aud.followers_verified || 0);
+    // Reste possible : d'anciens comptes portent un chiffre déclaré, la
+    // saisie ayant existé jusqu'au 2026-08-14. On ne le fait pas passer
+    // pour vérifié.
+    const declare = Number(aud.followers_declared || 0);
     return h("section", { class: "ow-hero" }, [
       h("p", { class: "ow-hero-label" }, "Audience cumulée"),
       h("p", { class: "ow-hero-num mono" }, nf.format(total)),
       h("p", { class: "ow-hero-sub" }, [
-        `abonnés déclarés par ${nf.format(avec)} clubbeur${avec > 1 ? "s" : ""} sur ${nf.format(gens)}`,
-        verifie ? ` · ${nf.format(verifie)} vérifiés par le réseau` : "",
+        `abonnés de ${nf.format(avec)} clubbeur${avec > 1 ? "s" : ""} sur ${nf.format(gens)}`,
+        declare ? ` · dont ${nf.format(declare)} déclarés à la main` : "",
         ". Les audiences se recoupent : c'est un ordre de grandeur, pas une portée.",
       ]),
     ]);
