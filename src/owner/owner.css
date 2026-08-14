@@ -607,17 +607,40 @@ select.ow-input { cursor: pointer; }
 .ow-review-views {
   width: 150px;
 }
-.ow-review-gain {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-}
-.ow-review-pts {
+/* Le montant crédité est la décision du gérant (migration 0022) : c'est
+   le champ le plus lourd de la carte, il se lit comme un chiffre, pas
+   comme un formulaire. */
+.ow-review-points {
+  width: 130px;
   font-size: 20px;
   font-weight: 700;
-  color: var(--vn-red);
+  color: var(--vn-red-ink);
   font-variant-numeric: tabular-nums;
+}
+.ow-review-points.is-custom {
+  border-color: var(--vn-red);
+}
+.ow-review-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+  font-size: 12px;
+}
+.ow-review-forfait {
+  color: var(--vn-txt-3);
+}
+.ow-review-reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--vn-red-ink);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.ow-review-reset[hidden] {
+  display: none;
 }
 
 .ow-review-actions {

@@ -5,13 +5,18 @@
 // tant que le club n'a pas tranche ici. Sans cet ecran, les points ne
 // seraient jamais verses.
 //
-// ⚠️ BAREME AU FORFAIT depuis la migration 0020 (2026-08-14).
-// Le gerant NE FIXE PLUS LE MONTANT. Avant, il corrigeait le nombre de
-// vues et c'est ce chiffre qui determinait le credit ; desormais le
-// montant ne depend que du TYPE de contenu. Il lui reste la seule
-// decision qui compte : valider, ou refuser.
-// Le champ « vues » est conserve a titre indicatif (il alimente
-// l'historique), mais il n'a plus aucun effet sur le credit.
+// ⚠️ BAREME AU FORFAIT depuis la migration 0020 (2026-08-14) : le montant
+// ne se calcule plus sur les vues. Le champ « vues » est conserve a titre
+// indicatif (il alimente l'historique), il n'entre plus dans le credit.
+//
+// ⚠️ MAIS LE GERANT REFIXE LE MONTANT depuis la migration 0022 (meme
+// jour, decision de Julien). Le forfait du type n'est qu'une PROPOSITION,
+// pre-remplie dans le champ « Points a crediter » : le gerant valide tel
+// quel, ou accorde un autre montant. C'est `p_points` qui part a
+// `review_story`, et la base borne la saisie a 2 000.
+// 👉 Ne pas re-figer ce champ : la 0020 avait supprime la prise du gerant
+// sur le montant sans que ce soit le but, et c'est precisement ce qui
+// avait ete rejete.
 
 import { h, icon } from "../../lib/dom.js";
 import { supabase } from "../../lib/supabase.js";
@@ -26,15 +31,20 @@ const dtf = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-// Apercu du credit. La base reste seule juge (`story_points`), ceci ne
-// sert qu'a montrer au gerant ce qu'il s'apprete a accorder.
+// Le forfait du type : ce qui est PROMIS au clubbeur sur l'ecran de
+// depot, donc la valeur proposee par defaut au gerant.
 //
 // ⚠️ Le bareme etait RECOPIE ICI en dur — une quatrieme copie, apres
 // mock.js, post-story.js et la fonction SQL. Il lit maintenant
 // lib/bareme.js, pour qu'il ne puisse plus diverger.
-function apercuPoints(kind) {
+function forfait(kind) {
   return (BAREME[kind] || BAREME.story).base;
 }
+
+// Borne de saisie cote base (constante `c_max` de la migration 0022).
+// Recopiee ici pour que le champ refuse AVANT l'aller-retour reseau ; la
+// base reste seule juge et renvoie `points_out_of_range`.
+const POINTS_MAX = 2000;
 
 export async function ReviewAdmin(mount, club) {
   const liste = h("div", { class: "ow-review" }, [h("p", { class: "ow-muted" }, "Chargement…")]);
@@ -61,7 +71,7 @@ export async function ReviewAdmin(mount, club) {
       h("div", { class: "ow-head" }, [
         h("div", {}, [
           h("h1", {}, ["À valider", compteur]),
-          h("p", { class: "ow-head-sub" }, `Vérifie que la mention y est, puis crédite. ${phraseBareme("story")}, quel que soit le nombre de vues.`),
+          h("p", { class: "ow-head-sub" }, `Vérifie que la mention y est, puis crédite. ${phraseBareme("story")} par défaut — tu peux ajuster le montant avant de valider.`),
           avisOcr,
         ]),
       ]),
@@ -101,10 +111,45 @@ export async function ReviewAdmin(mount, club) {
       value: String(r.declared_views ?? 0),
       "aria-label": "Vues constatées",
     });
-    // ⚠️ Le montant NE DEPEND PLUS de ce champ : plus d'ecouteur sur la
-    // saisie. Le laisser recalculer donnerait au gerant l'illusion qu'il
-    // fixe encore le credit.
-    const estim = h("span", { class: "ow-review-pts mono" }, `${nf.format(apercuPoints(r.kind))} pts`);
+    // ⚠️ Le montant ne se DEDUIT plus des vues (0020) mais il se SAISIT
+    // (0022). Pas d'ecouteur reliant les deux champs : le nombre de vues
+    // ne doit plus jamais piloter le credit, sinon on reintroduit le seul
+    // chiffre du produit qu'un clubbeur pouvait gonfler.
+    const socle = forfait(r.kind);
+    const points = h("input", {
+      class: "ow-input ow-review-points mono",
+      type: "number",
+      min: "0",
+      max: String(POINTS_MAX),
+      step: "10",
+      value: String(socle),
+      "aria-label": "Points à créditer",
+    });
+
+    // Repli visible des qu'on s'ecarte du forfait : le gerant doit pouvoir
+    // revenir a la valeur promise au clubbeur sans avoir a la retenir.
+    const revenir = h(
+      "button",
+      {
+        class: "ow-review-reset",
+        type: "button",
+        hidden: true,
+        onClick: () => {
+          points.value = String(socle);
+          points.dispatchEvent(new Event("input"));
+        },
+      },
+      `revenir au forfait (${nf.format(socle)})`
+    );
+    const rappel = h("span", { class: "ow-review-forfait" }, `forfait ${nf.format(socle)} pts`);
+
+    points.addEventListener("input", () => {
+      const v = Number(points.value);
+      const ecart = Number.isFinite(v) && v !== socle;
+      revenir.hidden = !ecart;
+      rappel.hidden = ecart;
+      points.classList.toggle("is-custom", ecart);
+    });
 
     const msg = h("p", { class: "ow-review-msg" });
     const valider = h("button", { class: "ow-btn ow-btn-primary" }, "Valider et créditer");
@@ -148,10 +193,10 @@ export async function ReviewAdmin(mount, club) {
         {
           class: "ow-review-ocr-apply",
           onClick: () => {
+            // ⚠️ Remplit le champ « vues » UNIQUEMENT. Le credit ne s'en
+            // deduit plus (0020) : reporter ce chiffre sur les points
+            // rebrancherait le calcul aux vues par la bande.
             vues.value = String(lu);
-            // Sans cet evenement, l'estimation de points resterait sur
-            // l'ancienne valeur : elle ecoute "input".
-            vues.dispatchEvent(new Event("input"));
           },
         },
         "appliquer"
@@ -213,20 +258,49 @@ export async function ReviewAdmin(mount, club) {
         );
       });
 
+    // Les erreurs de `review_story` remontent en codes bruts
+    // (`points_out_of_range`…). Un gerant de club n'a pas a les decoder.
+    function traduireErreur(err) {
+      const s = String(err || "");
+      if (s.includes("points_out_of_range"))
+        return `Montant refusé : il doit être compris entre 0 et ${nf.format(POINTS_MAX)} points.`;
+      if (s.includes("already_reviewed"))
+        return "Ce contenu a déjà été traité (peut-être depuis un autre onglet).";
+      if (s.includes("not_owner")) return "Ce contenu n'appartient pas à ton club.";
+      if (s.includes("unknown_story")) return "Ce contenu n'existe plus.";
+      if (s.includes("invalid_kind")) return "Type de contenu inconnu, impossible de créditer.";
+      return s;
+    }
+
     async function trancher(ok) {
+      // Garde-fou de saisie AVANT l'aller-retour : la base refuserait de
+      // toute facon, autant le dire tout de suite et garder la valeur a
+      // l'ecran pour qu'il la corrige.
+      const montant = Math.round(Number(points.value));
+      if (ok && (!Number.isFinite(montant) || montant < 0 || montant > POINTS_MAX)) {
+        msg.className = "ow-review-msg err";
+        msg.textContent = `Montant invalide : entre 0 et ${nf.format(POINTS_MAX)} points.`;
+        points.focus();
+        return;
+      }
+
       valider.disabled = true;
       refuser.disabled = true;
+      msg.className = "ow-review-msg";
       msg.textContent = ok ? "Crédit en cours…" : "Refus en cours…";
       const { error } = await supabase.rpc("review_story", {
         p_story: r.story_id,
         p_approve: ok,
         p_views: ok ? Math.max(0, Math.round(Number(vues.value) || 0)) : null,
+        // ⚠️ C'EST CE PARAMETRE QUI PORTE LA DECISION DU GERANT (0022).
+        // L'envoyer a null retomberait sur le forfait cote base.
+        p_points: ok ? montant : null,
       });
       if (error) {
         valider.disabled = false;
         refuser.disabled = false;
         msg.className = "ow-review-msg err";
-        msg.textContent = error.message;
+        msg.textContent = traduireErreur(error.message);
         return;
       }
       await charger();
@@ -257,9 +331,10 @@ export async function ReviewAdmin(mount, club) {
             h("span", { class: "ow-muted" }, "(pour info)"),
             vues,
           ]),
-          h("div", { class: "ow-review-gain" }, [
-            h("span", { class: "ow-muted" }, "Crédit — forfait"),
-            estim,
+          h("label", { class: "ow-review-field ow-review-gain" }, [
+            h("span", {}, "Points à créditer"),
+            points,
+            h("span", { class: "ow-review-note" }, [rappel, revenir]),
           ]),
         ]),
 
