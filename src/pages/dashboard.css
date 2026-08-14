@@ -1,0 +1,159 @@
+/* ============================================================
+   Dashboard — ce qui lui est PROPRE, et rien d'autre
+   ------------------------------------------------------------
+   Tout le reste (cartes, boutons, jauges, lignes, pastilles) vient
+   de ui/ et patterns/. Cette feuille ne doit jamais depasser la
+   centaine de lignes : au-dela, c'est qu'un composant manque.
+   ============================================================ */
+
+/* ---------- Barre du haut : le club, puis moi ---------- */
+.db-club {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 650;
+  color: var(--vn-txt-2);
+  min-width: 0;
+}
+/* ⚠️ Le `display: inline-flex` ci-dessus ecrase le `display: none`
+   que le navigateur applique a [hidden] — exactement le piege deja
+   rencontre sur la barre d'onglets. Sans cette regle, le bloc club
+   reste visible (avec sa pastille rouge et aucun nom) tant que le QR
+   n'a pas repondu. */
+.db-club[hidden] {
+  display: none;
+}
+.db-club__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vn-red);
+  box-shadow: 0 0 10px var(--vn-red-glow);
+  flex: none;
+}
+.db-club__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--vn-radius-pill);
+  color: var(--vn-txt-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.18s var(--vn-ease);
+}
+.db-me:hover {
+  background: var(--vn-surf-2);
+  color: var(--vn-txt);
+}
+.db-me__ava {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--vn-surf-3);
+  color: var(--vn-txt-2);
+  flex: none;
+}
+
+/* ---------- Le solde ----------
+   Pas de carte : le chiffre est pose a meme le fond. Un cadre
+   autour l'aurait mis au meme rang que le reste, alors que c'est
+   la seule chose qu'on vient regarder. */
+.db-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+.db-balance__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Serie en cours. TEINTE, pas aplat : c'est un etat, pas une action. */
+.db-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--vn-radius-pill);
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.db-streak__lbl {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* ---------- Defi du moment ---------- */
+.db-chal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+}
+.db-chal__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.db-chal__title {
+  font-size: 15.5px;
+  font-weight: 650;
+}
+.db-chal__desc {
+  font-size: 13px;
+  color: var(--vn-txt-3);
+  line-height: 1.4;
+}
+.db-chal__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+.db-chal__time {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--vn-txt-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Deux tuiles cote a cote ---------- */
+.db-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* Sous 340px (iPhone SE), deux tuiles cote a cote tronquent leur
+   titre. Elles s'empilent. */
+@media (max-width: 340px) {
+  .db-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+.db-tiles .vn-tile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.db-tiles .vn-tile__arrow {
+  display: none;
+}

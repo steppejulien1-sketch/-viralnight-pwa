@@ -5,12 +5,17 @@
 // tant que le club n'a pas tranche ici. Sans cet ecran, les points ne
 // seraient jamais verses.
 //
-// Le gerant peut corriger le nombre de vues avant de valider : c'est lui
-// qui a la capture sous les yeux, le chiffre saisi par le clubbeur n'est
-// qu'une declaration.
+// ⚠️ BAREME AU FORFAIT depuis la migration 0020 (2026-08-14).
+// Le gerant NE FIXE PLUS LE MONTANT. Avant, il corrigeait le nombre de
+// vues et c'est ce chiffre qui determinait le credit ; desormais le
+// montant ne depend que du TYPE de contenu. Il lui reste la seule
+// decision qui compte : valider, ou refuser.
+// Le champ « vues » est conserve a titre indicatif (il alimente
+// l'historique), mais il n'a plus aucun effet sur le credit.
 
 import { h, icon } from "../../lib/dom.js";
 import { supabase } from "../../lib/supabase.js";
+import { BAREME, phraseBareme } from "../../lib/bareme.js";
 
 const nf = new Intl.NumberFormat("fr-FR");
 const dtf = new Intl.DateTimeFormat("fr-FR", {
@@ -21,13 +26,14 @@ const dtf = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 });
 
-// Bareme d'affichage. La base reste seule juge (story_points), ceci ne
+// Apercu du credit. La base reste seule juge (`story_points`), ceci ne
 // sert qu'a montrer au gerant ce qu'il s'apprete a accorder.
-function apercuPoints(kind, vues) {
-  const v = Math.max(0, Math.floor(Number(vues) || 0));
-  return kind === "story"
-    ? 100 + Math.min(Math.floor(v / 100) * 20, 2000)
-    : 60 + Math.min(Math.floor(v / 100) * 7, 2000);
+//
+// ⚠️ Le bareme etait RECOPIE ICI en dur — une quatrieme copie, apres
+// mock.js, post-story.js et la fonction SQL. Il lit maintenant
+// lib/bareme.js, pour qu'il ne puisse plus diverger.
+function apercuPoints(kind) {
+  return (BAREME[kind] || BAREME.story).base;
 }
 
 export async function ReviewAdmin(mount, club) {
@@ -46,7 +52,7 @@ export async function ReviewAdmin(mount, club) {
     if (ocrIndispo) return;
     ocrIndispo = true;
     liste.querySelectorAll(".ow-review-ocr").forEach((n) => n.remove());
-    avisOcr.textContent = `Lecture automatique des captures ${raison}. Saisis les vues à la main, comme d'habitude.`;
+    avisOcr.textContent = `Lecture automatique des captures ${raison}. Sans effet sur le crédit, qui est forfaitaire.`;
     avisOcr.hidden = false;
   }
 
@@ -55,7 +61,7 @@ export async function ReviewAdmin(mount, club) {
       h("div", { class: "ow-head" }, [
         h("div", {}, [
           h("h1", {}, ["À valider", compteur]),
-          h("p", { class: "ow-head-sub" }, "Vérifie la capture, corrige les vues si besoin, puis crédite."),
+          h("p", { class: "ow-head-sub" }, `Vérifie que la mention y est, puis crédite. ${phraseBareme("story")}, quel que soit le nombre de vues.`),
           avisOcr,
         ]),
       ]),
@@ -95,10 +101,10 @@ export async function ReviewAdmin(mount, club) {
       value: String(r.declared_views ?? 0),
       "aria-label": "Vues constatées",
     });
-    const estim = h("span", { class: "ow-review-pts mono" }, `${nf.format(apercuPoints(r.kind, r.declared_views))} pts`);
-    vues.addEventListener("input", () => {
-      estim.textContent = `${nf.format(apercuPoints(r.kind, vues.value))} pts`;
-    });
+    // ⚠️ Le montant NE DEPEND PLUS de ce champ : plus d'ecouteur sur la
+    // saisie. Le laisser recalculer donnerait au gerant l'illusion qu'il
+    // fixe encore le credit.
+    const estim = h("span", { class: "ow-review-pts mono" }, `${nf.format(apercuPoints(r.kind))} pts`);
 
     const msg = h("p", { class: "ow-review-msg" });
     const valider = h("button", { class: "ow-btn ow-btn-primary" }, "Valider et créditer");
@@ -246,8 +252,15 @@ export async function ReviewAdmin(mount, club) {
           : h("p", { class: "ow-review-nolink" }, "Story : pas de lien public, la capture fait foi."),
 
         h("div", { class: "ow-review-row" }, [
-          h("label", { class: "ow-review-field" }, [h("span", {}, "Vues constatées"), vues]),
-          h("div", { class: "ow-review-gain" }, [h("span", { class: "ow-muted" }, "Crédit"), estim]),
+          h("label", { class: "ow-review-field" }, [
+            h("span", {}, "Vues constatées "),
+            h("span", { class: "ow-muted" }, "(pour info)"),
+            vues,
+          ]),
+          h("div", { class: "ow-review-gain" }, [
+            h("span", { class: "ow-muted" }, "Crédit — forfait"),
+            estim,
+          ]),
         ]),
 
         ocrBloc,

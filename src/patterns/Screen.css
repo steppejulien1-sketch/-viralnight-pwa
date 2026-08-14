@@ -1,0 +1,156 @@
+/* ============================================================
+   Ecran — en-tete, corps, pied
+   ------------------------------------------------------------
+   Remplace les SEPT en-tetes ecrits a la main : ob-head, ps-head,
+   bn-head, lb-head, cl-head, rw-head et db-top. Meme role, sept
+   implementations, sept alignements legerement differents — et
+   deux d'entre elles empruntaient leur feuille de style a une
+   AUTRE page (profile.js utilisait .bn-head de bonus.css).
+
+   Le conteneur .screen (main.css) reste celui du routeur : il
+   porte la transition de glissement. .vn-screen vit dedans.
+   ============================================================ */
+
+.vn-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--vn-app-max);
+  margin-inline: auto;
+}
+
+/* ---------- En-tete ----------
+   Colle en haut : le nom du club et le retour restent atteignables
+   quand la page defile. Fond opaque — un fond translucide sur du
+   contenu rouge devenait sale. */
+.vn-screen__head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px var(--vn-pad-x);
+  background: var(--vn-ink);
+}
+
+/* Le titre d'en-tete prend la place restante ; ce qui suit est
+   pousse a droite. */
+.vn-screen__head-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* Retour : cible pleine, pictogramme retourne. */
+.vn-screen__back {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  border-radius: var(--vn-radius-pill);
+  color: var(--vn-txt-2);
+  flex: none;
+  transition: background 0.18s var(--vn-ease), color 0.18s var(--vn-ease);
+}
+.vn-screen__back svg {
+  transform: rotate(180deg);
+}
+.vn-screen__back:hover {
+  background: var(--vn-surf-2);
+  color: var(--vn-txt);
+}
+
+/* ---------- Corps ---------- */
+.vn-screen__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px var(--vn-pad-x) 20px;
+}
+
+.vn-screen__title {
+  font-family: var(--vn-face-display);
+  font-weight: 800;
+  font-size: var(--vn-t-h1);
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+/* ⚠️ Le mot mis en avant dans un titre prend l'ENCRE rouge, jamais
+   l'italique. Sans cette regle, `<em>` retombe sur l'italique par
+   defaut du navigateur : l'accroche etait rouge et droite sur
+   l'accueil, blanche et penchee sur « Poster ». Une seule facon
+   d'insister dans toute l'app. */
+.vn-screen__title em {
+  font-style: normal;
+  color: var(--vn-red-ink);
+}
+
+.vn-screen__sub {
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-2);
+  line-height: 1.45;
+  max-width: 40ch;
+}
+
+/* ---------- Pied ----------
+   ⚠️ TOUTE action principale vit ici, dans la zone du pouce. Colle
+   en bas de la fenetre, avec un fondu pour que le contenu qui
+   passe dessous ne se colle pas au bouton. */
+.vn-screen__foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px var(--vn-pad-x) calc(14px + var(--vn-safe-bottom));
+  margin-top: auto;
+  background: linear-gradient(to top, var(--vn-ink) 68%, transparent);
+}
+
+/* Quand la barre d'onglets est la, le pied se pose juste au-dessus. */
+body.vn-has-tabbar .vn-screen__foot {
+  bottom: calc(var(--vn-tabbar-h) + var(--vn-safe-bottom));
+}
+
+.vn-screen__note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--vn-txt-3);
+  text-align: center;
+}
+
+/* ---------- Section ----------
+   Un intertitre + son contenu. La combinaison la plus repetee de
+   l'app (« Ton solde », « Tes soirees », « Ce que tu peux prendre »). */
+.vn-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vn-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Un emplacement rempli en asynchrone ne doit occuper AUCUNE place
+   tant qu'il est vide, sinon l'ecran saute quand la reponse arrive. */
+.vn-slot:empty {
+  display: none;
+}

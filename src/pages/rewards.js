@@ -1,35 +1,53 @@
-// Ecran — Boutique (PWA client), branchée sur Supabase.
-//  - grille de rewards filtrable par catégorie, "accessible en premier"
-//  - verrouillage : pas assez de points (barre) ou stock epuise
-//  - rédemption : confirmation -> RPC redeem_reward (atomique) -> QR
-//  - Realtime : toute modif côté dashboard owner apparaît sans refresh
+// Ecran — Boutique (refonte UI, socle ui/ + patterns/).
+//
+// ⚠️ AUCUN APPEL SUPABASE N'A CHANGE : meme lecture du club, meme
+// requete `rewards`, meme abonnement Realtime, meme RPC
+// `redeem_reward` (atomique, verrou de ligne), meme generation de QR.
+//
+// CE QUI CHANGE A L'ECRAN :
+//  - les deux `alert()` disparaissent. L'un servait a annoncer un
+//    echec d'echange, l'autre a donner le code de retrait quand le
+//    ticket ne s'affichait pas : une fenetre systeme grise, en pleine
+//    soiree, pour l'information la plus importante du parcours ;
+//  - le prix n'est en encre rouge que s'il est atteignable — sinon
+//    tout le catalogue s'allume et plus rien ne ressort ;
+//  - le QR passe sur fond BLANC (voir rewards.css) ;
+//  - la confirmation arrive par le bas, dans la zone du pouce.
 
 import { h, icon } from "../lib/dom.js";
+import { Button, Chips, Empty, Points, Sheet, Skeleton } from "../ui/index.js";
+import { Screen } from "../patterns/Screen.js";
+import { RewardCard, etatRecompense } from "../patterns/RewardCard.js";
 import { currentClub } from "../lib/club.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { impact } from "../lib/haptics.js";
 import { celebrate } from "../lib/celebrate.js";
 import QRCode from "qrcode";
+import "./rewards.css";
 
 const nf = new Intl.NumberFormat("fr-FR");
+
 const CATS = [
-  { v: "all", l: "Tout" },
-  { v: "boisson", l: "Boissons" },
-  { v: "entree", l: "Entrées" },
-  { v: "vip", l: "VIP" },
-  { v: "exclusif", l: "Exclusif" },
+  { value: "all", label: "Tout" },
+  { value: "boisson", label: "Boissons" },
+  { value: "entree", label: "Entrées" },
+  { value: "vip", label: "VIP" },
+  { value: "exclusif", label: "Exclusif" },
 ];
 
 export function Rewards(_params, ctx) {
-  const root = h("div", { class: "rw-page" });
+  // Pas de classe de page : le routeur pose deja .screen, et
+  // .vn-screen se charge de la mise en page.
+  const root = h("div");
+
   let rewards = [];
   let me = { points_balance: 0 };
-  // Le club entier, pas seulement son id : le ticket QR affiche son nom et
-  // sa ville. Il referencait `CLUB` (mock) qui n'etait meme pas importe.
+  // Le club entier, pas seulement son id : le ticket affiche son nom
+  // et sa ville.
   let club = null;
   let clubId = null;
-  let filter = "all";
+  let filtre = "all";
   let channel = null;
 
   boot();
@@ -40,33 +58,49 @@ export function Rewards(_params, ctx) {
   }
 
   async function boot() {
-    swap(loading());
+    swap(chargement());
+
     if (!isConfigured) {
-      swap(errorView("Boutique indisponible (hors ligne)."));
+      swap(
+        message(
+          "Boutique indisponible",
+          "L'app n'est pas reliée à sa base pour le moment. Réessaie dans un instant."
+        )
+      );
       return;
     }
+
     await ensureSession();
 
-    // Club Mirage + rewards actifs + mon profil.
-    // Le club vient du QR scanne, plus d'un slug fige.
     club = await currentClub();
     clubId = club?.id;
     if (!clubId) {
-      swap(errorView("Scanne le QR de ton club pour voir sa boutique."));
+      swap(
+        message(
+          "Scanne le QR de ton club",
+          "Il est affiché au bar ou à l'entrée. C'est lui qui ouvre la boutique du bon établissement."
+        )
+      );
       return;
     }
+
     const { data: user } = await supabase.from("users").select("points_balance").maybeSingle();
     if (user) me = user;
-    await loadRewards();
 
-    // Realtime : re-render quand un reward du club change.
+    await chargerRecompenses();
+
+    // Realtime : une modification cote gerant apparait sans refresh.
     channel = supabase
       .channel("rewards-" + clubId)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rewards", filter: `club_id=eq.${clubId}` }, () => loadRewards())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rewards", filter: `club_id=eq.${clubId}` },
+        () => chargerRecompenses()
+      )
       .subscribe();
   }
 
-  async function loadRewards() {
+  async function chargerRecompenses() {
     const { data } = await supabase
       .from("rewards")
       .select("*")
@@ -74,172 +108,216 @@ export function Rewards(_params, ctx) {
       .eq("active", true)
       .order("cost_points");
     rewards = data || [];
-    renderCatalog();
+    renderCatalogue();
   }
 
-  function affordable(r) {
-    // Les NIVEAUX sont desactives : une recompense ne depend plus que des
-    // points et du stock. Une deuxieme condition, invisible et lente a
-    // atteindre, decourageait sans rien apporter.
-    const lvlOk = true;
-    const ptsOk = me.points_balance >= r.cost_points;
-    const stockOk = r.stock_remaining == null || r.stock_remaining > 0;
-    return { lvlOk, ptsOk, stockOk, open: lvlOk && ptsOk && stockOk };
-  }
+  /* ---------- Catalogue ---------- */
+  function renderCatalogue() {
+    const el = Screen({ label: "Boutique", headRight: soldeEl() });
 
-  function renderCatalog() {
-    const shown = rewards.filter((r) => filter === "all" || r.category === filter);
-    // "accessible en premier"
-    shown.sort((a, b) => Number(affordable(b).open) - Number(affordable(a).open) || a.cost_points - b.cost_points);
-
-    swap(
-      h("div", { class: "rw-inner" }, [
-        h("header", { class: "rw-head" }, [
-          h("span", { class: "label" }, "Boutique"),
-          h("span", { class: "rw-balance mono" }, `${nf.format(me.points_balance)} pts`),
-        ]),
-
-        // Filtres catégorie.
-        h(
-          "div",
-          { class: "rw-filters" },
-          CATS.map((c) =>
-            h(
-              "button",
-              {
-                class: `rw-chip${filter === c.v ? " is-on" : ""}`,
-                onClick: () => {
-                  filter = c.v;
-                  renderCatalog();
-                },
-              },
-              c.l
-            )
-          )
-        ),
-
-        h("div", { class: "rw-grid" }, shown.length ? shown.map(card) : [h("p", { class: "rw-empty-msg" }, "Rien dans cette catégorie pour l'instant.")]),
-      ])
+    const visibles = rewards.filter((r) => filtre === "all" || r.category === filtre);
+    // Accessible en premier : c'est ce qu'on peut prendre CE SOIR qui
+    // decide si on reste dans l'app.
+    visibles.sort(
+      (a, b) =>
+        Number(etatRecompense(b, me.points_balance).ouverte) -
+          Number(etatRecompense(a, me.points_balance).ouverte) ||
+        a.cost_points - b.cost_points
     );
+
+    el.body.append(
+      Chips(CATS, {
+        value: filtre,
+        ariaLabel: "Filtrer par catégorie",
+        onChange: (v) => {
+          filtre = v;
+          renderCatalogue();
+        },
+      }),
+
+      h(
+        "div",
+        { class: "shop-list" },
+        visibles.length
+          ? visibles.map((r) => RewardCard(r, me.points_balance, confirmer))
+          : [
+              Empty({
+                ico: "gift",
+                title: "Rien dans cette catégorie",
+                sub: "Regarde les autres, ou reviens quand le club aura enrichi sa carte.",
+              }),
+            ]
+      )
+    );
+
+    swap(el);
   }
 
-  function card(r) {
-    const a = affordable(r);
-    const progress = Math.min(100, Math.round((me.points_balance / r.cost_points) * 100));
-    const remaining = r.cost_points - me.points_balance;
-
-    return h("div", { class: `rc card${a.open ? " is-open" : " is-locked"}` }, [
-      h("div", { class: "rc-top" }, [
-        h("div", { class: "rc-info" }, [
-          h("p", { class: "rc-title" }, r.title),
-          h("p", { class: "rc-desc" }, r.description || ""),
-        ]),
-        h("div", { class: "rc-cost" }, [
-          h("span", { class: "rc-cost-num mono" }, nf.format(r.cost_points)),
-          h("span", { class: "rc-cost-unit" }, "pts"),
-        ]),
-      ]),
-
-      // Ligne meta : stock + catégorie
-      h("div", { class: "rc-meta" }, [
-        h("span", { class: `rc-cat rc-cat-${r.category}` }, CATS.find((c) => c.v === r.category)?.l || r.category),
-        r.stock_remaining != null ? h("span", { class: "rc-stock" }, `${r.stock_remaining} restant${r.stock_remaining > 1 ? "s" : ""}`) : null,
-      ]),
-
-      a.open
-        ? h("button", { class: "btn btn-primary btn-block rc-btn", onClick: () => confirmRedeem(r) }, [icon("gift", 18), "Débloquer"])
-          : !a.stockOk
-            ? h("div", { class: "rc-locked-lvl" }, "Stock épuisé")
-            : h("div", { class: "rc-locked" }, [
-                h("div", { class: "rc-bar", "aria-hidden": "true" }, [h("span", { class: "rc-bar-fill", style: { width: `${progress}%` } })]),
-                h("p", { class: "rc-remaining" }, [h("span", { class: "mono" }, `${nf.format(remaining)} pts`), " avant de débloquer"]),
-              ]),
+  function soldeEl() {
+    return h("span", { class: "shop-balance" }, [
+      Points(me.points_balance, { size: "sm" }),
     ]);
   }
 
   /* ---------- Confirmation ---------- */
-  function confirmRedeem(r) {
-    const sheet = h("div", { class: "rw-sheet-backdrop", onClick: (e) => e.target === sheet && close() }, [
-      h("div", { class: "rw-sheet" }, [
-        h("div", { class: "rw-sheet-grip", "aria-hidden": "true" }),
-        h("h3", { class: "rw-sheet-title" }, r.title),
-        h("p", { class: "rw-sheet-sub" }, [
-          "Tu échanges ",
-          h("strong", {}, `${nf.format(r.cost_points)} points`),
-          ". Il te restera ",
-          h("strong", {}, `${nf.format(me.points_balance - r.cost_points)} pts`),
-          ".",
-        ]),
-        h("button", { class: "btn btn-primary btn-block", onClick: doRedeem }, "Confirmer l'échange"),
-        h("button", { class: "rw-sheet-cancel", onClick: close }, "Annuler"),
+  function confirmer(r) {
+    const reste = me.points_balance - r.cost_points;
+
+    const sheet = Sheet({
+      title: r.title,
+      body: h("p", { class: "vn-sheet__sub" }, [
+        "Tu échanges ",
+        h("strong", {}, `${nf.format(r.cost_points)} points`),
+        ". Il te restera ",
+        h("strong", {}, `${nf.format(reste)} pts`),
+        ".",
       ]),
-    ]);
-    document.body.appendChild(sheet);
-    requestAnimationFrame(() => sheet.classList.add("is-open"));
+      actions: [
+        confirmBtn(),
+        Button({
+          label: "Annuler",
+          variant: "quiet",
+          block: true,
+          onClick: () => sheet.close(),
+        }),
+      ],
+    });
 
-    function close() {
-      sheet.classList.remove("is-open");
-      setTimeout(() => sheet.remove(), 250);
-    }
+    function confirmBtn() {
+      const btn = Button({
+        label: "Confirmer l'échange",
+        block: true,
+        onClick: async () => {
+          btn.setLoading(true);
+          const { data, error } = await supabase.rpc("redeem_reward", { p_reward: r.id });
 
-    async function doRedeem() {
-      const { data, error } = await supabase.rpc("redeem_reward", { p_reward: r.id });
-      close();
-      if (error) {
-        alert("Échange impossible : " + error.message);
-        return;
-      }
-      const row = Array.isArray(data) ? data[0] : data;
-      impact();
-      celebrate({ title: "Récompense débloquée !", sub: r.title });
-      me.points_balance = row.new_balance;
-      // Filet de securite. renderTicket est async : une erreur dedans part
-      // en rejet silencieux, l'ecran ne change pas et le clubbeur se
-      // retrouve debite SANS son code. C'est exactement ce qui se passait
-      // avec la reference a CLUB, qui n'etait pas importe.
-      renderTicket(r, row.qr_code).catch(() => {
-        alert("Ton code à présenter au bar : " + row.qr_code);
+          if (error) {
+            // Plus d'alert() : le message revient DANS la feuille,
+            // la ou le geste a eu lieu.
+            btn.setLoading(false);
+            sheet.el.append(
+              h("p", { class: "vn-field__err", role: "alert" }, traduire(error.message))
+            );
+            return;
+          }
+
+          const row = Array.isArray(data) ? data[0] : data;
+          sheet.close();
+          impact();
+          celebrate({ title: "Récompense débloquée !", sub: r.title });
+          me.points_balance = row.new_balance;
+
+          // ⚠️ Filet de securite. renderTicket est async : une erreur
+          // dedans part en rejet silencieux, l'ecran ne change pas, et
+          // le clubbeur se retrouve DEBITE SANS SON CODE. C'est
+          // exactement ce qui arrivait avec la reference a `CLUB`, qui
+          // n'etait pas importee.
+          renderTicket(r, row.qr_code).catch(() => {
+            renderTicketDegrade(r, row.qr_code);
+          });
+        },
       });
+      return btn;
     }
   }
 
-  /* ---------- Ticket QR ---------- */
+  /* ---------- Ticket de retrait ---------- */
   async function renderTicket(reward, code) {
-    if (channel) supabase.removeChannel(channel);
-    const canvas = h("canvas", { class: "tk-qr", width: "220", height: "220" });
+    // On quitte l'ecran : plus besoin d'ecouter les changements.
+    if (channel) {
+      supabase.removeChannel(channel);
+      channel = null;
+    }
 
-    swap(
-      h("div", { class: "rw-inner rw-ticket" }, [
-        h("header", { class: "rw-head" }, [h("span", {}), h("span", { class: "label" }, "À montrer au bar"), h("button", { class: "ob-back rw-close", "aria-label": "Fermer", onClick: () => ctx.navigate("dashboard") }, icon("arrowRight", 18))]),
-        h("div", { class: "tk-body" }, [
-          h("div", { class: "tk-check pop", style: { "--d": "0ms" } }, icon("check", 26)),
-          h("h1", { class: "tk-title pop", style: { "--d": "90ms" } }, reward.title),
-          h("p", { class: "tk-sub pop", style: { "--d": "150ms" } }, "Débloqué. Présente ce code au staff."),
-          h("div", { class: "tk-card card pop", style: { "--d": "230ms" } }, [
-            h("div", { class: "tk-qr-wrap" }, [canvas]),
-            h("div", { class: "tk-code mono" }, code),
-            h("div", { class: "tk-meta" }, [h("span", {}, club ? `${club.name} · ${club.city}` : ""), h("span", { class: "tk-valid" }, [h("span", { class: "tk-valid-dot" }), "Valable ce soir"])]),
-          ]),
+    const canvas = h("canvas", { width: "216", height: "216" });
+    const el = Screen({
+      label: "À montrer au bar",
+      onBack: () => ctx.navigate("dashboard"),
+    });
+
+    el.body.append(
+      h("div", { class: "shop-ticket" }, [
+        h("div", { class: "shop-ticket__check", "aria-hidden": "true" }, icon("check", 28)),
+        h("h1", { class: "vn-h2" }, reward.title),
+        h("p", { class: "vn-screen__sub" }, "Débloqué. Présente ce code au staff."),
+        h("div", { class: "shop-ticket__qr" }, [canvas]),
+        h("p", { class: "shop-ticket__code" }, code),
+        h("p", { class: "shop-ticket__meta" }, [
+          club ? `${club.name} · ${club.city}` : "",
+          h("span", {}, "· Valable ce soir"),
         ]),
-        h("footer", { class: "ps-foot pop", style: { "--d": "320ms" } }, [h("button", { class: "btn btn-ghost btn-block", onClick: () => ctx.navigate("dashboard") }, "Retour au tableau de bord")]),
       ])
     );
 
-    try {
-      await QRCode.toCanvas(canvas, code, { margin: 0, width: 220, color: { dark: "#f7f5ff", light: "#00000000" } });
-    } catch (_) {}
+    el.foot.append(
+      Button({
+        label: "Retour à mon espace",
+        variant: "ghost",
+        block: true,
+        onClick: () => ctx.navigate("dashboard"),
+      })
+    );
+
+    swap(el);
+
+    // ⚠️ QR SOMBRE SUR FOND BLANC. L'ancienne version dessinait un QR
+    // clair (#f7f5ff) sur fond transparent, donc sur du noir : aucune
+    // douchette ni aucun appareil photo ne lit ca de facon fiable.
+    await QRCode.toCanvas(canvas, code, {
+      margin: 0,
+      width: 216,
+      color: { dark: "#08090c", light: "#ffffff" },
+    });
   }
 
-  function loading() {
-    return h("div", { class: "rw-inner" }, [
-      h("header", { class: "rw-head" }, [h("span", { class: "label" }, "Boutique")]),
-      h("div", { class: "rw-grid" }, [skeleton(), skeleton(), skeleton()]),
-    ]);
+  // Si meme le rendu du QR echoue, le code reste lisible : c'est lui
+  // qui vaut la recompense, le QR n'est qu'une commodite.
+  function renderTicketDegrade(reward, code) {
+    const el = Screen({ label: "À montrer au bar", onBack: () => ctx.navigate("dashboard") });
+    el.body.append(
+      h("div", { class: "shop-ticket" }, [
+        h("div", { class: "shop-ticket__check", "aria-hidden": "true" }, icon("check", 28)),
+        h("h1", { class: "vn-h2" }, reward.title),
+        h("p", { class: "vn-screen__sub" }, "Débloqué. Dicte ce code au staff."),
+        h("p", { class: "shop-ticket__code" }, code),
+      ])
+    );
+    el.foot.append(
+      Button({
+        label: "Retour à mon espace",
+        variant: "ghost",
+        block: true,
+        onClick: () => ctx.navigate("dashboard"),
+      })
+    );
+    swap(el);
   }
-  function skeleton() {
-    return h("div", { class: "rc card rc-skeleton" });
+
+  /* ---------- Etats ---------- */
+  function chargement() {
+    const el = Screen({ label: "Boutique" });
+    el.body.append(
+      h("div", { class: "shop-list" }, [
+        Skeleton({ card: true }),
+        Skeleton({ card: true }),
+        Skeleton({ card: true }),
+      ])
+    );
+    return el;
   }
-  function errorView(msg) {
-    return h("div", { class: "rw-inner" }, [h("p", { class: "rw-empty-msg" }, msg)]);
+
+  function message(titre, sous) {
+    const el = Screen({ label: "Boutique" });
+    el.body.append(Empty({ ico: "scan", title: titre, sub: sous }));
+    return el;
+  }
+
+  function traduire(m) {
+    const s = String(m || "").toLowerCase();
+    if (s.includes("insufficient") || s.includes("balance"))
+      return "Il te manque des points — ton solde a peut-être changé.";
+    if (s.includes("stock")) return "Plus de stock : quelqu'un vient de la prendre.";
+    if (s.includes("permission") || s.includes("denied")) return "Échange non autorisé.";
+    return "L'échange n'a pas abouti. Réessaie dans un instant.";
   }
 }

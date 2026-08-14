@@ -1,0 +1,71 @@
+/* ============================================================
+   Coquille de l'app — viewport, écrans, transitions
+   ------------------------------------------------------------
+   Reprend ce que styles/main.css et styles/screens.css portaient
+   encore : la fenetre applicative, le conteneur d'ecran monte par
+   le routeur, et le glissement d'une page a l'autre.
+
+   ⚠️ Ces trois selecteurs (.noise, .app-viewport, .screen) sont
+   GLOBAUX et non prefixes : ce sont les seuls, et ils sont poses
+   par index.html et par lib/router.js, qui ne connaissent pas nos
+   conventions. Ils ne peuvent cohabiter avec styles/main.css —
+   d'ou la suppression de ce dernier au moment de charger celui-ci.
+   ============================================================ */
+
+/* Grain de film : casse les aplats noirs et surtout le BANDING des
+   halos rouges, qui se voit sur un ecran OLED. Tres discret, pose
+   au-dessus de tout, ne capte aucun clic. */
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Fenetre applicative : centree sur desktop, plein ecran sur mobile.
+   C'est la « fenetre telephone » qui rend l'app testable au bureau. */
+.app-viewport {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--vn-app-max);
+  min-height: 100dvh;
+  margin-inline: auto;
+  /* Bordure laterale discrete quand on deborde du telephone. */
+  border-inline: 1px solid var(--vn-line-soft);
+}
+
+/* Un « ecran » monte par le routeur. */
+.screen {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--vn-safe-top);
+  padding-bottom: var(--vn-safe-bottom);
+  background: var(--vn-ink);
+}
+
+/* ------------------------------------------------------------
+   Transition d'ecran (glissement horizontal)
+   ------------------------------------------------------------
+   Pendant la transition, les deux ecrans sont superposes dans le
+   viewport. `will-change: transform` garde l'animation sur le GPU :
+   sans lui, le glissement saccade sur les telephones d'entree de
+   gamme, qui sont exactement ceux du public vise.
+   ------------------------------------------------------------ */
+.app-viewport .screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  transition: transform var(--vn-dur-screen) var(--vn-ease),
+    opacity var(--vn-dur-screen) var(--vn-ease);
+  will-change: transform;
+}
+
+/* L'ecran actif passe au-dessus. */
+.app-viewport .screen.is-active {
+  z-index: 2;
+}

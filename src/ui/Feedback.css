@@ -1,0 +1,71 @@
+/* ============================================================
+   Etats vides et chargement
+   ------------------------------------------------------------
+   L'app avait CINQ messages « rien ici » ecrits a la main, avec
+   cinq mises en forme : un <p class="db-empty">, trois
+   <p class="rw-empty-msg"> (dont deux servaient d'ecran d'erreur)
+   et un <li> deguise en fausse recompense.
+   ============================================================ */
+
+.vn-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 30px 20px;
+  border: 1px dashed var(--vn-line);
+  border-radius: var(--vn-radius-card);
+}
+
+.vn-empty__ico {
+  color: var(--vn-txt-3);
+  margin-bottom: 2px;
+}
+
+.vn-empty__title {
+  font-weight: 650;
+  font-size: 15.5px;
+  color: var(--vn-txt-2);
+}
+
+.vn-empty__sub {
+  font-size: var(--vn-t-meta);
+  color: var(--vn-txt-3);
+  max-width: 32ch;
+  line-height: 1.45;
+}
+
+/* ============================================================
+   Squelette de chargement
+   ------------------------------------------------------------
+   ⚠️ Un squelette, jamais un chiffre de demonstration. Afficher
+   « 480 pts » en attendant la vraie reponse, c'est raconter une
+   histoire fausse assez longtemps pour qu'on y croie — et assez
+   pour croire qu'on peut prendre une recompense qu'on n'a pas.
+   Une barre grise dit « je ne sais pas encore ». C'est vrai.
+   ============================================================ */
+
+.vn-skel {
+  height: 15px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--vn-surf-2),
+    var(--vn-surf-3),
+    var(--vn-surf-2)
+  );
+  background-size: 200% 100%;
+  animation: vn-shimmer 1.4s linear infinite;
+}
+
+.vn-skel--card {
+  height: 96px;
+  border-radius: var(--vn-radius-card);
+}
+
+@keyframes vn-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

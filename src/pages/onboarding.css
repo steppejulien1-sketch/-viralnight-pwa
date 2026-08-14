@@ -1,0 +1,168 @@
+/* ============================================================
+   Inscription — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   RAPPEL COULEUR — un seul aplat ROUGE par ecran : le bouton du
+   pied (« Recevoir mon lien », puis « C'est parti »). Les deux
+   boutons sociaux sont pleins eux aussi, mais aux couleurs de
+   LEURS marques — ce ne sont pas des accents du produit, ce sont
+   des logos. C'est la seule exception, et elle est bornee a cet
+   ecran.
+   ============================================================ */
+
+/* ---------- Pastille de tete ---------- */
+.ob-badge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+  margin-bottom: 4px;
+}
+
+/* ---------- Boutons sociaux ---------- */
+.ob-social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Separateur « ou par email ». Un trait de chaque cote, le texte au
+   milieu — sans lui, le champ email ressemblait a un troisieme
+   fournisseur. */
+.ob-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--vn-txt-3);
+  font-size: 13px;
+}
+.ob-sep::before,
+.ob-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--vn-line);
+}
+
+/* ---------- Ce qu'on promet de ne pas faire ----------
+   Trois phrases courtes. C'est l'ecran ou l'on demande un acces a un
+   compte social : dire ce qu'on NE fait PAS vaut mieux que trois
+   paragraphes de conditions. */
+.ob-assure {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  list-style: none;
+  padding: 15px;
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-surf-1);
+}
+
+.ob-assure__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--vn-txt-2);
+  line-height: 1.4;
+}
+
+.ob-assure__dot {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+}
+
+/* ---------- Bloc « abonnes », facultatif ----------
+   Attenue par rapport au champ obligatoire au-dessus : c'est un bonus
+   d'affichage, il ne donne AUCUN point, et il ne doit pas ressembler
+   a une etape de plus. */
+.ob-declare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  border: 1px dashed var(--vn-line);
+  border-radius: var(--vn-radius-card);
+}
+
+.ob-declare__note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--vn-txt-3);
+}
+
+/* ---------- Rappel de l'objectif ----------
+   L'accueil vend « un verre a 300 pts », puis cet ecran demandait un
+   pseudo sans jamais redire pourquoi — et laissait un grand vide
+   avant le bouton. Le rappel comble le vide ET tient la promesse
+   jusqu'au bout du formulaire. */
+.ob-goal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--vn-radius-card);
+  background: var(--vn-red-tint);
+  border: 1px solid var(--vn-red-edge);
+}
+
+.ob-goal__ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 12px;
+  background: rgba(255, 47, 69, 0.2);
+  color: var(--vn-red-ink);
+}
+
+.ob-goal__txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ob-goal__title {
+  font-size: 15px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Message d'erreur global de l'ecran ---------- */
+.ob-alert {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--vn-red-ink);
+}
+.ob-alert[hidden] {
+  display: none;
+}
+
+/* ---------- Ecran « regarde tes mails » ---------- */
+.ob-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 24px 0 8px;
+}
+.ob-center .vn-screen__sub {
+  max-width: 34ch;
+}

@@ -1,0 +1,78 @@
+/* ============================================================
+   Boutique — ce qui lui est propre
+   ------------------------------------------------------------
+   Prefixe .shop- volontairement DIFFERENT de l'ancien .rw-/.rc- :
+   styles/rewards.css est encore charge, parce que trois ecrans non
+   migres lui empruntent des classes (.rw-empty-msg dans le
+   classement et la collection, .rw-check dans « Poster »).
+   Reutiliser .rw- ici ferait s'ecraser les deux systemes.
+   ============================================================ */
+
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Solde rappele dans la barre du haut : on decide d'un echange en
+   regardant ce qu'on a. */
+.shop-balance {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+/* ============================================================
+   Ticket de retrait
+   ------------------------------------------------------------
+   ⚠️ Le fond du QR est BLANC PLEIN et le code sombre. Un QR clair
+   sur fond noir n'est lu de facon fiable par aucune douchette ni
+   par l'appareil photo d'un telephone a moitie sale, dans un bar
+   mal eclaire. C'est le seul endroit blanc de toute l'app, et
+   c'est fonctionnel.
+   ============================================================ */
+
+.shop-ticket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.shop-ticket__check {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--vn-red);
+  color: var(--vn-red-on);
+  box-shadow: 0 14px 40px -14px var(--vn-red-glow);
+}
+
+.shop-ticket__qr {
+  background: #ffffff;
+  border-radius: var(--vn-radius-card);
+  padding: 16px;
+  line-height: 0;
+}
+
+/* Le code lu a voix haute au barman : c'est LE seul usage du mono
+   qui reste dans l'app. */
+.shop-ticket__code {
+  font-family: var(--vn-face-mono);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--vn-txt);
+}
+
+.shop-ticket__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--vn-txt-3);
+}

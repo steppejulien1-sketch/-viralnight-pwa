@@ -1,25 +1,22 @@
 // Point d'entree de la PWA ViralNight.
 // Enregistre les ecrans, demarre le routeur sur la landing.
 
-import "./styles/screens.css";
-import "./styles/components.css";
-import "./styles/landing.css";
-import "./styles/onboarding.css";
-import "./styles/dashboard.css";
-import "./styles/post-story.css";
-import "./styles/rewards.css";
-import "./styles/bonus.css";
-import "./styles/profile.css";
-import "./styles/gamification.css";
+// Socle de design. Il porte TOUT : jetons, reset, coquille, composants.
+// styles/ n'existe plus pour la PWA — chaque ecran importe sa propre
+// feuille, Vite les regroupe.
+//
+// ⚠️ src/styles/tokens.css SURVIT, mais uniquement pour owner.html, qui
+// n'est pas encore migre et le charge en direct. Ne pas le supprimer
+// avant la refonte de la console gerant.
+import "./ui/index.js";
 
 import { createRouter } from "./lib/router.js";
-import { mountTabBar } from "./components/TabBar.js";
+import { mountTabBar } from "./patterns/TabBar.js";
 import { Landing } from "./pages/landing.js";
 import { Onboarding } from "./pages/onboarding.js";
 import { Dashboard } from "./pages/dashboard.js";
 import { PostStory } from "./pages/post-story.js";
 import { Rewards } from "./pages/rewards.js";
-import { Bonus } from "./pages/bonus.js";
 import { Profile } from "./pages/profile.js";
 import { Leaderboard } from "./pages/leaderboard.js";
 import { Collection } from "./pages/collection.js";
@@ -43,7 +40,6 @@ router = createRouter({
     dashboard: Dashboard,
     post: PostStory,
     rewards: Rewards,
-    bonus: Bonus,
     profile: Profile,
     leaderboard: Leaderboard,
     collection: Collection,

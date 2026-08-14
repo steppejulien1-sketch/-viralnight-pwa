@@ -1,0 +1,62 @@
+/* ============================================================
+   Carte
+   ------------------------------------------------------------
+   Le conteneur de base. Trois etats seulement :
+     defaut      surface posee, contour discret
+     --live      TEINTE : ce qui est atteignable maintenant
+     --tap       cliquable (rend un <button>, pas un <div>)
+   ============================================================ */
+
+.vn-card {
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  box-shadow: var(--vn-lift);
+  /* Une carte cliquable est un <button> : le texte doit rester
+     aligne a gauche, pas centre comme un libelle de bouton. */
+  text-align: left;
+  width: 100%;
+}
+
+/* Section posee sur le fond, un cran plus bas qu'une carte. */
+.vn-card--flat {
+  background: var(--vn-surf-1);
+  box-shadow: none;
+}
+
+/* TEINTE — la carte qu'on peut debloquer maintenant.
+   Contour et halo rouges, jamais d'aplat : l'aplat est reserve au
+   bouton qui est DANS la carte. */
+.vn-card--live {
+  border-color: var(--vn-red-edge);
+  box-shadow: var(--vn-lift-live);
+}
+
+.vn-card--tap {
+  transition: transform var(--vn-dur-tap) var(--vn-ease),
+    background 0.2s var(--vn-ease), border-color 0.2s var(--vn-ease);
+}
+.vn-card--tap:hover {
+  border-color: var(--vn-surf-4);
+}
+.vn-card--tap:active {
+  transform: scale(0.985);
+  background: var(--vn-surf-3);
+}
+
+/* En-tete de carte : libelle a gauche, chevron ou valeur a droite. */
+.vn-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vn-card__arrow {
+  color: var(--vn-txt-3);
+  flex: none;
+}

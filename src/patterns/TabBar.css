@@ -1,0 +1,75 @@
+/* ============================================================
+   Barre d'onglets basse
+   ------------------------------------------------------------
+   Collee en bas de la fenetre, largeur de l'app. Fond OPAQUE : un
+   fond translucide sur du contenu rouge devenait sale.
+   ============================================================ */
+
+.vn-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: 100%;
+  max-width: var(--vn-app-max);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--vn-ink);
+  border-top: 1px solid var(--vn-line-soft);
+  padding-bottom: var(--vn-safe-bottom);
+}
+
+/* ⚠️ Indispensable : le `display: grid` ci-dessus ecrase le
+   `display: none` que le navigateur applique a [hidden]. Sans cette
+   regle la barre reste visible sur l'accueil et masque le bouton
+   « Commencer ». Le bug a deja ete corrige une fois — il revient a
+   chaque fois qu'on redonne un display a .vn-tabbar. */
+.vn-tabbar[hidden] {
+  display: none;
+}
+
+.vn-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--vn-tabbar-h);
+  padding: 9px 4px 10px;
+  color: var(--vn-txt-3);
+  transition: color 0.18s var(--vn-ease);
+}
+.vn-tab:hover {
+  color: var(--vn-txt-2);
+}
+
+/* Onglet actif : couleur PLUS un trait. La couleur seule ne suffit
+   pas — daltonisme, et le rouge sur noir se lit mal en biais. */
+.vn-tab.is-on {
+  color: var(--vn-red-ink);
+}
+.vn-tab.is-on::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 28px;
+  height: 2px;
+  background: var(--vn-red-ink);
+  border-radius: 0 0 2px 2px;
+}
+
+/* ⚠️ 12px, contre 10,5px avant. C'est le plancher typographique de
+   l'app : en dessous, ce n'est plus lisible debout dans un bar. */
+.vn-tab__lbl {
+  font-size: var(--vn-t-label);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+/* Reserve la hauteur de la barre sous chaque ecran. La classe est
+   posee sur <body> par TabBar.js, donc elle suit son apparition. */
+body.vn-has-tabbar .screen {
+  padding-bottom: calc(var(--vn-tabbar-h) + var(--vn-safe-bottom));
+}

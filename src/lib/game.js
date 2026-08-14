@@ -311,7 +311,11 @@ export async function loadMyHistory(limite = 20) {
   if (!uid) return null;
   const { data, error } = await supabase
     .from("story_events")
-    .select("id, mentioned_at, awarded_points, kind, views")
+    // `verified` est INDISPENSABLE : un depot en attente de validation a
+    // awarded_points = 0 (migration 0014). Sans ce champ, l'historique
+    // l'affichait « +0 » — alors que l'ecran d'envoi promet de le
+    // retrouver ici « marque en attente ».
+    .select("id, mentioned_at, awarded_points, kind, views, verified")
     .eq("user_id", uid)
     .order("mentioned_at", { ascending: false })
     .limit(limite);

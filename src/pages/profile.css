@@ -1,0 +1,205 @@
+/* ============================================================
+   Profil — ce qui lui est PROPRE
+   ------------------------------------------------------------
+   ⚠️ Cet ecran empruntait son en-tete a la feuille du BONUS
+   (`.bn-head` de styles/bonus.css). C'est cette dependance qui
+   empechait de supprimer l'ecran bonus. Elle n'existe plus.
+
+   RAPPEL COULEUR — aucun aplat ici : l'ecran n'a pas d'action
+   principale (« Se deconnecter » est volontairement discret). Le
+   solde prend l'encre, l'avatar la teinte.
+   ============================================================ */
+
+/* ---------- Identite ---------- */
+.pf-id {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 6px 0 4px;
+}
+
+/* ⚠️ Le degrade Instagram a ete RETIRE d'ici. C'est la couleur d'une
+   marque tierce : elle ne doit apparaitre que sur le bouton
+   « Continuer avec Instagram », pas sur l'avatar d'un clubbeur qui
+   s'est peut-etre connecte par TikTok ou par email. */
+.pf-ava {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--vn-red-tint);
+  color: var(--vn-red-ink);
+}
+
+.pf-id__txt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pf-handle {
+  font-family: var(--vn-face-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-club {
+  font-size: 13.5px;
+  color: var(--vn-txt-3);
+}
+.pf-club[hidden] {
+  display: none;
+}
+
+/* ---------- Les trois chiffres ---------- */
+.pf-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pf-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 14px 13px;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  min-width: 0;
+}
+
+.pf-stat__val {
+  font-family: var(--vn-face-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--vn-txt);
+  font-variant-numeric: tabular-nums;
+}
+/* Le solde depensable prend l'encre : c'est la monnaie, et c'est la
+   meme couleur que sur l'accueil. Le cumul et le nombre de soirees
+   sont des compteurs, pas une monnaie. */
+.pf-stat--live .pf-stat__val {
+  color: var(--vn-red-ink);
+}
+
+.pf-stat__lbl {
+  font-size: var(--vn-t-label);
+  font-weight: 650;
+  color: var(--vn-txt-3);
+  line-height: 1.25;
+}
+
+/* ---------- Lignes de reglage ---------- */
+.pf-rows {
+  display: flex;
+  flex-direction: column;
+  background: var(--vn-surf-2);
+  border: 1px solid var(--vn-line-soft);
+  border-radius: var(--vn-radius-card);
+  overflow: hidden;
+}
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  /* ⚠️ 56px : cible tactile minimale. La ligne ENTIERE est cliquable
+     quand elle porte un interrupteur — viser un bouton de 32px de
+     haut, une main prise, dans le noir, ne marche pas. */
+  min-height: var(--vn-tap);
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--vn-line-soft);
+}
+.pf-row:last-child {
+  border-bottom: 0;
+}
+.pf-row[hidden] {
+  display: none;
+}
+
+button.pf-row {
+  transition: background 0.18s var(--vn-ease);
+}
+button.pf-row:hover {
+  background: var(--vn-surf-3);
+}
+
+.pf-row__lbl {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vn-txt);
+}
+
+.pf-row__val {
+  font-size: 14px;
+  color: var(--vn-txt-3);
+  text-align: right;
+  flex: none;
+}
+
+/* Valeur mise en avant : les points en attente de deblocage. */
+.pf-row__val--live {
+  color: var(--vn-red-ink);
+  font-weight: 650;
+}
+
+/* ---------- Interrupteur ---------- */
+.pf-toggle {
+  position: relative;
+  width: 50px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--vn-radius-pill);
+  background: var(--vn-surf-4);
+  transition: background 0.2s var(--vn-ease);
+  pointer-events: none; /* c'est la LIGNE qui capte le tap */
+}
+.pf-toggle.is-on {
+  background: var(--vn-red);
+}
+
+.pf-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.22s var(--vn-ease);
+}
+.pf-toggle.is-on .pf-toggle__knob {
+  transform: translateX(20px);
+}
+
+/* ---------- Mention basse ---------- */
+.pf-legal {
+  font-size: 12.5px;
+  color: var(--vn-txt-3);
+  text-align: center;
+  line-height: 1.45;
+}
+
+/* Bloc de sortie : de l'air au-dessus, pour que la deconnexion ne
+   soit pas la voisine immediate du dernier reglage. */
+.pf-out {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}

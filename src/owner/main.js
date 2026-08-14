@@ -2,7 +2,15 @@
 // Auth Supabase (email/mot de passe) → layout sidebar → sections.
 // Partage la base + le design system avec la PWA client.
 
+// Socle de design, partage avec la PWA. Charge ICI (et non par une
+// balise <link>) pour que Vite le regroupe avec le reste de la console.
+// ⚠️ ui/shell.css n'est PAS importe : il porte .app-viewport et .screen,
+// qui n'existent que dans la PWA.
+import "../ui/tokens.css";
+import "../ui/type.css";
+import "../ui/reset.css";
 import "./owner.css";
+
 import { h, icon } from "../lib/dom.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { RewardsAdmin } from "./sections/rewards.js";

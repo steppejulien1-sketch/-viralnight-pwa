@@ -1,40 +1,56 @@
-// Ecran 2 — Connexion.
+// Ecran — Inscription / connexion (refonte UI, socle ui/ + patterns/).
 //
-// Trois voies, par ordre de facilite :
-//   1. TikTok   — Login Kit, ouvert a TOUS les comptes.
-//   2. Instagram— n'accepte QUE les comptes professionnels (Createur ou
-//                 Business) depuis la fermeture de Basic Display le
-//                 4 decembre 2024. Un compte perso est refuse par
-//                 Instagram ; le message d'erreur explique la bascule,
-//                 qui est gratuite et instantanee.
-//   3. Email    — lien magique, toujours disponible, aucun reseau requis.
+// ⚠️ AUCUN APPEL SUPABASE N'A CHANGE : meme `signInWithEmail`, meme
+// `startSocialLogin` / `readSocialReturn`, meme creation de la ligne de
+// profil, meme upload de la capture, meme RPC `declare_followers`.
 //
-// Les deux boutons sociaux sont TOUJOURS affiches, comme le "Continuer
-// avec Google" du site B2B : l'utilisateur doit voir ses options d'un
-// coup d'oeil. Tant qu'une app n'est pas configuree (cle + redirect_uri),
-// le bouton est attenue et annonce "bientot disponible" au tap, plutot
-// que de lancer une redirection cassee.
+// TROIS VOIES, par ordre de facilite :
+//   1. TikTok    — Login Kit, ouvert a TOUS les comptes.
+//   2. Instagram — n'accepte QUE les comptes Createur ou Business depuis
+//                  la fermeture de Basic Display le 4 decembre 2024. Un
+//                  compte perso est refuse par Instagram lui-meme ; le
+//                  message d'erreur explique la bascule, gratuite et
+//                  instantanee.
+//   3. Email     — lien magique, toujours disponible, aucun reseau requis.
 //
-// A noter : meme sans connexion sociale, la propriete du compte reste
-// prouvee par la mention elle-meme -- seul le proprietaire peut publier
-// depuis son compte.
+// Les deux boutons sociaux sont TOUJOURS affiches : l'utilisateur doit
+// voir ses options d'un coup d'oeil. Tant qu'une app n'est pas configuree
+// (cle + redirect_uri), le bouton est attenue et l'annonce au tap, plutot
+// que de lancer une redirection qui casserait chez lui.
+//
+// ⚠️ CE QUI CREE LA LIGNE DE PROFIL. Aucun declencheur ne genere
+// `public.users` a la creation du compte auth : sans l'upsert ci-dessous,
+// l'UPDATE du pseudo -- et `declare_followers`, qui fait aussi un UPDATE --
+// portent sur 0 ligne SANS lever d'erreur, et le pseudo est perdu en
+// silence. C'etait le cas depuis l'origine (voir migration 0018).
+//
+// CE QUI CHANGE A L'ECRAN :
+//  - chaque champ porte SA propre erreur. Un seul <p class="ob-alert">
+//    etait partage : une erreur sur le nombre d'abonnes s'affichait sous
+//    le champ du pseudo ;
+//  - la capture de profil passe sur Picker, qui MONTRE l'image au lieu
+//    d'ecrire « Aucune capture » puis un nom de fichier ;
+//  - le bouton d'envoi garde son libelle pendant le chargement.
 
 import { h, icon } from "../lib/dom.js";
+import { Button, Field, Picker, Points } from "../ui/index.js";
+import { Screen, Title, Sub, Section, Note } from "../patterns/Screen.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 import { currentClub } from "../lib/club.js";
 import { loadPublicRewards, loadMyProfile } from "../lib/game.js";
+import "./onboarding.css";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
 
 export function Onboarding(_params, ctx) {
-  const root = h("div", { class: "ob" });
+  const root = h("div");
 
-  // Le club vient du QR scanne, plus de nom en dur : l'ecran annoncait
-  // "Rejoins le Mirage" et le handle @mirage.brussels a tout le monde,
-  // quel que soit l'etablissement scanne.
+  // Le club vient du QR scanne : l'ecran annoncait « Rejoins le Mirage »
+  // et le handle @mirage.brussels a tout le monde, quel que soit
+  // l'etablissement scanne.
   let club = null;
 
   start();
@@ -47,405 +63,330 @@ export function Onboarding(_params, ctx) {
   async function start() {
     // Resolu AVANT tout rendu : l'ecran affiche le nom du club des sa
     // premiere image, on ne veut pas afficher un nom puis un autre.
-    club = await currentClub();
+    club = await currentClub().catch(() => null);
 
-    // Retour d'un reseau social. La session est deja ouverte par Supabase
-    // (l'edge function a renvoye le navigateur sur le lien d'action), il ne
-    // reste qu'a lire le resultat.
+    // Retour d'un reseau social. La session est deja ouverte par
+    // Supabase (l'edge function a renvoye le navigateur sur le lien
+    // d'action), il ne reste qu'a lire le resultat.
     const retour = readSocialReturn();
     if (retour && !retour.ok) return renderConnect(retour.message);
 
-    // Retour de lien magique ou de reseau social : la session existe, on enchaine.
-    const s = await ensureSession();
+    // Retour de lien magique ou de reseau social : la session existe.
+    const s = await ensureSession().catch(() => null);
     if (s?.user) {
-      // Le pseudo deja enregistre vient de la base, plus d'une variable en
-      // memoire : il doit survivre a la fermeture de l'app.
-      const profil = await loadMyProfile();
+      // Le pseudo deja enregistre vient de la BASE, pas d'une variable
+      // en memoire : il doit survivre a la fermeture de l'app.
+      const profil = await loadMyProfile().catch(() => null);
       return renderHandle(s.user, profil?.handle || "");
     }
     renderConnect();
   }
 
-  // Ecran d'attente neutre pendant un aller-retour reseau.
-  function renderPending(txt) {
-    swap(
-      h("div", { class: "ob-inner" }, [
-        h("div", { class: "ob-body ob-connect" }, [
-          h("div", { class: "ob-ig-badge", "aria-hidden": "true" }, [icon("instagram", 34)]),
-          h("h1", { class: "ob-title" }, txt),
-        ]),
-      ])
-    );
-  }
+  /* ================= 1. Choix de la voie ================= */
 
-  /* ---------- 1. Identite ---------- */
   function renderConnect(erreur) {
-    const input = h("input", {
-      class: "ob-input",
+    const el = Screen({
+      label: club ? `${club.name} · ${club.city}` : "Ton club",
+      onBack: () => ctx.back("landing"),
+    });
+
+    const msg = h("p", { class: "ob-alert", role: "alert", hidden: true });
+
+    const email = Field({
+      label: "Ton adresse email",
       type: "email",
       inputmode: "email",
       autocomplete: "email",
       placeholder: "ton@email.com",
-      "aria-label": "Ton adresse email",
+      onEnter: () => envoyer(),
     });
-    const msg = h("p", { class: "ob-msg" });
-    const btn = h("button", { class: "btn btn-primary btn-block" }, "Recevoir mon lien");
 
-    async function send() {
-      const email = input.value.trim();
-      if (!email || !email.includes("@")) {
-        msg.className = "ob-msg err";
-        msg.textContent = "Il manque une adresse email valide.";
-        input.focus();
+    const btn = Button({
+      label: "Recevoir mon lien",
+      block: true,
+      onClick: () => envoyer(),
+    });
+
+    async function envoyer() {
+      const adresse = email.getValue();
+      if (!adresse || !adresse.includes("@")) {
+        email.setError("Il manque une adresse email valide.");
         return;
       }
       tap();
-      btn.disabled = true;
-      btn.textContent = "Envoi…";
-      msg.className = "ob-msg";
-      msg.textContent = "";
+      cacher(msg);
+      btn.setLoading(true);
 
       if (!isConfigured) {
         // Mode demo hors ligne : on n'invente pas une connexion reussie.
-        btn.disabled = false;
-        btn.textContent = "Recevoir mon lien";
-        msg.className = "ob-msg err";
-        msg.textContent = "Connexion indisponible : l'app n'est pas reliée à sa base.";
+        btn.setLoading(false);
+        montrer(msg, "Connexion indisponible : l'app n'est pas reliée à sa base.");
         return;
       }
 
-      const { error } = await signInWithEmail(email);
-      btn.disabled = false;
-      btn.textContent = "Recevoir mon lien";
+      const { error } = await signInWithEmail(adresse);
+      btn.setLoading(false);
       if (error) {
-        msg.className = "ob-msg err";
-        msg.textContent = traduire(error);
+        email.setError(traduire(error));
         return;
       }
-      renderSent(email);
-    }
-
-    btn.addEventListener("click", send);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") send();
-    });
-
-    if (erreur) {
-      msg.className = "ob-msg err";
-      msg.textContent = erreur;
+      renderSent(adresse);
     }
 
     // Les deux boutons sont toujours visibles. S'ils ne sont pas encore
     // configures, on le dit au tap plutot que de lancer une redirection
     // qui echouerait chez l'utilisateur.
-    const providers = availableProviders();
-    const social = [
-      h(
-        "div",
-        { class: "ob-social reveal", style: { "--d": "150ms" } },
-        providers.map((p) =>
-          h(
-            "button",
-            {
-              class: `btn btn-social btn-${p.id} btn-block${p.ready ? "" : " is-soon"}`,
-              onClick: async (e) => {
-                tap();
-                if (!p.ready) {
-                  msg.className = "ob-msg err";
-                  msg.textContent = `Connexion ${p.label} bientôt disponible. En attendant, reçois un lien par email.`;
-                  input.focus();
-                  return;
-                }
-                const bouton = e.currentTarget;
-                bouton.disabled = true;
-                const err = await startSocialLogin(p.id);
-                if (err) {
-                  bouton.disabled = false;
-                  msg.className = "ob-msg err";
-                  msg.textContent = err;
-                }
-              },
-            },
-            [icon(p.ico, 19), `Continuer avec ${p.label}`]
-          )
-        )
-      ),
-      h("div", { class: "ob-sep reveal", style: { "--d": "180ms" } }, [
-        h("span", {}, "ou par email"),
+    const social = availableProviders().map((p) =>
+      Button({
+        label: `Continuer avec ${p.label}`,
+        variant: p.id === "instagram" ? "ig" : "tiktok",
+        ico: icon(p.ico, 19),
+        block: true,
+        soon: !p.ready,
+        onClick: async (e) => {
+          tap();
+          if (!p.ready) {
+            montrer(
+              msg,
+              `Connexion ${p.label} bientôt disponible. En attendant, reçois un lien par email.`
+            );
+            email.focus();
+            return;
+          }
+          const bouton = e.currentTarget;
+          bouton.setLoading?.(true);
+          const err = await startSocialLogin(p.id);
+          if (err) {
+            bouton.setLoading?.(false);
+            montrer(msg, err);
+          }
+        },
+      })
+    );
+
+    el.body.append(
+      h("div", { class: "ob-badge", "aria-hidden": "true" }, icon("sparkles", 30)),
+      Title(club ? `Rejoins le ${club.name}` : "Rejoins ton club"),
+      Sub([
+        "Connecte ton réseau, ou reçois un lien par email. ",
+        h("strong", {}, "Aucun mot de passe"),
+        " à retenir.",
       ]),
-    ];
 
-    swap(
-      h("div", { class: "ob-inner" }, [
-        head(() => ctx.back("landing")),
-        h("div", { class: "ob-body ob-connect" }, [
-          h("div", { class: "ob-ig-badge reveal", style: { "--d": "0ms" }, "aria-hidden": "true" }, [
-            icon("sparkles", 34),
-          ]),
-          h(
-            "h1",
-            { class: "ob-title reveal", style: { "--d": "70ms" } },
-            club ? `Rejoins le ${club.name}` : "Rejoins ton club"
-          ),
-          h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
-            "Connecte ton réseau, ou reçois un lien par email. ",
-            h("strong", {}, "Aucun mot de passe"),
-            " à retenir.",
-          ]),
+      h("div", { class: "ob-social" }, social),
+      h("p", { class: "ob-sep" }, h("span", {}, "ou par email")),
+      email,
+      msg,
 
-          ...social,
-
-          h("div", { class: "ob-field reveal", style: { "--d": "190ms" } }, [input, msg]),
-
-          h("ul", { class: "ob-assure reveal", style: { "--d": "240ms" } }, [
-            assure("On ne poste jamais à ta place."),
-            assure("On lit juste les stories qui taguent le club."),
-            assure("Ton email ne sert qu'à te reconnaître."),
-          ]),
-        ]),
-        h("footer", { class: "ob-foot reveal", style: { "--d": "300ms" } }, [
-          btn,
-          h("p", { class: "ob-note" }, [icon("check", 13), "Gratuit, rien à installer."]),
-        ]),
+      h("ul", { class: "ob-assure" }, [
+        assure("On ne poste jamais à ta place."),
+        assure("On lit juste les stories qui taguent le club."),
+        assure("Ton email ne sert qu'à te reconnaître."),
       ])
     );
+
+    el.foot.append(btn, Note("Gratuit, rien à installer."));
+
+    if (erreur) montrer(msg, erreur);
+    swap(el);
   }
 
-  /* ---------- 2. Lien envoye ---------- */
-  function renderSent(email) {
-    swap(
-      h("div", { class: "ob-inner" }, [
-        head(() => renderConnect()),
-        h("div", { class: "ob-body ob-connect" }, [
-          h("div", { class: "ob-ig-badge reveal", "aria-hidden": "true" }, [icon("check", 34)]),
-          h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Regarde tes mails"),
-          h("p", { class: "ob-sub reveal", style: { "--d": "130ms" } }, [
-            "On vient d'envoyer un lien à ",
-            h("strong", {}, email),
-            ". Clique dessus depuis ce téléphone et tu reviens ici connecté.",
-          ]),
-          h(
-            "p",
-            { class: "ob-note reveal", style: { "--d": "200ms" } },
-            "Rien reçu ? Vérifie les spams, ou reviens en arrière pour corriger l'adresse."
-          ),
+  /* ================= 2. Lien envoye ================= */
+
+  function renderSent(adresse) {
+    const el = Screen({ label: "Vérifie tes mails", onBack: () => renderConnect() });
+
+    el.body.append(
+      h("div", { class: "ob-center" }, [
+        h("div", { class: "ob-badge", "aria-hidden": "true" }, icon("check", 30)),
+        Title("Regarde tes mails"),
+        Sub([
+          "On vient d'envoyer un lien à ",
+          h("strong", {}, adresse),
+          ". Clique dessus depuis ce téléphone et tu reviens ici connecté.",
         ]),
+        h(
+          "p",
+          { class: "vn-meta vn-mute" },
+          "Rien reçu ? Vérifie les spams, ou reviens en arrière pour corriger l'adresse."
+        ),
       ])
     );
+
+    swap(el);
   }
 
-  /* ---------- 3. Pseudo Instagram ---------- */
+  /* ================= 3. Pseudo ================= */
+
   function renderHandle(user, handleExistant = "") {
-    const input = h("input", {
-      class: "ob-input",
-      type: "text",
-      autocapitalize: "none",
-      autocorrect: "off",
-      spellcheck: "false",
-      placeholder: "ton.pseudo",
-      "aria-label": "Ton pseudo Instagram",
-      value: handleExistant,
+    const el = Screen({
+      label: club ? `${club.name} · ${club.city}` : "Ton club",
+      onBack: () => ctx.back("landing"),
     });
-    const msg = h("p", { class: "ob-msg" });
-    const btn = h("button", { class: "btn btn-primary btn-block" }, "C'est parti");
 
-    // Repli pour les comptes qu'aucune API ne sert (Instagram perso).
-    // Facultatif : le chiffre est decoratif, il ne donne aucun point.
-    const abosInput = h("input", {
-      class: "ob-input",
+    const msg = h("p", { class: "ob-alert", role: "alert", hidden: true });
+
+    const pseudo = Field({
+      label: "Ton pseudo Instagram",
+      prefix: "@",
+      placeholder: "ton.pseudo",
+      value: handleExistant,
+      onEnter: () => enregistrer(),
+    });
+
+    const abos = Field({
+      label: "Tes abonnés — facultatif",
       type: "number",
       inputmode: "numeric",
-      min: "0",
       placeholder: "1 250",
-      "aria-label": "Ton nombre d'abonnés",
-    });
-    const fileInput = h("input", {
-      class: "ob-file",
-      type: "file",
-      accept: "image/*",
-      "aria-label": "Capture de ton profil",
-    });
-    const fileName = h("span", { class: "ob-file-name" }, "Aucune capture");
-    fileInput.addEventListener("change", () => {
-      const f = fileInput.files && fileInput.files[0];
-      fileName.textContent = f ? f.name : "Aucune capture";
+      hint: "Affiché comme « déclaré ». Ça ne change rien à tes points.",
     });
 
-    async function save() {
-      const handle = input.value.trim().replace(/^@/, "");
+    const capture = Picker({
+      title: "Joindre une capture de ton profil",
+      sub: "facultatif",
+    });
+
+    const btn = Button({ label: "C'est parti", block: true, onClick: () => enregistrer() });
+
+    async function enregistrer() {
+      const handle = pseudo.getValue().replace(/^@/, "");
       if (!HANDLE_RE.test(handle)) {
-        msg.className = "ob-msg err";
-        msg.textContent = "Pseudo invalide : lettres, chiffres, point et underscore.";
-        input.focus();
+        pseudo.setError("Pseudo invalide : lettres, chiffres, point et underscore.");
         return;
       }
 
-      const abosRaw = abosInput.value.trim();
-      const abos = abosRaw === "" ? null : Number(abosRaw);
-      if (abos !== null && (!Number.isFinite(abos) || abos < 0)) {
-        msg.className = "ob-msg err";
-        msg.textContent = "Nombre d'abonnés invalide.";
-        abosInput.focus();
+      const brut = abos.getValue();
+      const nombre = brut === "" ? null : Number(brut);
+      if (nombre !== null && (!Number.isFinite(nombre) || nombre < 0)) {
+        // ⚠️ L'erreur s'affiche SOUS LE CHAMP CONCERNE. Avant, tous les
+        // champs partageaient un seul message : une erreur sur les
+        // abonnes apparaissait sous le pseudo.
+        abos.setError("Nombre d'abonnés invalide.");
         return;
       }
 
       tap();
-      btn.disabled = true;
-      btn.textContent = "Enregistrement…";
+      cacher(msg);
+      btn.setLoading(true);
 
       if (isConfigured) {
-        // La ligne de profil n'existe pas tant qu'on ne la cree pas : aucun
-        // trigger ne la genere a la creation du compte auth. Sans cette
-        // insertion, l'UPDATE plus bas -- et declare_followers, qui fait
-        // aussi un UPDATE -- portent sur 0 ligne SANS lever d'erreur, et le
-        // pseudo est perdu en silence. C'etait le cas depuis l'origine.
-        //
-        // ON CONFLICT DO NOTHING : on ne retouche pas une ligne existante.
-        // C'est aussi ce qu'imposent les droits, le grant UPDATE ne
-        // couvrant pas la colonne id (migration 0018). Les colonnes
-        // inserables se limitent a (id, handle, email) : impossible de se
-        // donner des points en passant par ici.
-        const { error: creaErr } = await supabase.from("users").upsert(
-          { id: user.id, handle, email: user.email || null },
-          { onConflict: "id", ignoreDuplicates: true }
-        );
+        // ⚠️ ON CONFLICT DO NOTHING : on ne retouche pas une ligne
+        // existante. C'est aussi ce qu'imposent les droits, le grant
+        // UPDATE ne couvrant pas la colonne id (migration 0018). Les
+        // colonnes inserables se limitent a (id, handle, email) :
+        // impossible de se donner des points en passant par ici.
+        const { error: creaErr } = await supabase
+          .from("users")
+          .upsert(
+            { id: user.id, handle, email: user.email || null },
+            { onConflict: "id", ignoreDuplicates: true }
+          );
         if (creaErr) {
-          btn.disabled = false;
-          btn.textContent = "C'est parti";
-          msg.className = "ob-msg err";
-          msg.textContent = traduire(creaErr.message);
+          btn.setLoading(false);
+          montrer(msg, traduire(creaErr.message));
           return;
         }
 
         let proofPath = null;
 
-        // La capture part dans un bucket PRIVE, dans un dossier nomme par
-        // l'id du clubbeur : personne ne voit celle des autres.
-        const f = fileInput.files && fileInput.files[0];
-        if (f && abos !== null) {
+        // La capture part dans un bucket PRIVE, dans un dossier nomme
+        // par l'id du clubbeur : personne ne voit celle des autres.
+        const f = capture.getFile();
+        if (f && nombre !== null) {
           const ext = (f.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
-          const path = `${user.id}/profil.${ext}`;
+          const chemin = `${user.id}/profil.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("follower-proofs")
-            .upload(path, f, { upsert: true, contentType: f.type || "image/jpeg" });
+            .upload(chemin, f, { upsert: true, contentType: f.type || "image/jpeg" });
           // Une capture qui ne part pas ne doit pas bloquer l'inscription.
-          if (!upErr) proofPath = path;
+          if (!upErr) proofPath = chemin;
         }
 
         let error = null;
-        if (abos !== null) {
-          // declare_followers force follower_source = 'declared' : un
+        if (nombre !== null) {
+          // `declare_followers` force follower_source = 'declared' : un
           // chiffre saisi a la main ne peut pas se faire passer pour un
           // chiffre verifie par le reseau.
           const r = await supabase.rpc("declare_followers", {
             p_handle: handle,
-            p_count: Math.round(abos),
+            p_count: Math.round(nombre),
             p_proof: proofPath,
           });
           error = r.error;
         } else {
-          // La migration 0004 n'autorise l'ecriture que sur handle et email :
-          // impossible de toucher a son solde en passant par ici.
+          // La migration 0004 n'autorise l'ecriture que sur handle et
+          // email : impossible de toucher a son solde en passant par ici.
           const r = await supabase.from("users").update({ handle }).eq("id", user.id);
           error = r.error;
         }
 
         if (error) {
-          btn.disabled = false;
-          btn.textContent = "C'est parti";
-          msg.className = "ob-msg err";
-          msg.textContent = traduire(error.message);
+          btn.setLoading(false);
+          montrer(msg, traduire(error.message));
           return;
         }
       }
 
+      capture.destroy();
       ctx.navigate("dashboard");
     }
 
-    btn.addEventListener("click", save);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") save();
-    });
+    el.body.append(
+      h("div", { class: "ob-badge", "aria-hidden": "true" }, icon("instagram", 30)),
+      Title("Ton pseudo Instagram"),
+      Sub(
+        club
+          ? [
+              "C'est lui qu'on cherche dans les mentions de ",
+              h("strong", {}, `@${club.ig_handle}`),
+              ". Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
+            ]
+          : "C'est lui qu'on cherche dans les mentions de ton club. Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien."
+      ),
 
-    swap(
-      h("div", { class: "ob-inner" }, [
-        head(() => ctx.back("landing")),
-        h("div", { class: "ob-body ob-connect" }, [
-          h("div", { class: "ob-ig-badge reveal", "aria-hidden": "true" }, [icon("instagram", 34)]),
-          h("h1", { class: "ob-title reveal", style: { "--d": "70ms" } }, "Ton pseudo Instagram"),
+      pseudo,
+
+      Section(null, [
+        h("div", { class: "ob-declare" }, [
           h(
             "p",
-            { class: "ob-sub reveal", style: { "--d": "130ms" } },
-            club
-              ? [
-                  "C'est lui qu'on cherche dans les mentions de ",
-                  h("strong", {}, `@${club.ig_handle}`),
-                  ". Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
-                ]
-              : [
-                  "C'est lui qu'on cherche dans les mentions de ton club. Pas besoin de te connecter à Instagram : poster depuis ton compte suffit à prouver que c'est le tien.",
-                ]
+            { class: "ob-declare__note" },
+            "Si tu ne connectes pas ton réseau, tu peux saisir ton nombre d'abonnés. Il sera affiché comme déclaré et ne donne aucun point."
           ),
-          h("div", { class: "ob-field reveal", style: { "--d": "190ms" } }, [
-            h("div", { class: "ob-at" }, [h("span", { class: "ob-at-sign" }, "@"), input]),
-          ]),
-
-          h("div", { class: "ob-declare reveal", style: { "--d": "230ms" } }, [
-            h("p", { class: "label ob-declare-label" }, "Tes abonnés — facultatif"),
-            h(
-              "p",
-              { class: "ob-declare-note" },
-              "Si tu ne connectes pas ton réseau, tu peux les saisir. Le chiffre sera affiché comme déclaré et ne change rien à tes points."
-            ),
-            abosInput,
-            h("label", { class: "ob-file-row" }, [
-              h("span", { class: "ob-file-btn" }, "Joindre une capture"),
-              fileName,
-              fileInput,
-            ]),
-          ]),
-
-          h("div", { class: "ob-field" }, [msg]),
-
-          // Rappel de la recompense. L'accueil vend "un verre a 300 pts",
-          // puis cet ecran demandait un pseudo sans jamais redire pourquoi
-          // — et laissait un grand vide avant le bouton. Le rappel comble
-          // le vide ET tient la promesse jusqu'au bout du formulaire.
-          rappelRecompense(),
+          abos,
+          capture,
         ]),
-        h("footer", { class: "ob-foot reveal", style: { "--d": "260ms" } }, [
-          btn,
-          h("p", { class: "ob-note" }, [
-            icon("check", 13),
-            "Tu pourras le changer depuis ton profil.",
-          ]),
-        ]),
-      ])
+      ]),
+
+      msg,
+      rappelObjectif()
     );
+
+    el.foot.append(btn, Note("Tu pourras le changer depuis ton profil."));
+    swap(el);
   }
 
-  // Bandeau "voila ce que tu viens chercher". Rempli en async : s'il n'y
-  // a pas de catalogue, il reste vide plutot que d'annoncer une
-  // recompense inventee.
-  function rappelRecompense() {
-    const slot = h("div", { class: "ob-goal-slot" });
+  /* ---------- Fabriques ---------- */
 
-    currentClub()
-      .then((club) => (club ? loadPublicRewards(club.id) : null))
+  // Bandeau « voila ce que tu viens chercher ». Rempli en async : s'il
+  // n'y a pas de catalogue, il reste VIDE plutot que d'annoncer une
+  // recompense inventee.
+  function rappelObjectif() {
+    const slot = h("div", { class: "vn-slot" });
+
+    Promise.resolve(club ? loadPublicRewards(club.id) : null)
       .then((liste) => {
         if (!liste || !liste.length) return;
         const premiere = liste[0];
         slot.replaceChildren(
           h("div", { class: "ob-goal" }, [
-            h("span", { class: "ob-goal-ico", "aria-hidden": "true" }, icon("gift", 18)),
-            h("div", { class: "ob-goal-txt" }, [
-              h("span", { class: "ob-goal-label" }, "Ton premier objectif"),
-              h("span", { class: "ob-goal-title" }, premiere.title),
+            h("span", { class: "ob-goal__ico", "aria-hidden": "true" }, icon("gift", 18)),
+            h("span", { class: "ob-goal__txt" }, [
+              h("span", { class: "vn-label" }, "Ton premier objectif"),
+              h("span", { class: "ob-goal__title" }, premiere.title),
             ]),
-            h("span", { class: "ob-goal-cost mono" }, [
-              new Intl.NumberFormat("fr-FR").format(premiere.cost_points),
-              h("small", {}, "pts"),
-            ]),
+            Points(premiere.cost_points, { size: "sm" }),
           ])
         );
       })
@@ -454,19 +395,20 @@ export function Onboarding(_params, ctx) {
     return slot;
   }
 
-  /* ---------- utilitaires ---------- */
-  function head(onBack) {
-    return h("header", { class: "ob-head" }, [
-      h("button", { class: "ob-back", "aria-label": "Retour", onClick: onBack }, icon("arrowRight", 18)),
-      h("span", { class: "label" }, club ? `${club.name} · ${club.city}` : "Ton club"),
+  function assure(txt) {
+    return h("li", { class: "ob-assure__item" }, [
+      h("span", { class: "ob-assure__dot", "aria-hidden": "true" }, icon("check", 12)),
+      h("span", {}, txt),
     ]);
   }
 
-  function assure(txt) {
-    return h("li", { class: "ob-assure-item" }, [
-      h("span", { class: "ob-assure-dot", "aria-hidden": "true" }, icon("check", 13)),
-      h("span", {}, txt),
-    ]);
+  function montrer(el, txt) {
+    el.textContent = txt;
+    el.hidden = false;
+  }
+  function cacher(el) {
+    el.textContent = "";
+    el.hidden = true;
   }
 }
 
@@ -476,9 +418,7 @@ function traduire(m) {
   if (s.includes("rate limit") || s.includes("too many"))
     return "Trop de tentatives. Réessaie dans une minute.";
   if (s.includes("invalid") && s.includes("email")) return "Cette adresse email n'est pas valide.";
-  if (s.includes("duplicate") || s.includes("unique"))
-    return "Ce pseudo est déjà pris sur ce club.";
-  if (s.includes("permission") || s.includes("denied"))
-    return "Action non autorisée.";
+  if (s.includes("duplicate") || s.includes("unique")) return "Ce pseudo est déjà pris sur ce club.";
+  if (s.includes("permission") || s.includes("denied")) return "Action non autorisée.";
   return "Ça n'a pas marché. Réessaie dans un instant.";
 }

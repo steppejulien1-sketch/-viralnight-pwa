@@ -3,10 +3,14 @@
 // prefers-reduced-motion (pas de confettis animés alors). Zéro dépendance.
 
 import { h } from "./dom.js";
+import "../patterns/Celebration.css";
 
 // Confettis : camaieu de rouge + blanc. Pas de vert (rejete), pas de
 // multicolore (ca fait "genere par IA", Julien l'a dit plusieurs fois).
-const COLORS = ["#ff2d2d", "#ff7a3d", "#ffffff", "#ff5c5c"];
+// ⚠️ L'orange #ff7a3d a ete retire : c'etait une seconde teinte, et le
+// produit n'en a qu'une. Les quatre valeurs sont le rouge de marque,
+// son encre, un rose pale et le blanc.
+const COLORS = ["#ff2f45", "#ff6070", "#ffb3bb", "#ffffff"];
 
 export function celebrate({ title = "Débloqué !", sub = "" } = {}) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;

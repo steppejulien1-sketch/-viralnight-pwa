@@ -1,0 +1,101 @@
+/* ============================================================
+   VIRALNIGHT — Reset global
+   ------------------------------------------------------------
+   ⚠️ NE PAS importer depuis ui/index.js.
+
+   Ce fichier touche des selecteurs GLOBAUX (body, button, *) qui
+   entrent en collision avec l'ancien src/styles/main.css : les
+   deux definissent la taille du corps de texte, la couleur de
+   focus et la reinitialisation des boutons, et c'est le dernier
+   charge qui gagne.
+
+   Il est donc charge une seule fois, par index.html, AU MOMENT ou
+   l'ancien main.css est retire. Tant que des ecrans tournent
+   encore sur l'ancien systeme, seuls tokens.css et type.css sont
+   actifs — eux ne portent que des selecteurs prefixes --vn-/.vn-,
+   donc ils ne peuvent rien casser.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--vn-ink);
+  color: var(--vn-txt);
+  font-family: var(--vn-face-body);
+  font-size: var(--vn-t-body);
+  line-height: 1.55;
+  letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Pas de scroll horizontal, jamais. */
+  overflow-x: hidden;
+  /* Coupe le surlignage bleu au tap sur mobile. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+svg {
+  display: block;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+::selection {
+  background: var(--vn-red-tint);
+  color: var(--vn-txt);
+}
+
+/* Focus visible net, jamais supprime. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--vn-red-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

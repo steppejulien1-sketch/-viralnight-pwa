@@ -7,23 +7,29 @@
     <meta name="description" content="Poste tes soirées, gagne des points, débloque des récompenses dans ton club." />
 
     <!-- PWA -->
-    <meta name="theme-color" content="#0A0A0B" />
+    <meta name="theme-color" content="#08090c" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="robots" content="noindex" />
 
-    <!-- Polices : Inter (texte/titres) + JetBrains Mono (chiffres, feel data).
+    <!-- Polices — trois roles, trois familles :
+           Archivo        titres ET chiffres. Grotesque large et lourde,
+                          en capitales : c'est elle qui porte le ton.
+           Inter          texte courant, excellente en petit corps.
+           JetBrains Mono UNIQUEMENT le code de retrait qu'on lit a voix
+                          haute au barman. Il portait les chiffres avant,
+                          ce qui donnait un air de tableau de bord de dev.
          preconnect pour couper la latence, display=swap pour ne pas bloquer le rendu. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="/src/styles/tokens.css" />
-    <link rel="stylesheet" href="/src/styles/main.css" />
+    <!-- Aucune feuille en dur : le socle (src/ui/index.js) importe ses
+         jetons, son reset et sa coquille, et Vite les regroupe. -->
   </head>
   <body>
     <!-- Grain de film, tres discret, pose sur tout l'ecran. -->
