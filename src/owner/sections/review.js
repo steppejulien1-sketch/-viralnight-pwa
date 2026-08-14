@@ -326,10 +326,15 @@ export async function ReviewAdmin(mount, club) {
           : h("p", { class: "ow-review-nolink" }, "Story : pas de lien public, la capture fait foi."),
 
         h("div", { class: "ow-review-row" }, [
+          // ⚠️ Les deux champs ont la MEME structure (libelle / champ /
+          // note) : sans ca le libelle en deux morceaux passait a la ligne
+          // et decalait le champ « vues » d'une hauteur de ligne par
+          // rapport au montant. Les deux se lisent maintenant sur une
+          // seule ligne de base.
           h("label", { class: "ow-review-field" }, [
-            h("span", {}, "Vues constatées "),
-            h("span", { class: "ow-muted" }, "(pour info)"),
+            h("span", {}, "Vues constatées"),
             vues,
+            h("span", { class: "ow-review-note ow-review-forfait" }, "sans effet sur le crédit"),
           ]),
           h("label", { class: "ow-review-field ow-review-gain" }, [
             h("span", {}, "Points à créditer"),
