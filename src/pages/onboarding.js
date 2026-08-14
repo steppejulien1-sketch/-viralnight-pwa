@@ -1,10 +1,19 @@
 // Ecran — Inscription / connexion (refonte UI, socle ui/ + patterns/).
 //
-// ⚠️ L'ecran ne demande plus QUE le pseudo. La saisie du nombre
-// d'abonnes et sa capture de profil ont ete retirees le 2026-08-14
-// (Julien : « que le client puisse lui-meme mettre son nombre d'abos,
-// c'est inutile »). Un chiffre qu'on se donne a soi-meme ne prouve rien.
-// Les abonnes ne peuvent plus venir que d'une connexion reseau.
+// ⚠️ L'ecran demande le pseudo, et propose une capture de profil.
+//
+// 1. La SAISIE DU NOMBRE D'ABONNES a ete retiree le 2026-08-14 (Julien :
+//    « que le client puisse lui-meme mettre son nombre d'abos, c'est
+//    inutile »). Un chiffre qu'on se donne a soi-meme ne prouve rien : les
+//    abonnes ne peuvent plus venir que d'une connexion reseau.
+// 2. La CAPTURE DE PROFIL, elle, a ete REDEMANDEE le meme jour (« quand on
+//    tape son nom d'utilisateur, mets un truc pour mettre une capture
+//    d'ecran en dessous », migration 0027). Ce n'est pas un retour en
+//    arriere : on ne demande aucun chiffre, la capture sert au gerant a
+//    reconnaitre qui se cache derriere un pseudo — d'autant plus utile
+//    qu'une story n'apporte plus de capture depuis la 0026.
+//    Elle est FACULTATIVE et part dans `story-proofs`, seul bucket dont le
+//    chemin permet au gerant de lire (0015).
 //
 // TROIS VOIES, par ordre de facilite :
 //   1. TikTok    — Login Kit, ouvert a TOUS les comptes.
@@ -32,14 +41,14 @@
 //  - le bouton d'envoi garde son libelle pendant le chargement.
 
 import { h, icon } from "../lib/dom.js";
-import { Button, Field } from "../ui/index.js";
+import { Button, Field, Picker } from "../ui/index.js";
 import { Screen, Title, Sub, Section, Note } from "../patterns/Screen.js";
 import { tap } from "../lib/haptics.js";
 import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 import { currentClub } from "../lib/club.js";
-import { loadMyProfile } from "../lib/game.js";
+import { loadMyProfile, uploadProfileProof } from "../lib/game.js";
 import "./onboarding.css";
 
 const HANDLE_RE = /^[a-zA-Z0-9._]{2,30}$/;
@@ -242,6 +251,18 @@ export function Onboarding(_params, ctx) {
     // 👉 Ne pas remettre de champ de saisie ici : `declare_followers` a
     // ete revoquee pour `authenticated`, l'appel echouerait.
 
+    // ⚠️ CAPTURE DE PROFIL, sous le pseudo (demande de Julien, 0027).
+    // Elle ne remplace PAS la declaration d'abonnes retiree par la 0024 :
+    // on ne demande aucun chiffre. Elle sert au gerant a reconnaitre qui
+    // se cache derriere `@ce.pseudo` — d'autant plus utile qu'une story
+    // n'apporte plus de capture depuis la 0026.
+    // FACULTATIVE : la rendre obligatoire ferait perdre des inscriptions
+    // pour une piece qui n'est pas indispensable au credit.
+    const profil = Picker({
+      title: "Capture de ton profil",
+      sub: "facultatif",
+    });
+
     const btn = Button({ label: "C'est parti", block: true, onClick: () => enregistrer() });
 
     async function enregistrer() {
@@ -282,8 +303,20 @@ export function Onboarding(_params, ctx) {
           montrer(msg, traduire(error.message));
           return;
         }
+
+        // Capture de profil (0027). « Au mieux » et volontairement :
+        // elle est facultative, une panne d'envoi ne doit pas empecher
+        // quelqu'un d'entrer dans l'app. Elle part APRES la creation de
+        // la ligne `users` — `set_profile_proof` fait un UPDATE, qui ne
+        // toucherait aucune ligne avant (meme piege que la 0018).
+        const f = profil.getFile();
+        if (f && club?.id) {
+          const r = await uploadProfileProof(f, club.id);
+          if (r?.error) console.warn("capture de profil non enregistree :", r.error);
+        }
       }
 
+      profil.destroy();
       ctx.navigate("dashboard");
     }
 
@@ -301,6 +334,14 @@ export function Onboarding(_params, ctx) {
       ),
 
       pseudo,
+
+      // Capture de profil, juste sous le pseudo (0027).
+      profil,
+      h(
+        "p",
+        { class: "ob-hint" },
+        "Une capture de ton profil aide le club à te reconnaître quand tu le tagues."
+      ),
 
       msg
       // ⚠️ Le bandeau « Ton premier objectif » a ete RETIRE (demande de

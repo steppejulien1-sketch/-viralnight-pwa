@@ -581,6 +581,31 @@ select.ow-input { cursor: pointer; }
   object-fit: contain;
 }
 
+/* Story sans capture (0026) : ce n'est pas une erreur, c'est le
+   fonctionnement normal. Le bloc explique où aller vérifier au lieu de
+   laisser un cadre vide qui ressemble à une image cassée. */
+.ow-review-shot.is-nocapture {
+  gap: 4px;
+  padding: 18px 16px;
+  text-align: center;
+  align-content: center;
+}
+.ow-review-shot__ico {
+  color: var(--vn-txt-3);
+}
+.ow-review-shot__t {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--vn-txt-2);
+}
+.ow-review-shot__d {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--vn-txt-3);
+}
+
 .ow-review-main {
   display: flex;
   flex-direction: column;

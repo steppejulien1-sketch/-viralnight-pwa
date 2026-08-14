@@ -107,7 +107,11 @@ async function boot() {
 
   const { data: link } = await supabase
     .from("club_owners")
-    .select("club_id, clubs(id, name, city, slug)")
+    // ⚠️ `ig_handle` est INDISPENSABLE depuis la 0026 : une story arrive
+    // sans capture, et l'ecran de validation doit dire au gerant sur quel
+    // compte Instagram aller verifier la mention. Sans lui, il lit une
+    // consigne vague et ne sait pas ou regarder.
+    .select("club_id, clubs(id, name, city, slug, ig_handle)")
     .eq("user_id", uid)
     .limit(1)
     .maybeSingle();

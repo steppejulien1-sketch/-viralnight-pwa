@@ -229,7 +229,13 @@ export async function submitStory({ kind, views, file, url = "" }) {
   const s = await ensureSession();
   const uid = s?.user?.id;
   if (!uid) return { error: "not_authenticated" };
-  if (!file) return { error: "proof_required" };
+  // ⚠️ LA CAPTURE N'EST PLUS EXIGEE POUR UNE STORY (migration 0026) : sa
+  // verification passe par les mentions recues sur l'Instagram du club.
+  // Ce garde-fou local rejetait le depot AVANT tout appel reseau : l'ecran
+  // affichait « Ajoute la capture » alors qu'il n'en demandait plus, et
+  // rien ne partait. La base reste seule juge (elle exige toujours la
+  // capture pour un reel ou un TikTok).
+  if (!file && kind !== "story") return { error: "proof_required" };
 
   const cid = await clubId();
   if (!cid) return { error: "club_introuvable" };
@@ -239,12 +245,19 @@ export async function submitStory({ kind, views, file, url = "" }) {
   // dossier, le gerant lit le dossier de son club — aucune jointure, donc
   // aucune policy fragile. L'horodatage evite d'ecraser les depots
   // precedents : ils servent de trace en cas de litige.
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
-  const chemin = `${cid}/${uid}/${Date.now()}.${ext}`;
-  const { error: upErr } = await supabase.storage
-    .from("story-proofs")
-    .upload(chemin, file, { contentType: file.type || "image/jpeg" });
-  if (upErr) return { error: "upload:" + upErr.message };
+  // ⚠️ Pas de fichier = pas d'upload. `file.name` sur un null jetterait,
+  // et l'erreur partirait en rejet silencieux (le clic sur « envoyer »
+  // n'attend pas cette promesse) : le bouton resterait a tourner sans que
+  // rien n'explique pourquoi.
+  let chemin = null;
+  if (file) {
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+    chemin = `${cid}/${uid}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("story-proofs")
+      .upload(chemin, file, { contentType: file.type || "image/jpeg" });
+    if (upErr) return { error: "upload:" + upErr.message };
+  }
 
   const { data, error } = await supabase.rpc("submit_story", {
     p_club: cid,
@@ -312,6 +325,36 @@ export async function loadMyPending() {
     .eq("verified", false)
     .order("mentioned_at", { ascending: false });
   return data || [];
+}
+
+// Depose la capture de PROFIL d'un clubbeur (migration 0027).
+//
+// ⚠️ CE N'EST PAS LA DECLARATION D'ABONNES (retiree par la 0024) : aucun
+// chiffre n'est demande, et rien de ceci n'entre dans un calcul de points.
+// C'est une piece d'identite — depuis la 0026 une story arrive sans
+// capture, et le gerant a besoin de savoir a quoi ressemble le profil
+// derriere un pseudo.
+//
+// ⚠️ Bucket `story-proofs`, PAS `follower-proofs` : seul le premier porte
+// le club dans le chemin, donc seul lui laisse le GERANT lire la capture
+// (migration 0015). Une preuve que personne ne peut ouvrir ne sert a rien.
+export async function uploadProfileProof(file, clubUuid) {
+  if (!isConfigured || !file) return { error: "rien_a_envoyer" };
+  const uid = await myId();
+  if (!uid) return { error: "not_authenticated" };
+  if (!clubUuid) return { error: "club_introuvable" };
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+  const chemin = `${clubUuid}/${uid}/profil-${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from("story-proofs")
+    .upload(chemin, file, { contentType: file.type || "image/jpeg" });
+  if (upErr) return { error: "upload:" + upErr.message };
+
+  // La base revalide que le chemin est bien celui de l'appelant.
+  const { error } = await supabase.rpc("set_profile_proof", { p_path: chemin });
+  if (error) return { error: error.message };
+  return { chemin };
 }
 
 // Profil du clubbeur connecte : solde, cumul et nombre d'abonnes.

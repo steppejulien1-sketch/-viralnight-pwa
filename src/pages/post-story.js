@@ -196,32 +196,41 @@ export function PostStory(_params, ctx) {
   }
 
   /* ================= 2. La preuve ================= */
-  // Sans capture, pas de depot : le bouton reste desactive, et la base
-  // refuse de toute facon (`proof_required`).
+  //
+  // ⚠️ POUR UNE STORY, IL N'Y A PLUS DE CAPTURE (migration 0026).
+  // Julien : « ça sert à rien, on vérifiera que ça existe grâce à l'Insta
+  // du club ». C'est plus solide : une capture se fabrique et se recycle,
+  // alors que la mention arrive chez le club lui-même — une source que le
+  // clubbeur ne contrôle pas.
+  // Reel et TikTok gardent la capture : leur verification passe par le
+  // lien public, mais on ne change qu'une chose a la fois.
 
   function renderProof(url) {
     ecran = "proof";
+    const sansCapture = kind.id === "story";
 
-    const el = Screen({ label: "Ta preuve", onBack: () => renderHowto() });
+    const el = Screen({ label: sansCapture ? "Dernière étape" : "Ta preuve", onBack: () => renderHowto() });
 
     const msg = h("p", { class: "vn-field__err", role: "alert", hidden: true });
 
     const btn = Button({
-      label: "Envoyer au club",
+      label: sansCapture ? "J'ai posté, envoyer au club" : "Envoyer au club",
       block: true,
-      disabled: true,
+      // Sans capture a fournir, il n'y a plus rien a attendre : le bouton
+      // est actif d'emblee.
+      disabled: !sansCapture,
       onClick: () => envoyer(),
     });
 
-    const capture = Picker({
-      title: "Ajouter la capture",
-      sub: "obligatoire",
-      // La capture est la SEULE condition. C'etait deja la seule que la
-      // base verifiait.
-      onPick: () => {
-        btn.disabled = false;
-      },
-    });
+    const capture = sansCapture
+      ? null
+      : Picker({
+          title: "Ajouter la capture",
+          sub: "obligatoire",
+          onPick: () => {
+            btn.disabled = false;
+          },
+        });
 
     async function envoyer() {
       tap();
@@ -230,7 +239,7 @@ export function PostStory(_params, ctx) {
 
       const res = await submitStory({
         kind: kind.id,
-        file: capture.getFile(),
+        file: capture ? capture.getFile() : null,
         url: url || "",
       });
 
@@ -241,30 +250,52 @@ export function PostStory(_params, ctx) {
         return;
       }
 
-      capture.destroy();
+      capture?.destroy();
       success();
       renderSent();
     }
 
     el.body.append(
-      Title(["Montre ta publication, ", h("em", {}, "et c'est plié")]),
-      Sub([
-        "Ouvre ",
-        h("strong", {}, kind.app),
-        `, va sur ${kind.id === "story" ? "ta story" : "ta publication"}, et fais une capture d'écran. `,
-        h("strong", {}, phraseBareme(kind.id)),
-        ", quel que soit le nombre de vues.",
-      ]),
-      capture,
+      sansCapture
+        ? Title(["Préviens le club, ", h("em", {}, "et c'est plié")])
+        : Title(["Montre ta publication, ", h("em", {}, "et c'est plié")]),
+      Sub(
+        sansCapture
+          ? [
+              "Rien à envoyer : ta mention arrive directement sur ",
+              h("strong", {}, club?.ig_handle ? `@${club.ig_handle}` : "le compte du club"),
+              ". Le club la voit et te crédite ",
+              h("strong", {}, phraseBareme("story")),
+              ".",
+            ]
+          : [
+              "Ouvre ",
+              h("strong", {}, kind.app),
+              ", va sur ta publication, et fais une capture d'écran. ",
+              h("strong", {}, phraseBareme(kind.id)),
+              ".",
+            ]
+      ),
+      // ⚠️ `append(null)` ecrit la chaine « null » dans la page — le DOM
+      // convertit tout ce qui n'est pas un Node en texte. Un tableau vide
+      // ne laisse rien.
+      ...(capture ? [capture] : []),
       h(
         "p",
         { class: "ps-hint" },
-        "Le club vérifie que la mention y est. C'est tout ce qu'on regarde."
+        sansCapture
+          ? "Si la mention n'y est pas, le club ne pourra pas te créditer."
+          : "Le club vérifie que la mention y est. C'est tout ce qu'on regarde."
       ),
       msg
     );
 
-    el.foot.append(btn, Note("Ta capture n'est visible que par le club.", "lock"));
+    el.foot.append(
+      btn,
+      sansCapture
+        ? Note("Le club vérifie dans ses mentions Instagram.", "lock")
+        : Note("Ta capture n'est visible que par le club.", "lock")
+    );
     swap(el);
   }
 
@@ -284,7 +315,9 @@ export function PostStory(_params, ctx) {
         h("p", { class: "ps-sent__sub" }, [
           "Le ",
           h("strong", {}, club?.name || "club"),
-          " vérifie ta capture et crédite tes points. En général avant la prochaine soirée.",
+          kind.id === "story"
+            ? " vérifie la mention dans ses stories et crédite tes points. En général avant la prochaine soirée."
+            : " vérifie ta capture et crédite tes points. En général avant la prochaine soirée.",
         ]),
         h(
           "p",

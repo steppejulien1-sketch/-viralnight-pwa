@@ -263,6 +263,26 @@ export async function ReviewAdmin(mount, club) {
     // La capture vit dans un bucket prive : on genere une URL signee,
     // valable une heure. Pas de lien permanent qui traine.
     const visuel = h("div", { class: "ow-review-shot" }, [h("span", { class: "ow-muted" }, "Chargement de la capture…")]);
+
+    // ⚠️ UNE STORY ARRIVE SANS CAPTURE depuis la 0026. Sans ce cas, on
+    // appelait createSignedUrl(null) et le gerant voyait « Capture
+    // illisible » — un message de panne pour une situation normale, qui
+    // l'aurait pousse a refuser des contenus valables.
+    // On lui dit OU regarder : la mention arrive sur le compte du club.
+    if (!r.proof_path) {
+      visuel.classList.add("is-nocapture");
+      visuel.replaceChildren(
+        h("span", { class: "ow-review-shot__ico", "aria-hidden": "true" }, icon("instagram", 22)),
+        h("p", { class: "ow-review-shot__t" }, "Pas de capture"),
+        h(
+          "p",
+          { class: "ow-review-shot__d" },
+          club?.ig_handle
+            ? `Vérifie la mention dans les stories reçues sur @${club.ig_handle}.`
+            : "Vérifie la mention dans les stories reçues sur le compte du club."
+        )
+      );
+    } else
     supabase.storage
       .from("story-proofs")
       .createSignedUrl(r.proof_path, 3600)
