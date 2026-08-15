@@ -117,6 +117,11 @@ serve(async (req) => {
         customerId: story.user_id,
         url: story.url,
         contentType: contentTypeFor(story.kind),
+        // ⚠️ L'identifiant de la story voyage avec le contenu. C'est lui
+        // qui permet au B2B, apres validation, de revenir crediter le
+        // bon clubbeur dans CETTE base. Sans lui, la validation
+        // centralisee cote B2B ne saurait pas qui payer.
+        storyId: story.id,
       }),
     });
 

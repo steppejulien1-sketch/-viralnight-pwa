@@ -23,9 +23,16 @@ import { QrAdmin } from "./sections/qr.js";
 const mount = document.getElementById("owner");
 
 const SECTIONS = [
-  // "À valider" en premier : c'est la seule section qui demande une action
-  // du gerant, et rien n'est credite tant qu'il ne l'a pas ouverte.
-  { id: "review", label: "À valider", render: ReviewAdmin },
+  // ⚠️ « À valider » A ETE RETIREE le 2026-08-15, sur decision de Julien :
+  // « c'est sur ce site [le B2B] que je veux qu'on puisse verifier les
+  // clients, pas sur l'autre ». La validation des contenus est desormais
+  // centralisee dans le back-office B2B, qui valide pour tous les clubs
+  // et credite le clubbeur par le pont retour (`credit-story` + 0029).
+  //
+  // `sections/review.js` est CONSERVE tel quel, et `review_story` reste
+  // en place, protegee par owns_club() : remettre une ligne ici suffit a
+  // rouvrir l'ecran si le pont venait a tomber. Le supprimer nous
+  // priverait de ce filet.
   { id: "rewards", label: "Boutique", render: RewardsAdmin },
   { id: "challenges", label: "Défis", render: ChallengesAdmin },
   { id: "qr", label: "QR code", render: QrAdmin },
@@ -34,7 +41,10 @@ const SECTIONS = [
 ];
 
 let club = null;
-let current = "review";
+// La section d'arrivee suit le retrait de « À valider » : sans ce
+// changement la console s'ouvrait sur un identifiant qui n'existe plus,
+// et aucune section n'etait rendue.
+let current = "rewards";
 
 start();
 
