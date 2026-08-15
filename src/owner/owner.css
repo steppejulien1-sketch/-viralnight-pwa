@@ -111,7 +111,10 @@ select.ow-input { cursor: pointer; }
 .ow-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
 .ow-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.025em; }
 .ow-head-sub { margin-top: 5px; font-size: 14px; color: var(--vn-txt-2); }
-.ow-empty-box { padding: 40px; border: 1px dashed var(--vn-line); border-radius: var(--vn-radius-card); text-align: center; color: var(--vn-txt-3); }
+/* ⚠️ Meme retrait que `.vn-empty` cote clubbeur : plus de cadre en
+   tirets ni de texte centre. Une absence se dit a plat, alignee comme
+   le reste du contenu — l'encadrer en fait un evenement. */
+.ow-empty-box { padding: 16px 0 22px; color: var(--vn-txt-3); }
 
 /* ============================================================
    Table des rewards
@@ -276,12 +279,15 @@ select.ow-input { cursor: pointer; }
 .ow-hero-num.is-void {
   color: var(--vn-txt-3);
 }
+/* ⚠️ Capitales espacees retirees, comme sur la PWA. Le libelle nomme
+   la mesure (« Contenus publiés sur 30 jours ») : c'est une vraie
+   information, elle reste — mais elle n'a pas a etre criee au-dessus
+   d'un nombre de 60px. Le poids et le gris suffisent a la poser en
+   second plan. */
 .ow-hero-label {
   margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--vn-txt-3);
 }
 .ow-hero-num {

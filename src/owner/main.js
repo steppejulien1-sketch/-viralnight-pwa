@@ -11,7 +11,7 @@ import "../ui/type.css";
 import "../ui/reset.css";
 import "./owner.css";
 
-import { h, icon } from "../lib/dom.js";
+import { h } from "../lib/dom.js";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { RewardsAdmin } from "./sections/rewards.js";
 import { ChallengesAdmin } from "./sections/challenges.js";
@@ -25,12 +25,12 @@ const mount = document.getElementById("owner");
 const SECTIONS = [
   // "À valider" en premier : c'est la seule section qui demande une action
   // du gerant, et rien n'est credite tant qu'il ne l'a pas ouverte.
-  { id: "review", label: "À valider", icon: "check", render: ReviewAdmin },
-  { id: "rewards", label: "Boutique", icon: "gift", render: RewardsAdmin },
-  { id: "challenges", label: "Défis", icon: "sparkles", render: ChallengesAdmin },
-  { id: "qr", label: "QR code", icon: "scan", render: QrAdmin },
-  { id: "stats", label: "Statistiques", icon: "trophy", render: StatsAdmin },
-  { id: "settings", label: "Paramètres", icon: "check", render: SettingsAdmin },
+  { id: "review", label: "À valider", render: ReviewAdmin },
+  { id: "rewards", label: "Boutique", render: RewardsAdmin },
+  { id: "challenges", label: "Défis", render: ChallengesAdmin },
+  { id: "qr", label: "QR code", render: QrAdmin },
+  { id: "stats", label: "Statistiques", render: StatsAdmin },
+  { id: "settings", label: "Paramètres", render: SettingsAdmin },
 ];
 
 let club = null;
@@ -137,7 +137,14 @@ function renderShell() {
           s.render(content, club);
         },
       },
-      [icon(s.icon, 18), s.label]
+      // ⚠️ PICTOGRAMMES DE NAVIGATION RETIRES, et pas seulement par
+      // gout : le jeu d'icones n'a ni engrenage ni graphique, donc
+      // « Paramètres » portait la MEME coche que « À valider » et
+      // « Statistiques » un trophee. Deux entrees sur six mentaient.
+      // Six libelles ecrits en toutes lettres, toujours visibles, se
+      // reperent tres bien sans image — et une icone qui ne code rien
+      // est exactement ce qui fait « interface generee ».
+      s.label
     )
   );
   const navRefs = Object.fromEntries(SECTIONS.map((s, i) => [s.id, nav[i]]));
