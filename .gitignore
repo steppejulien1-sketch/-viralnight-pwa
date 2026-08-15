@@ -10,3 +10,6 @@ dist
 
 # Residus du CLI Supabase (cache local de la ref projet)
 supabase/.temp/
+
+# Captures regenerables du parcours (outils/parcours_clubbeur.cjs)
+outils/parcours/
