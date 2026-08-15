@@ -11,7 +11,7 @@
 const fs = require("fs");
 const zlib = require("zlib");
 const puppeteer = require("puppeteer-core");
-const V = require("./lib_vn");
+const V = require("./lib_vn.cjs");
 
 const trace = [];
 const dire = (ok, t) => { trace.push([ok, t]); console.log((ok ? "  OK  | " : " FAIL | ") + t); };

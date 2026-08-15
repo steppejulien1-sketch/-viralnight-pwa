@@ -16,20 +16,20 @@ fonction ne prouve.
 
 ```bash
 npm i puppeteer-core        # pilote le Chrome deja installe, aucun telechargement
-node outils/e2e_reel.js
+node outils/e2e_reel.cjs
 ```
 
-`lib_vn.js` lit les clés là où elles vivent déjà (le `.env.local` de la
+`lib_vn.cjs` lit les clés là où elles vivent déjà (le `.env.local` de la
 PWA et celui du B2B) : **aucun secret n'est écrit ici**.
 
 ## Les scripts
 
 | Fichier | Ce qu'il vérifie |
 |---|---|
-| `e2e_reel.js` | Le parcours complet en **production** : QR → inscription → dépôt → validation par le gérant → points crédités, bloqués 12 h. Compare aussi le tableau de bord à un calcul SQL indépendant. |
-| `test_tiktok_vues.js` | Le barème TikTok aux vues (0025) : repli à 60, 5 000 vues → 410, **un chiffre sans source vérifiée ne paie pas**, plafond, bornes de saisie du gérant. |
-| `test_sans_capture_partout.js` | Les 3 formats déposés **sans capture** (0028), le lien exigé pour reel/TikTok, et la consigne affichée au gérant selon le format. |
-| `poser_cles_tiktok.js` | À lancer quand `C:\Users\stepp\tiktok-cles.txt` est rempli : pose les secrets TikTok côté Supabase et vérifie que la fonction cesse de répondre `not_configured`. |
+| `e2e_reel.cjs` | Le parcours complet en **production** : QR → inscription → dépôt → validation par le gérant → points crédités, bloqués 12 h. Compare aussi le tableau de bord à un calcul SQL indépendant. |
+| `test_tiktok_vues.cjs` | Le barème TikTok aux vues (0025) : repli à 60, 5 000 vues → 410, **un chiffre sans source vérifiée ne paie pas**, plafond, bornes de saisie du gérant. |
+| `test_sans_capture_partout.cjs` | Les 3 formats déposés **sans capture** (0028), le lien exigé pour reel/TikTok, et la consigne affichée au gérant selon le format. |
+| `poser_cles_tiktok.cjs` | À lancer quand `C:\Users\stepp\tiktok-cles.txt` est rempli : pose les secrets TikTok côté Supabase et vérifie que la fonction cesse de répondre `not_configured`. |
 
 ## Pièges déjà payés, à ne pas repayer
 
@@ -48,3 +48,9 @@ PWA et celui du B2B) : **aucun secret n'est écrit ici**.
 - **Ne jamais supprimer le compte `julien.steppe123@gmail.com`** dans un
   ménage : c'est un vrai compte. Les comptes de test sont en
   `e2e-…@viralnight.test`.
+- ⚠️ **Ces scripts sont en CommonJS, le projet est en `"type": "module"`.**
+  D'où l'extension **`.cjs`** : en `.js` ils meurent sur
+  `require is not defined in ES module scope`. Écrits dans le scratchpad
+  (sans `package.json`), ils n'avaient jamais été relancés depuis le dépôt.
+  ⚠️ En CommonJS, `require("./lib_vn")` ne résout PAS un `.cjs` :
+  l'extension doit être écrite en toutes lettres.

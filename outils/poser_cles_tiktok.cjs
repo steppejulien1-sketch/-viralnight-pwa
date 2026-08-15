@@ -2,7 +2,7 @@
 // Pose les deux secrets cote Supabase, puis verifie que la fonction ne
 // repond plus `not_configured`. Les valeurs ne sont JAMAIS affichees.
 const fs = require("fs");
-const V = require("./lib_vn");
+const V = require("./lib_vn.cjs");
 
 const CHEMIN = "C:/Users/stepp/tiktok-cles.txt";
 

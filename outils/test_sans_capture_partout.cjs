@@ -3,7 +3,7 @@
 // le lien est exige pour les deux derniers, et le gerant sait ou verifier.
 const fs = require("fs");
 const puppeteer = require("puppeteer-core");
-const V = require("./lib_vn");
+const V = require("./lib_vn.cjs");
 const LOCAL = "http://127.0.0.1:5174";
 
 const trace = [];
