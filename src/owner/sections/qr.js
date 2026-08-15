@@ -85,9 +85,17 @@ export async function QrAdmin(mount, club) {
             h("button", { class: "ow-btn", onClick: () => window.print() }, "Imprimer"),
           ]),
 
+          // ⚠️ La reassurance disait « ne change jamais … imprime-le une
+          // fois pour toutes », en taisant le SEUL geste qui le casse :
+          // modifier l'identifiant dans Parametres. L'avertissement
+          // existe bien la-bas, mais un gerant qui ne lit que cette page
+          // pouvait changer son identifiant en croyant que rien n'en
+          // dependait — et rendre caducs des QR deja colles au bar.
+          // Une promesse doit nommer son exception, sinon elle en fait
+          // une decouverte payante.
           h("p", { class: "ow-qr-note" }, [
             icon("check", 13),
-            " Le QR ne change jamais, même si tu modifies tes récompenses ou le nom affiché. Tu peux l'imprimer une fois pour toutes.",
+            " Le QR ne change pas quand tu modifies tes récompenses ou le nom de ton club. Une seule chose le rend illisible : changer l'identifiant du club dans Paramètres.",
           ]),
         ]),
       ]),

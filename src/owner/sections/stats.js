@@ -197,10 +197,20 @@ export async function StatsAdmin(mount, club) {
       tuile("Clubbeurs actifs", nf.format(s.active_clubbeurs || 0), "Ont publié au moins une fois"),
       tuile("Points distribués", nf.format(pts), `${nf.format(parContenu)} pts par contenu en moyenne`),
       tuile("Récompenses retirées", nf.format(s.rewards_redeemed || 0), "Échangées au bar"),
+      // ⚠️ SEULE TUILE HORS PERIODE, et il FAUT le dire. Les trois
+      // autres comptent ce qui s'est passe sur la fenetre choisie ;
+      // `points_outstanding` est un STOCK a aujourd'hui — la somme des
+      // soldes de tous ceux qui ont deja publie, depuis toujours.
+      // Sans cette mention, la tuile affichait « 5 620 en circulation »
+      // sous un titre « sur 30 jours » qui annonçait « 4 048 distribues » :
+      // plus de dette que de points versés, ce qui est impossible et
+      // donne l'impression que le tableau de bord se trompe.
+      // La borner a la periode serait FAUX : ce que le club doit au bar
+      // ne cesse pas d'exister parce qu'on regarde 7 jours.
       tuile(
         "Points en circulation",
         nf.format(s.points_outstanding || 0),
-        "Distribués, pas encore dépensés",
+        "Solde total de tes clubbeurs aujourd'hui, toutes périodes confondues",
         true
       ),
     ];

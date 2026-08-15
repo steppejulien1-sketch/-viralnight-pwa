@@ -13,3 +13,4 @@ supabase/.temp/
 
 # Captures regenerables du parcours (outils/parcours_clubbeur.cjs)
 outils/parcours/
+outils/parcours-gerant/
