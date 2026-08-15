@@ -48,6 +48,10 @@ export function Profile(_params, ctx) {
   const soldeVal = valeur();
   const cumulVal = valeur();
   const soireesVal = valeur();
+  // ⚠️ Le libelle s'accorde avec le chiffre, qui arrive en asynchrone.
+  // Une premiere soiree affichait « 1 Soirées » — et c'est l'etat que
+  // TOUT nouveau clubbeur voit apres son premier depot.
+  const soireesLbl = h("span", { class: "pf-stat__lbl" }, "Soirées");
 
   // Lignes remplies en asynchrone : masquees tant qu'on n'a rien a y
   // mettre, plutot qu'affichees avec un tiret qui ressemble a une
@@ -75,7 +79,7 @@ export function Profile(_params, ctx) {
     h("section", { class: "pf-stats" }, [
       stat("Points", soldeVal, true),
       stat("Gagnés en tout", cumulVal),
-      stat("Soirées", soireesVal),
+      stat(soireesLbl, soireesVal),
     ]),
 
     Section("Réglages", [
@@ -140,7 +144,9 @@ export function Profile(_params, ctx) {
   // Une story publiee = une soiree.
   loadMyHistory()
     .then((evts) => {
-      if (evts) soireesVal.textContent = String(evts.length);
+      if (!evts) return;
+      soireesVal.textContent = String(evts.length);
+      soireesLbl.textContent = evts.length <= 1 ? "Soirée" : "Soirées";
     })
     .catch(() => {});
 
@@ -180,10 +186,12 @@ export function Profile(_params, ctx) {
     return h("span", { class: "pf-stat__val" }, "—");
   }
 
+  // `label` accepte un element : la tuile « Soirées » doit pouvoir
+  // s'accorder quand le chiffre arrive (voir soireesLbl).
   function stat(label, valEl, live = false) {
     return h("div", { class: `pf-stat${live ? " pf-stat--live" : ""}` }, [
       valEl,
-      h("span", { class: "pf-stat__lbl" }, label),
+      typeof label === "string" ? h("span", { class: "pf-stat__lbl" }, label) : label,
     ]);
   }
 

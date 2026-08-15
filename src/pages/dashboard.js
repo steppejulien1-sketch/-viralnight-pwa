@@ -127,7 +127,11 @@ export function Dashboard(_params, ctx) {
       block: true,
       onClick: () => ctx.navigate("post"),
     }),
-    Note("Le club valide ta capture, puis tes points tombent.")
+    // ⚠️ Ne JAMAIS reparler de capture ici : la 0028 les a toutes
+    // retirees. Ce texte promettait encore « le club valide ta capture »
+    // alors que l'ecran de depot n'en demande plus aucune — la seule
+    // phrase de l'app qui decrivait un parcours disparu.
+    Note("Le club vérifie, puis tes points tombent.")
   );
 
   /* ---------- Donnees ---------- */

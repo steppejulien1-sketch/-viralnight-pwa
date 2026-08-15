@@ -113,7 +113,7 @@ export function Collection(_params, ctx) {
         ? h("p", { class: "cl-next" }, [
             "Le plus proche : ",
             h("strong", {}, prochain.name),
-            ` — il te manque ${nf.format(Math.max(0, prochain.target - prochain.current_value))} ${unite(prochain.metric)}.`,
+            manquant(prochain),
           ])
         : h("p", { class: "cl-next" }, "Tout est débloqué. Respect."),
 
@@ -191,9 +191,18 @@ export function Collection(_params, ctx) {
     return Math.min(1, (b.current_value || 0) / b.target);
   }
 
-  function unite(metric) {
-    if (metric === "redemptions") return "récompense à retirer";
-    if (metric === "streak") return "soirées d'affilée";
-    return "contenus";
+  // ⚠️ L'accord. Un badge se debloque souvent au DERNIER pas : le cas
+  // « il te manque 1 » est donc le plus frequent de l'ecran, et c'est
+  // justement celui qui affichait « 1 contenus ».
+  function manquant(b) {
+    const n = Math.max(0, b.target - b.current_value);
+    return ` — il te manque ${nf.format(n)} ${unite(b.metric, n)}.`;
+  }
+
+  function unite(metric, n = 2) {
+    const s = n <= 1;
+    if (metric === "redemptions") return s ? "récompense à retirer" : "récompenses à retirer";
+    if (metric === "streak") return s ? "soirée d'affilée" : "soirées d'affilée";
+    return s ? "contenu" : "contenus";
   }
 }
