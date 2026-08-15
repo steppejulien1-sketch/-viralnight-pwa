@@ -85,7 +85,6 @@ export function Leaderboard(_params, _ctx) {
     if (!top.length) {
       el.body.append(
         Empty({
-          ico: "trophy",
           title: "Le classement est vide",
           sub: "Personne n'a encore posté cette semaine. La première story prend la première place.",
         })

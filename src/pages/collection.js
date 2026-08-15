@@ -76,7 +76,6 @@ export function Collection(_params, ctx) {
       el.body.append(
         Title("Ta collection"),
         Empty({
-          ico: "medal",
           title: "Pas encore de badges ici",
           sub: "Ce club n'en propose pas pour le moment. Tes points, eux, continuent de compter.",
         })
@@ -115,7 +114,7 @@ export function Collection(_params, ctx) {
             h("strong", {}, prochain.name),
             manquant(prochain),
           ])
-        : h("p", { class: "cl-next" }, "Tout est débloqué. Respect."),
+        : h("p", { class: "cl-next" }, "Tous les badges sont débloqués."),
 
       // ⚠️ `.map(ligne)` passerait l'INDEX en deuxieme argument, qui
       // atterrirait dans le parametre `pause` : tous les badges sauf

@@ -46,6 +46,17 @@
   gap: 9px;
 }
 
+/* Nom de l'ecran : casse normale, poids moyen, gris. Un reperage,
+   pas une annonce. */
+.vn-screen__name {
+  font-size: var(--vn-t-meta);
+  font-weight: 500;
+  color: var(--vn-txt-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Retour : cible pleine, pictogramme retourne. */
 .vn-screen__back {
   display: grid;
@@ -75,13 +86,20 @@
   padding: 6px var(--vn-pad-x) 20px;
 }
 
+/* ⚠️ PLUS DE CAPITALES ICI. Dix ecrans portaient un titre geant tout
+   en majuscules — « TA COLLECTION », « CETTE SEMAINE », « TON PSEUDO
+   INSTAGRAM ». Quand chaque ecran crie, aucun ne ressort, et c'est la
+   signature la plus reconnaissable d'une interface generee.
+   Le seul titre qui garde ses capitales est l'accroche de l'accueil
+   (`.lp-title`) : c'est le moment d'affiche du produit, il est unique.
+   L'interlettrage passe de -0.035em a -0.02em : le premier etait
+   calibre pour des capitales, il serre trop du bas de casse. */
 .vn-screen__title {
   font-family: var(--vn-face-display);
   font-weight: 800;
   font-size: var(--vn-t-h1);
-  letter-spacing: -0.035em;
-  line-height: 1.02;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
   text-wrap: balance;
 }
 

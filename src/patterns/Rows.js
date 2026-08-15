@@ -43,9 +43,17 @@ export function Row(o = {}) {
  * gestionnaire de clic, donc inatteignables au clavier.
  */
 export function Tile(o = {}) {
-  const { ico = "sparkles", title, sub = "", onClick } = o;
+  const { title, sub = "", onClick } = o;
+  // ⚠️ LE PICTOGRAMME DECORATIF A SAUTE. Un trophee au-dessus de
+  // « Classement » et une medaille au-dessus de « Collection » ne
+  // codaient rien : le mot etait deja ecrit dessous. Une icone doit
+  // porter une information que le texte ne porte pas, sinon elle
+  // n'est que du remplissage — et le remplissage systematique est ce
+  // qui fait « maquette generee ». La chevron de droite reste : elle
+  // dit que la tuile mene ailleurs, ce que le texte ne dit pas.
+  // `ico` est encore accepte par les appelants et volontairement
+  // ignore, pour ne pas casser un appel oublie.
   return h("button", { type: "button", class: "vn-tile", onClick }, [
-    h("span", { class: "vn-tile__ico", "aria-hidden": "true" }, icon(ico, 20)),
     h("span", { class: "vn-tile__txt" }, [
       h("span", { class: "vn-tile__title" }, title),
       sub ? h("span", { class: "vn-tile__sub" }, sub) : null,

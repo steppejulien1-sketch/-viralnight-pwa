@@ -7,20 +7,24 @@
    et un <li> deguise en fausse recompense.
    ============================================================ */
 
+/* ⚠️ PLUS DE CADRE POINTILLE NI DE PICTOGRAMME CENTRE. Le bloc vide
+   « boite en tirets + icone au milieu + texte centre » est, avec le
+   numero cercle, le motif le plus reconnaissable des interfaces
+   generees — et il en existait CINQ dans l'app.
+   Un etat vide n'est pas un evenement : c'est une absence. Il se dit
+   a plat, aligne comme le reste du contenu, sans lui construire un
+   monument. Le pictogramme reste possible (`ico`) mais n'est plus
+   passe par les ecrans. */
 .vn-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-  padding: 30px 20px;
-  border: 1px dashed var(--vn-line);
-  border-radius: var(--vn-radius-card);
+  gap: 5px;
+  padding: 14px 0 18px;
 }
 
 .vn-empty__ico {
   color: var(--vn-txt-3);
-  margin-bottom: 2px;
+  margin-bottom: 6px;
 }
 
 .vn-empty__title {

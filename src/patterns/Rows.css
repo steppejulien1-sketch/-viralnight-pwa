@@ -84,10 +84,13 @@
   background: var(--vn-surf-3);
 }
 
-/* ⚠️ NEUTRE, pas rouge. Deux tuiles cote a cote avec un pictogramme
-   teinte faisaient deux taches rouges en haut d'ecran, qui volaient
-   la vedette au bouton d'action. Le rouge ne se depense qu'une fois
-   par ecran, et c'est sur l'action. */
+/* ⚠️ N'EST PLUS RENDU PAR `Tile()` — pictogramme decoratif retire.
+   La regle reste pour le bloc « Defi du moment » du tableau de bord,
+   qui l'utilise encore et ou l'icone signale un etat (un defi est en
+   cours), pas une categorie.
+   Note d'origine, toujours valable : NEUTRE, pas rouge. Deux tuiles
+   cote a cote avec un pictogramme teinte faisaient deux taches rouges
+   en haut d'ecran, qui volaient la vedette au bouton d'action. */
 .vn-tile__ico {
   display: grid;
   place-items: center;

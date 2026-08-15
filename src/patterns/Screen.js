@@ -38,8 +38,12 @@ export function Screen(o = {}) {
           icon("arrowRight", 19)
         )
       : null,
+    // ⚠️ Le nom de l'ecran n'est PAS un intertitre : c'est un reperage,
+    // il se lit d'un coup d'oeil et ne doit rien reclamer. En `vn-label`
+    // il etait en capitales espacees, au meme niveau sonore que le titre
+    // juste en dessous — deux cris pour la meme information.
     h("div", { class: "vn-screen__head-main" }, [
-      label ? h("span", { class: "vn-label" }, label) : null,
+      label ? h("span", { class: "vn-screen__name" }, label) : null,
     ]),
     headRight,
   ]);

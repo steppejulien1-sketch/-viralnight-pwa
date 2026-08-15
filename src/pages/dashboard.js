@@ -92,10 +92,11 @@ export function Dashboard(_params, ctx) {
     // dire ou on en est. Le streak, lui, reste : il pousse a
     // revenir, donc il remonte a cote du solde.
     h("section", { class: "db-balance" }, [
-      h("div", { class: "db-balance__head" }, [
-        h("span", { class: "vn-label" }, "Ton solde"),
-        streakSlot,
-      ]),
+      // ⚠️ L'etiquette « TON SOLDE » a saute. Un nombre de 56px en
+      // rouge suivi de « pts », en haut de l'ecran d'accueil, n'a pas
+      // besoin qu'on annonce ce qu'il est. Etiqueter l'evident est la
+      // deuxieme signature la plus visible d'une interface generee.
+      h("div", { class: "db-balance__head" }, [streakSlot]),
       solde,
     ]),
 
@@ -238,7 +239,6 @@ export function Dashboard(_params, ctx) {
     if (!evts.length) {
       histSlot.replaceChildren(
         Empty({
-          ico: "instagram",
           title: "Ta première story apparaîtra ici",
           sub: "Poste ce soir, tu la retrouveras juste là.",
         })

@@ -267,7 +267,13 @@ export function PostStory(_params, ctx) {
     }
 
     el.body.append(
-      Title(["Préviens le club, ", h("em", {}, "et c'est plié")]),
+      // ⚠️ « et c'est plié » retire. La barre du haut dit deja
+      // « Dernière étape » : la formule ne portait aucune information
+      // de plus, elle mettait juste un clin d'oeil sur un ecran qu'on
+      // traverse a chaque publication. La voix du produit reste sur
+      // l'accueil, qu'on ne voit qu'une fois ; a l'interieur de l'app
+      // les textes disent ce qu'ils font.
+      Title("Préviens le club"),
       Sub(
         kind.id === "story"
           ? [

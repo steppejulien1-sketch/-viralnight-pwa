@@ -69,17 +69,17 @@
   border-bottom: 0;
 }
 
+/* ⚠️ Meme retrait que sur l'accueil (`.lp-step__n`) : le numero cercle
+   est le cliche le plus reconnaissable des maquettes generees. Le
+   chiffre reste, la medaille part. */
 .ps-step__n {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
   flex: none;
-  border-radius: 50%;
-  border: 1px solid var(--vn-line);
+  width: 16px;
+  padding-top: 1px;
   font-family: var(--vn-face-display);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--vn-txt-3);
 }
 

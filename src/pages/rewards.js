@@ -142,7 +142,6 @@ export function Rewards(_params, ctx) {
           ? visibles.map((r) => RewardCard(r, me.points_balance, confirmer))
           : [
               Empty({
-                ico: "gift",
                 title: "Rien dans cette catégorie",
                 sub: "Regarde les autres, ou reviens quand le club aura enrichi sa carte.",
               }),
