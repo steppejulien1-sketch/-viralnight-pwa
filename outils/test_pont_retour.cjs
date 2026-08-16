@@ -6,6 +6,15 @@
 // personne n'est paye — et rien ne le signalerait cote PWA.
 //
 // Compte jetable, verifie en base, supprime a la fin.
+//
+// ⚠️ Il faut lui passer le secret EN CLAIR, et il ne se trouve nulle part
+// sur le PC : Supabase ne rend qu'une empreinte SHA-256, et la valeur ne
+// vit que dans les variables Vercel et Supabase. S'il est perdu, en
+// generer un neuf et le reposer des deux cotes avec `poser_pont_retour.cjs`.
+//
+// Le test qui n'a besoin d'aucun secret, et qui couvre la chaine entiere
+// depuis le depot du clubbeur, est cote B2B :
+//   01-base-fonctionnelle-vite-supabase-api/outils/e2e_validation_complete.cjs
 
 const V = require("./lib_vn.cjs");
 
@@ -18,12 +27,16 @@ if (!SECRET) {
 const trace = [];
 const dire = (ok, t) => { trace.push([ok, t]); console.log((ok ? "  OK  | " : " FAIL | ") + t); };
 
+// ⚠️ AUCUN apikey, AUCUN Authorization : on appelle EXACTEMENT comme
+// `api/credit-clubbeur.js` le fait depuis le serveur B2B.
+// Ce test envoyait la cle anon en plus, que le vrai appelant n'a pas. Il
+// annoncait donc 16/16 alors que la passerelle Supabase refusait le vrai
+// appel en 401 avant meme d'executer la fonction : personne n'etait paye.
+// Un test qui s'accorde une faveur que la prod n'a pas ne teste rien.
 async function pont(corps, secret = SECRET) {
   const r = await fetch(`${V.BASE}/functions/v1/credit-story`, {
     method: "POST",
     headers: {
-      apikey: V.ANON,
-      Authorization: `Bearer ${V.ANON}`,
       "Content-Type": "application/json",
       "x-vn-secret": secret,
     },

@@ -1,0 +1,16 @@
+project_id = "gcopwgmqjiufemapamek"
+
+# ⚠️ credit-story est appelee par un SERVEUR (le back-office B2B), pas par
+# une personne. Elle n'a donc aucune session a presenter, et la passerelle
+# Supabase la refusait en 401 « Missing authorization header » AVANT
+# d'executer son code : le back-office affichait « Points non credites »
+# a chaque validation, et aucun clubbeur n'etait paye.
+#
+# Son portier a elle, c'est le secret partage `B2B_BRIDGE_SECRET`, compare
+# a temps constant dans index.ts. Un JWT en plus n'ajouterait rien : la
+# cle anon est publique, elle est dans le bundle de l'app.
+#
+# Sans cette ligne, un `supabase functions deploy credit-story` remet
+# verify_jwt a true et recasse le pont en silence.
+[functions.credit-story]
+verify_jwt = false
