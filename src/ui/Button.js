@@ -11,7 +11,7 @@
 import { h } from "../lib/dom.js";
 import "./Button.css";
 
-const VARIANTS = new Set(["primary", "ghost", "quiet", "ig", "tiktok"]);
+const VARIANTS = new Set(["primary", "ghost", "quiet", "ig", "tiktok", "google"]);
 
 /**
  * @param {object} o

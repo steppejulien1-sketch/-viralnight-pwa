@@ -44,7 +44,7 @@ import { h, icon } from "../lib/dom.js";
 import { Button, Field, Picker } from "../ui/index.js";
 import { Screen, Title, Sub, Section, Note } from "../patterns/Screen.js";
 import { tap } from "../lib/haptics.js";
-import { supabase, isConfigured, signInWithEmail } from "../lib/supabase.js";
+import { supabase, isConfigured, signInWithEmail, signInWithGoogle } from "../lib/supabase.js";
 import { ensureSession } from "../lib/session.js";
 import { availableProviders, startSocialLogin, readSocialReturn } from "../lib/social.js";
 import { currentClub } from "../lib/club.js";
@@ -172,16 +172,57 @@ export function Onboarding(_params, ctx) {
       })
     );
 
+    // Google, via le fournisseur OAuth natif de Supabase (voir supabase.js
+    // pour pourquoi ce n'est pas le meme chemin que TikTok/Instagram). Le
+    // logo Google est une charte a 4 couleurs imposee par Google lui-meme :
+    // ca ne rentre pas dans le jeu d'icones a un seul trait de dom.js
+    // (voir instagram/tiktok juste au-dessus), d'ou ce SVG inline plutot
+    // qu'un icon("google").
+    const googleIco = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    googleIco.setAttribute("viewBox", "0 0 48 48");
+    googleIco.setAttribute("width", "19");
+    googleIco.setAttribute("height", "19");
+    googleIco.setAttribute("aria-hidden", "true");
+    googleIco.innerHTML =
+      '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
+      '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>' +
+      '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>' +
+      '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>';
+
+    const googleBtn = Button({
+      label: "Continuer avec Google",
+      variant: "google",
+      ico: googleIco,
+      block: true,
+      onClick: async (e) => {
+        tap();
+        const bouton = e.currentTarget;
+        bouton.setLoading?.(true);
+        const err = await signInWithGoogle();
+        // N'arrive que si la redirection n'est jamais partie (Supabase pas
+        // configure, ou le fournisseur Google pas encore active cote
+        // tableau de bord -- "Unsupported provider"). Si la redirection
+        // part, la page quitte avant que ce code ne s'execute.
+        if (err) {
+          bouton.setLoading?.(false);
+          montrer(msg, /unsupported provider/i.test(err)
+            ? "Connexion Google bientôt disponible. En attendant, reçois un lien par email."
+            : err);
+          email.focus();
+        }
+      },
+    });
+
     el.body.append(
-      h("div", { class: "ob-badge", "aria-hidden": "true" }, icon("sparkles", 30)),
-      Title(club ? `Rejoins le ${club.name}` : "Rejoins ton club"),
+      mascotteAccueil(),
+      Title(club ? `Rejoins le ${club.name}` : "Bienvenue sur ViralNight"),
       Sub([
         "Connecte ton réseau, ou reçois un lien par email. ",
         h("strong", {}, "Aucun mot de passe"),
         " à retenir.",
       ]),
 
-      h("div", { class: "ob-social" }, social),
+      h("div", { class: "ob-social" }, [googleBtn, ...social]),
       h("p", { class: "ob-sep" }, h("span", {}, "ou par email")),
       email,
       msg,
@@ -356,6 +397,58 @@ export function Onboarding(_params, ctx) {
   }
 
   /* ---------- Fabriques ---------- */
+
+  // Meme mascotte que la maquette approuvee par Julien (petit personnage a
+  // lunettes de soleil, boule a facettes tournante, lumieres animees) --
+  // reprise ici a l'identique plutot que retapee, pour garantir un rendu
+  // pixel pour pixel identique a ce qu'il a valide.
+  function mascotteAccueil() {
+    const el = h("div", { class: "ob-mascot", "aria-hidden": "true" });
+    el.innerHTML = `<svg viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="obBallShine" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+          <stop offset="45%" stop-color="#d8d8de" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#8d8d97" stop-opacity="0.3" />
+        </radialGradient>
+        <linearGradient id="obBodyShade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2a2733" />
+          <stop offset="100%" stop-color="#181620" />
+        </linearGradient>
+      </defs>
+      <g class="ob-mascot-lights">
+        <circle cx="80" cy="12" r="3" fill="#ff6363" />
+        <circle cx="106" cy="24" r="2.4" fill="#9281f7" />
+        <circle cx="112" cy="46" r="2" fill="#ffe27a" />
+        <circle cx="48" cy="46" r="2" fill="#63a1ff" />
+        <circle cx="54" cy="24" r="2.4" fill="#ff6363" />
+      </g>
+      <g class="ob-mascot-ball">
+        <circle cx="80" cy="38" r="17" fill="url(#obBallShine)" stroke="rgba(255,255,255,0.35)" stroke-width="0.6" />
+        <g stroke="rgba(10,8,16,0.35)" stroke-width="0.6" fill="none">
+          <path d="M63 38h34M80 21v34M67 25l26 26M93 25 67 51" />
+          <circle cx="80" cy="38" r="10" />
+        </g>
+      </g>
+      <line x1="80" y1="55" x2="80" y2="76" stroke="rgba(255,255,255,0.25)" stroke-width="1.4" />
+      <g class="ob-mascot-body">
+        <ellipse cx="80" cy="140" rx="46" ry="50" fill="url(#obBodyShade)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+        <circle cx="38" cy="128" r="9" fill="url(#obBodyShade)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+        <circle cx="122" cy="128" r="9" fill="url(#obBodyShade)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+        <g>
+          <rect x="46" y="124" width="30" height="22" rx="11" fill="#0a0810" stroke="#ff6363" stroke-width="2" />
+          <rect x="84" y="124" width="30" height="22" rx="11" fill="#0a0810" stroke="#ff6363" stroke-width="2" />
+          <path d="M76 133h8" stroke="#ff6363" stroke-width="2" stroke-linecap="round" />
+          <path d="M52 130q6-4 12 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.6" fill="none" stroke-linecap="round" />
+          <path d="M90 130q6-4 12 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.6" fill="none" stroke-linecap="round" />
+        </g>
+        <path d="M68 160q12 10 24 0" stroke="#e8e9eb" stroke-width="2.6" fill="none" stroke-linecap="round" />
+        <path d="M36 158q-14 6-16 20" stroke="url(#obBodyShade)" stroke-width="10" fill="none" stroke-linecap="round" />
+        <path d="M124 158q14 6 16 20" stroke="url(#obBodyShade)" stroke-width="10" fill="none" stroke-linecap="round" />
+      </g>
+    </svg>`;
+    return el;
+  }
 
   function assure(txt) {
     return h("li", { class: "ob-assure__item" }, [

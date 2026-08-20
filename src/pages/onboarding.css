@@ -127,3 +127,43 @@
   line-height: 1.45;
   color: var(--vn-txt-3);
 }
+
+/* ---------- Mascotte du premier ecran (renderConnect uniquement) ----------
+   Reference envoyee par Julien (ecran d'onboarding mobile type "Welcome to
+   X"), deja construite et validee sur le site gerants avant d'etre retiree
+   de la-bas -- ce n'etait pas le bon ecran. Ici, c'est le bon : le vrai
+   premier contact d'un client de club avec l'app, avec la vraie connexion
+   derriere (Google/TikTok/Instagram/email). */
+.ob-mascot {
+  width: 108px;
+  margin: 0 auto 6px;
+}
+.ob-mascot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.ob-mascot-ball {
+  transform-origin: 80px 38px;
+  animation: ob-mascot-spin 7s linear infinite;
+}
+@keyframes ob-mascot-spin {
+  to { transform: rotate(360deg); }
+}
+.ob-mascot-lights circle {
+  animation: ob-mascot-twinkle 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+.ob-mascot-lights circle:nth-child(1) { animation-delay: 0s; }
+.ob-mascot-lights circle:nth-child(2) { animation-delay: .35s; }
+.ob-mascot-lights circle:nth-child(3) { animation-delay: .7s; }
+.ob-mascot-lights circle:nth-child(4) { animation-delay: 1.05s; }
+.ob-mascot-lights circle:nth-child(5) { animation-delay: 1.4s; }
+@keyframes ob-mascot-twinkle {
+  0%, 100% { opacity: .35; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-mascot-ball, .ob-mascot-lights circle { animation: none; }
+}

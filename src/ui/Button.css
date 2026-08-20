@@ -99,6 +99,18 @@
   filter: brightness(0.92);
 }
 
+/* Google impose sa charte (fond blanc, texte gris fonce) sur son propre
+   bouton de connexion -- meme convention que le bouton Google du site
+   gerants (auth.js). */
+.vn-btn--google {
+  background: #fff;
+  color: #1f1f1f;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.vn-btn--google:hover:not(:disabled) {
+  background: #f7f7f7;
+}
+
 /* Fournisseur pas encore configure : visible mais attenue, plutot
    qu'une redirection cassee chez l'utilisateur. */
 .vn-btn--soon {
