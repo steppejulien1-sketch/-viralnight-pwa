@@ -358,7 +358,35 @@ export function Onboarding(_params, ctx) {
       }
 
       profil.destroy();
+
+      // Compte cree SANS avoir jamais scanne de QR (arrive par un lien
+      // de parrainage plutot que par le parcours normal scan -> compte,
+      // voir app-preview.html/?parrain=) : rien ne lui a encore dit ou
+      // aller. L'envoyer directement au dashboard afficherait un espace
+      // vide sans explication -- demande de Julien, on le renvoie
+      // scanner avant.
+      if (!club) {
+        renderScanneUnQr();
+        return;
+      }
       ctx.navigate("dashboard");
+    }
+
+    /* ================= 4. Compte cree, aucun club connu ================= */
+
+    function renderScanneUnQr() {
+      const el = Screen({});
+
+      el.body.append(
+        h("div", { class: "ob-badge", "aria-hidden": "true" }, icon("scan", 30)),
+        Title("Scanne le QR de ta boîte"),
+        Sub(
+          "Ton compte est prêt. Il ne reste qu'à scanner le QR affiché au bar ou à l'entrée pour débloquer tes points sur ce club."
+        )
+      );
+
+      el.foot.append(Note("Pas de QR sous la main ? Reviens dès que tu y es.", null));
+      swap(el);
     }
 
     el.body.append(

@@ -31,7 +31,8 @@ import { Button, Points, State } from "../ui/index.js";
 import { Screen, Section, Note } from "../patterns/Screen.js";
 import { AU_FORFAIT, phraseBareme, promesseCourte } from "../lib/bareme.js";
 import { loadPublicRewards, loadClubProof } from "../lib/game.js";
-import { currentClub, slugDemande } from "../lib/club.js";
+import { currentClub, slugDemande, urlDuClub } from "../lib/club.js";
+import { supabase, isConfigured } from "../lib/supabase.js";
 import "./landing.css";
 
 const nf = new Intl.NumberFormat("fr-FR");
@@ -215,6 +216,8 @@ export function Landing(_params, ctx) {
       ])
     );
 
+    const msgPosition = h("p", { class: "lp-noclub__sub", hidden: true });
+
     vide.body.append(
       h("div", { class: "lp-noclub" }, [
         h("span", { class: "lp-noclub__ico", "aria-hidden": "true" }, icon("scan", 30)),
@@ -230,10 +233,55 @@ export function Landing(_params, ctx) {
             ? "Il a peut-être été remplacé. Demande le QR à jour au bar."
             : "Il est affiché au bar ou à l'entrée. C'est lui qui ouvre la soirée du bon établissement."
         ),
+        msgPosition,
       ])
     );
 
-    vide.foot.append(Note("ViralNight · rien à installer", null));
+    // Repli demande par Julien : avant de forcer a chercher un QR,
+    // proposer la position -- si un club est enregistre a moins de
+    // 300 m (nearest_club_slug, migration 0037), on saute direct au
+    // meme resultat qu'un scan reussi. Anonyme (cle anon), comme le
+    // reste de cet ecran : pas besoin de compte pour ca.
+    if (!qrInconnu && isConfigured && navigator.geolocation) {
+      const boutonPosition = Button({
+        label: "Utiliser ma position",
+        variant: "ghost",
+        block: true,
+        onClick: (e) => essayerPosition(e.currentTarget),
+      });
+      vide.foot.append(boutonPosition, Note("ViralNight · rien à installer", null));
+    } else {
+      vide.foot.append(Note("ViralNight · rien à installer", null));
+    }
+
+    function essayerPosition(bouton) {
+      bouton.setLoading?.(true);
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { data, error } = await supabase.rpc("nearest_club_slug", {
+            p_lat: pos.coords.latitude,
+            p_lng: pos.coords.longitude,
+          });
+          bouton.setLoading?.(false);
+          if (error || !data) {
+            // Rien a moins de 300 m : pas une erreur a proprement
+            // parler, juste aucun club assez proche. Le scan reste le
+            // chemin normal, pas la peine d'inventer un message alarmant.
+            msgPosition.textContent = "Aucun club trouvé à proximité. Scanne son QR à la place.";
+            msgPosition.hidden = false;
+            return;
+          }
+          window.location.href = urlDuClub(data);
+        },
+        () => {
+          // Permission refusee ou position indisponible : silencieux,
+          // "scanne le QR" (deja affiche au-dessus) reste la reponse.
+          bouton.setLoading?.(false);
+        },
+        { timeout: 8000 }
+      );
+    }
+
     return vide;
   }
 
