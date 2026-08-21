@@ -16,9 +16,10 @@
 alter table public.users
   add column if not exists referred_by uuid references public.users(id);
 
--- Valeur du parrainage : alignee sur le socle d'une story (credit_story,
--- v_base = 100) -- amener un clubbeur vaut autant qu'un contenu publie.
--- Modifiable ici seul si Julien veut un autre montant.
+-- Valeur du parrainage : moins qu'une story (credit_story, v_base =
+-- 100) -- demande de Julien, amener un clubbeur reste plus facile
+-- que publier un contenu verifie. Modifiable ici seul si Julien veut
+-- un autre montant.
 create or replace function public.claim_referral(p_code text)
 returns table(referrer_id uuid, referrer_handle text, awarded int)
 language plpgsql security definer set search_path = public as $$
@@ -27,7 +28,7 @@ declare
   v_clean    text := trim(lower(p_code));
   v_referrer record;
   v_deja     uuid;
-  v_points   int := 100;
+  v_points   int := 50;
 begin
   if v_uid is null then
     raise exception 'not_authenticated';
