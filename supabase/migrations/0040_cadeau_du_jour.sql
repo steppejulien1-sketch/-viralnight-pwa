@@ -1,48 +1,75 @@
 -- ============================================================
--- 0040 — Le cadeau du jour, en escalier
+-- 0040 — Le cadeau du jour
 -- ------------------------------------------------------------
--- Julien, 06/09/2026 : « trouve un systeme de recompense pour les rendre
--- accro [...] tu peux meme changer les cinq points et mettre genre trois
--- points, puis cinq points, puis dix points. »
+-- Julien, 06/09/2026 : « cadeau du jour, trente points par exemple [...]
+-- tu cliques sur un truc ou il faut mettre recuperer et c'est assez gros
+-- et une fois que tu as recuperé, ca disparait, ca laisse place a la
+-- boutique. Et le lendemain, ca reapparait a dix heures. »
 --
--- Ce n'est donc plus un tirage plat repete chaque jour, mais un ESCALIER
--- de sept jours qui recommence : 2, 3, 4, 5, 6, 8, puis 20. Manquer un
--- jour renvoie a la premiere marche.
+-- Trois regles, et chacune a une consequence en base :
 --
--- POURQUOI UN ESCALIER PLUTOT QU'UN MONTANT FIXE. Ce qui ramene
--- quelqu'un, ce n'est pas la taille du cadeau -- c'est de VOIR la marche
--- suivante, et de savoir qu'un jour saute fait tout retomber. Les deux
--- ressorts qui font revenir (la marche visible, la perte) ne coutent
--- rien au club ; seul le montant coute. D'ou un escalier qui monte franc
--- et une depense qui, elle, ne bouge pas.
+--   1. LE MONTANT EST ANNONCE AVANT d'etre pris ("trente points" ecrit
+--      sur la carte, puis on appuie sur Recuperer). Le tirage ne peut
+--      donc plus etre au hasard a l'instant du clic : il doit etre
+--      DETERMINISTE, sinon il suffit de rafraichir la page jusqu'a
+--      tomber sur le jackpot. Voir montant_cadeau().
+--   2. LA JOURNEE DU CADEAU COMMENCE A 10 H, pas a minuit. Voir
+--      jour_cadeau().
+--   3. UNE FOIS PRIS, LA CARTE DISPARAIT. C'est cote appli, mais c'est
+--      la meme idee que le reste : une carte « reviens demain » affichee
+--      en permanence devient un meuble, et un meuble ne se touche plus.
 --
--- CE QUE CA COUTE, ET POURQUOI CE N'EST PAS PLUS QU'AVANT.
+-- L'ESCALIER. Le montant n'est pas fixe : 2, 3, 4, 5, 6, 8, puis 20 le
+-- septieme jour, et on recommence. Manquer un jour renvoie a la premiere
+-- marche. Ce qui ramene quelqu'un n'est pas la taille du cadeau, c'est
+-- de VOIR la marche suivante et de savoir qu'un jour saute la fait
+-- retomber -- deux ressorts qui ne coutent rien au club, alors que le
+-- montant, lui, coute.
+--
+-- CE QUE CA COUTE.
 --   escalier  : 2+3+4+5+6+8+20 = 48 points par semaine, soit 6,86 / jour
 --   jackpot   : 1 fois sur 100, le cadeau vaut 40 au lieu de sa marche
 --   esperance : 0,99 x 6,86 + 0,01 x 40 = 7,19 points par jour
--- La version plate d'avant (5 / 10 / 20 / 35) revenait a 6,65 points par
--- jour. On change donc la FORME du cadeau, pas son prix.
 --
--- ⚠️ CE QUE CA REPRESENTE POUR LE CLUB QUI PAIE. Les recompenses reelles
--- posees a la creation d'un club sont : vestiaire 40, shot 60, pinte 90,
+-- ⚠️ CE QUE CA REPRESENTE POUR LE CLUB QUI PAIE. Les recompenses posees
+-- a la creation d'un vrai club sont : vestiaire 40, shot 60, pinte 90,
 -- cocktail 130. A 7,19 points par jour, quelqu'un qui ouvre l'appli tous
 -- les jours sans jamais rien publier gagne un cocktail toutes les trois
 -- semaines environ. C'est le prix de l'habitude, et il est paye par le
 -- dernier club frequente. Les sept montants vivent dans une TABLE, pas
 -- dans le code : un update suffit a les baisser, sans redeploiement.
 --
--- ⚠️ LE TIRAGE ET LA MARCHE SE CALCULENT ICI, PAS DANS LE NAVIGATEUR.
--- Cote client, c'est un jackpot a volonte : il suffit de rappeler la
--- fonction jusqu'a tomber sur le bon nombre. Et une garde « un par
--- jour » posee dans le localStorage se contourne en vidant son
--- navigateur. La clef primaire (user_id, gift_date) est ce qui rend le
--- cadeau REELLEMENT quotidien -- c'est la base qui refuse le second.
---
 -- ⚠️ PAS DE CADEAU SANS CLUB. Quelqu'un qui n'a jamais scanne de QR n'a
 -- pas de « derniere boutique » : lui donner des points ferait payer une
 -- recompense a un club qu'il n'a jamais visite. La fonction renvoie
 -- alors `aucun_club` et l'appli l'invite a scanner.
 -- ============================================================
+
+-- ------------------------------------------------------------
+-- La journee du cadeau commence a 10 h
+-- ------------------------------------------------------------
+-- Julien : « tous les jours a dix heures, il y a un cadeau. » Donc la
+-- journee du cadeau n'est pas la journee civile : elle va de 10 h a
+-- 10 h. Avant 10 h, on est encore dans la journee de la veille -- et
+-- celui qui n'a pas pris son cadeau d'hier peut donc encore le prendre
+-- le matin. C'est voulu : on ne punit pas quelqu'un qui se couche a 4 h.
+--
+-- ⚠️ EN HEURE DE PARIS, pas en UTC. La base tourne en UTC : 10 h y
+-- tomberait a midi l'ete et 11 h l'hiver cote clubbeur, et le cadeau
+-- changerait d'heure deux fois par an sans que personne comprenne.
+create or replace function public.jour_cadeau()
+returns date
+language sql stable as $$
+  select case
+    when (now() at time zone 'Europe/Paris')::time >= time '10:00'
+      then (now() at time zone 'Europe/Paris')::date
+    else (now() at time zone 'Europe/Paris')::date - 1
+  end;
+$$;
+
+comment on function public.jour_cadeau is
+  'La journee du cadeau, de 10 h a 10 h, heure de Paris. Remplace '
+  'current_date partout ici : sinon le cadeau reapparaitrait a minuit.';
 
 -- ------------------------------------------------------------
 -- L'escalier
@@ -76,8 +103,8 @@ comment on table public.daily_gift_ladder is
 -- ------------------------------------------------------------
 create table if not exists public.daily_gifts (
   user_id    uuid not null references public.users(id) on delete cascade,
-  -- La DATE, pas un horodatage : c'est elle qui porte la regle « un par
-  -- jour » dans la clef primaire.
+  -- La journee du cadeau (jour_cadeau(), pas current_date) : c'est elle
+  -- qui porte la regle « un par jour » dans la clef primaire.
   gift_date  date not null,
   club_id    uuid not null references public.clubs(id) on delete cascade,
   amount     int  not null check (amount > 0),
@@ -101,9 +128,9 @@ create policy "own gifts - select"
   on public.daily_gifts for select using (auth.uid() = user_id);
 
 comment on table public.daily_gifts is
-  'Un cadeau par personne et par jour. La clef primaire (user_id, '
-  'gift_date) EST la garantie : la base refuse le second, aucune '
-  'verification cote appli n''est necessaire ni suffisante.';
+  'Un cadeau par personne et par journee de cadeau. La clef primaire '
+  '(user_id, gift_date) EST la garantie : la base refuse le second, '
+  'aucune verification cote appli n''est necessaire ni suffisante.';
 
 -- ------------------------------------------------------------
 -- Quelle marche aujourd'hui ?
@@ -117,7 +144,7 @@ language sql stable security definer set search_path = public as $$
     (select case when g.jour >= 7 then 1 else g.jour + 1 end
        from public.daily_gifts g
       where g.user_id = p_uid
-        and g.gift_date = current_date - 1),
+        and g.gift_date = public.jour_cadeau() - 1),
     1);
 $$;
 
@@ -126,32 +153,37 @@ comment on function public.jour_de_cycle is
   'separe : l''historique est la seule source, il ne peut pas mentir.';
 
 -- ------------------------------------------------------------
--- Le montant
+-- Le montant — TIRAGE DETERMINISTE
 -- ------------------------------------------------------------
-create or replace function public.tirer_cadeau(p_jour int)
+-- ⚠️ CETTE FONCTION NE DOIT JAMAIS UTILISER random().
+--
+-- La carte ANNONCE le montant avant qu'on appuie sur « Recuperer ».
+-- Avec un tirage au hasard a chaque appel, il suffirait de rafraichir la
+-- page jusqu'a lire « 40 points » puis de cliquer : jackpot a volonte.
+--
+-- Le hasard vient donc du COUPLE (personne, journee) passe dans un md5 :
+-- imprevisible pour la personne, mais toujours identique pour le meme
+-- couple. daily_gift_status() peut l'annoncer, daily_gift() le verse, et
+-- les deux tombent forcement d'accord.
+--
+-- bit(28) et non bit(32) : sur 32 bits le cast donne un entier SIGNE,
+-- et le modulo d'un negatif ne tombe pas dans 0..99. 28 bits restent
+-- toujours positifs.
+create or replace function public.montant_cadeau(p_uid uuid, p_jour date, p_marche int)
 returns table (amount int, jackpot boolean)
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  v_marche int;
-begin
-  select l.points into v_marche from public.daily_gift_ladder l where l.jour = p_jour;
-  v_marche := coalesce(v_marche, 2);
-
-  -- Une fois sur cent, le cadeau du jour vaut 40 au lieu de sa marche.
-  -- C'est la seule part de hasard : l'escalier, lui, est previsible, et
-  -- c'est justement ce qui le rend tenable.
-  if random() < 0.01 then
-    return query select 40, true;
-  end if;
-
-  return query select v_marche, false;
-end;
+language sql stable as $$
+  select case when d.gagne then 40 else p_marche end, d.gagne
+  from (
+    select (('x' || substr(md5(p_uid::text || p_jour::text || 'cadeau-noctify'), 1, 7))::bit(28)::int % 100) = 0
+      as gagne
+  ) d;
 $$;
 
-comment on function public.tirer_cadeau is
+comment on function public.montant_cadeau is
   'Le montant du cadeau : la marche du jour, ou 40 une fois sur cent. '
-  'Separee de daily_gift() pour que la regle se lise et se change sans '
-  'toucher a la mecanique de versement.';
+  'DETERMINISTE (md5 du couple personne+journee) : c''est ce qui permet '
+  'd''annoncer le montant avant de le donner sans ouvrir un re-tirage '
+  'a volonte. Ne jamais y mettre random().';
 
 -- ------------------------------------------------------------
 -- Le cadeau
@@ -161,10 +193,11 @@ returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   v_uid     uuid := auth.uid();
-  v_today   date := current_date;
+  v_jourcal date := public.jour_cadeau();
   v_club    uuid;
   v_nom     text;
   v_jour    int;
+  v_marche  int;
   v_amount  int;
   v_jackpot boolean;
 begin
@@ -174,7 +207,7 @@ begin
 
   -- Deja pris aujourd'hui : on le dit, on ne retire pas.
   if exists (select 1 from public.daily_gifts
-              where user_id = v_uid and gift_date = v_today) then
+              where user_id = v_uid and gift_date = v_jourcal) then
     return jsonb_build_object('etat', 'deja_pris');
   end if;
 
@@ -196,7 +229,10 @@ begin
   end if;
 
   v_jour := public.jour_de_cycle(v_uid);
-  select t.amount, t.jackpot into v_amount, v_jackpot from public.tirer_cadeau(v_jour) t;
+  select l.points into v_marche from public.daily_gift_ladder l where l.jour = v_jour;
+  v_marche := coalesce(v_marche, 2);
+  select m.amount, m.jackpot into v_amount, v_jackpot
+    from public.montant_cadeau(v_uid, v_jourcal, v_marche) m;
 
   /* L'insertion d'abord, et c'est elle qui arbitre : deux appels
      simultanes (deux onglets, un double tap) se disputent la meme clef
@@ -204,7 +240,7 @@ begin
      puis noter -- donnerait deux fois les points sur la course. */
   begin
     insert into public.daily_gifts (user_id, gift_date, club_id, amount, jackpot, jour)
-    values (v_uid, v_today, v_club, v_amount, v_jackpot, v_jour);
+    values (v_uid, v_jourcal, v_club, v_amount, v_jackpot, v_jour);
   exception when unique_violation then
     return jsonb_build_object('etat', 'deja_pris');
   end;
@@ -235,28 +271,30 @@ end;
 $$;
 
 comment on function public.daily_gift is
-  'Le cadeau du jour, credite au dernier club frequente. Marche et '
-  'tirage cote serveur, unicite garantie par la clef primaire de '
+  'Le cadeau du jour, credite au dernier club frequente. Montant '
+  'deterministe et unicite garantie par la clef primaire de '
   'daily_gifts : rappeler la fonction ne donne rien de plus.';
 
 grant execute on function public.daily_gift() to authenticated;
 
 -- ------------------------------------------------------------
--- Est-ce qu'il reste un cadeau a prendre ?
+-- Ce qu'il y a a prendre, et combien
 -- ------------------------------------------------------------
--- Une lecture, pour que l'appli sache s'il faut afficher la carte sans
--- avoir a tenter le cadeau pour le decouvrir. Renvoie aussi l'escalier
--- entier et la marche du jour : l'appli dessine les sept jours d'un
--- coup, sans second aller-retour.
+-- Renvoie le MONTANT en plus de l'etat : la carte l'annonce avant que la
+-- personne appuie. C'est sans risque parce que montant_cadeau() est
+-- deterministe -- rafraichir ne change rien.
 create or replace function public.daily_gift_status()
 returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   v_uid     uuid := auth.uid();
+  v_jourcal date := public.jour_cadeau();
   v_club    uuid;
   v_jour    int;
+  v_marche  int;
+  v_amount  int;
+  v_jackpot boolean;
   v_echelle jsonb;
-  v_pris    boolean;
 begin
   if v_uid is null then
     return jsonb_build_object('etat', 'non_connecte');
@@ -266,15 +304,9 @@ begin
     into v_echelle from public.daily_gift_ladder l;
   v_echelle := coalesce(v_echelle, '[]'::jsonb);
 
-  v_pris := exists (select 1 from public.daily_gifts
-                     where user_id = v_uid and gift_date = current_date);
-
-  -- Deja pris : la marche affichee est celle qui a ete JOUEE, pas la
-  -- suivante -- sinon l'appli allumerait demain des ce soir.
-  if v_pris then
-    select g.jour into v_jour from public.daily_gifts g
-     where g.user_id = v_uid and g.gift_date = current_date;
-    return jsonb_build_object('etat', 'deja_pris', 'jour', v_jour, 'echelle', v_echelle);
+  if exists (select 1 from public.daily_gifts
+              where user_id = v_uid and gift_date = v_jourcal) then
+    return jsonb_build_object('etat', 'deja_pris', 'echelle', v_echelle);
   end if;
 
   select pg.club_id into v_club
@@ -284,12 +316,20 @@ begin
    limit 1;
 
   v_jour := public.jour_de_cycle(v_uid);
+  select l.points into v_marche from public.daily_gift_ladder l where l.jour = v_jour;
+  v_marche := coalesce(v_marche, 2);
+  select m.amount, m.jackpot into v_amount, v_jackpot
+    from public.montant_cadeau(v_uid, v_jourcal, v_marche) m;
 
   if v_club is null then
-    return jsonb_build_object('etat', 'aucun_club', 'jour', v_jour, 'echelle', v_echelle);
+    return jsonb_build_object(
+      'etat', 'aucun_club', 'jour', v_jour, 'points', v_amount,
+      'jackpot', v_jackpot, 'echelle', v_echelle);
   end if;
 
-  return jsonb_build_object('etat', 'disponible', 'jour', v_jour, 'echelle', v_echelle);
+  return jsonb_build_object(
+    'etat', 'disponible', 'jour', v_jour, 'points', v_amount,
+    'jackpot', v_jackpot, 'echelle', v_echelle);
 end;
 $$;
 
