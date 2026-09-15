@@ -79,7 +79,7 @@ async function rpc(compte, nom, args) {
     dit((await rpc(a, "welcome_bonus_status", { p_device: APPAREIL })).etat === "disponible",
       await rpc(a, "welcome_bonus_status", { p_device: APPAREIL }),
       "le bonus est disponible tout de suite (0049)");
-    const sansClub = await rpc(n, "welcome_bonus", { p_device: APPAREIL + "-n" });
+    const sansClub = await rpc(n, "welcome_bonus", { p_device: APPAREIL });
     dit(sansClub.etat === "ok" && sansClub.points === 50, sansClub, "un autre compte sans scan le prend");
     const soldeN = sql(`select points_balance from public.users where id = '${n.id}'`)[0];
     dit(Number(soldeN.points_balance) === 50, soldeN, "ses 50 points sont dans son solde (depensables)");
@@ -102,18 +102,17 @@ async function rpc(compte, nom, args) {
     const rejoue = await rpc(a, "welcome_bonus", { p_device: APPAREIL });
     dit(rejoue.etat === "deja_pris", rejoue, "ne se reprend pas");
 
-    // ---- 4. LA GARDE ANTI-TRICHE ----
-    console.log("\n4. Un SECOND compte sur le MEME telephone");
+    // ---- 4. Un cadeau par COMPTE, plus par telephone (0050) ----
+    console.log("\n4. Un SECOND compte sur le MEME telephone (0050 : il y a droit)");
     sql(`insert into public.point_grants (user_id, club_id, amount, unlocks_at, released)
            values ('${b.id}', '${club.id}', 15, now(), false)`);
     sql(`select public.release_due_points('${b.id}')`);
     const bStatut = await rpc(b, "welcome_bonus_status", { p_device: APPAREIL });
-    dit(bStatut.etat === "appareil_deja_servi", bStatut, "le statut le dit avant le clic");
-    const bTente = await rpc(b, "welcome_bonus", { p_device: APPAREIL });
-    dit(bTente.etat === "appareil_deja_servi", bTente, "et la fonction refuse");
-
-    const bAutre = await rpc(b, "welcome_bonus_status", { p_device: APPAREIL + "-autre" });
-    dit(bAutre.etat === "disponible", bAutre, "mais un autre telephone passe");
+    dit(bStatut.etat === "disponible", bStatut, "le statut l'annonce");
+    const bPris = await rpc(b, "welcome_bonus", { p_device: APPAREIL });
+    dit(bPris.etat === "ok" && bPris.points === 50, bPris, "et il le recoit");
+    const bRejoue = await rpc(b, "welcome_bonus", { p_device: APPAREIL });
+    dit(bRejoue.etat === "deja_pris", bRejoue, "mais une seule fois par compte");
 
     // ---- 5. Le cadeau du jour, et son montant deterministe ----
     console.log("\n5. Le cadeau du jour");
