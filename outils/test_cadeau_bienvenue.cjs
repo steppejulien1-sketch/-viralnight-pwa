@@ -70,14 +70,19 @@ async function rpc(compte, nom, args) {
 
   const a = await creer("a");
   const b = await creer("b");
+  const n = await creer("n");
   const APPAREIL = "test-appareil-" + Date.now();
 
   try {
-    // ---- 1. Sans club scanne, rien n'est du ----
+    // ---- 1. Sans club scanne : le bonus se prend quand meme (0049) ----
     console.log("1. Un compte tout neuf, sans aucun scan");
-    dit((await rpc(a, "welcome_bonus_status", { p_device: APPAREIL })).etat === "aucun_club",
+    dit((await rpc(a, "welcome_bonus_status", { p_device: APPAREIL })).etat === "disponible",
       await rpc(a, "welcome_bonus_status", { p_device: APPAREIL }),
-      "le bonus attend le premier scan");
+      "le bonus est disponible tout de suite (0049)");
+    const sansClub = await rpc(n, "welcome_bonus", { p_device: APPAREIL + "-n" });
+    dit(sansClub.etat === "ok" && sansClub.points === 50, sansClub, "un autre compte sans scan le prend");
+    const soldeN = sql(`select points_balance from public.users where id = '${n.id}'`)[0];
+    dit(Number(soldeN.points_balance) === 50, soldeN, "ses 50 points sont dans son solde (depensables)");
     dit((await rpc(a, "daily_gift_status")).etat === "aucun_club",
       await rpc(a, "daily_gift_status"), "le cadeau aussi");
 
@@ -141,7 +146,7 @@ async function rpc(compte, nom, args) {
     dit(taux > 0.6 && taux < 1.5, { taux: taux.toFixed(2) + " %" }, "entre 0,6 et 1,5 % (cible 1 %)");
   } finally {
     console.log("\nMenage");
-    for (const c of [a, b]) {
+    for (const c of [a, b, n]) {
       V.sql(`delete from public.daily_gifts where user_id = '${c.id}'`);
       V.sql(`delete from public.welcome_bonuses where user_id = '${c.id}'`);
       V.sql(`delete from public.point_grants where user_id = '${c.id}'`);
@@ -149,6 +154,6 @@ async function rpc(compte, nom, args) {
       V.sql(`delete from public.users where id = '${c.id}'`);
       await V.admin(`/auth/v1/admin/users/${c.id}`, "DELETE");
     }
-    ok("les deux comptes jetables et leurs lignes sont supprimes");
+    ok("les trois comptes jetables et leurs lignes sont supprimes");
   }
 })();
